@@ -107,6 +107,16 @@ Profil je Dokumenttyp konfiguriert – nie das LLM:
 Jedes Ergebnis (`ok`/`warning`/`error`) hat eine Begründung; bei `error` geht der Eingang in
 die manuelle Prüfung. Fristen folgen § 188 BGB (Monatsenden, Schaltjahre).
 
+## Vorschläge und Antwortentwürfe
+
+Für jeden Eingang mit gültiger Extraktion wählt deterministischer Code die erste passende
+Aktion aus dem Profil (Bedingungen `when_missing` / `when_rule`, letzte Aktion = Standard).
+Hat die Aktion eine Antwortvorlage, wird sie mit den extrahierten Feldern und den Ergebnissen
+der Regelprüfung (z. B. berechnetes Vertragsende) gefüllt; das LLM darf den Text nur sprachlich
+anpassen. Entwürfe, die Zahlen, Daten oder Beträge der Vorlage verändern, werden verworfen
+(ein Retry, danach manuelle Prüfung). Jeder Entwurf beginnt mit
+`[KI-Vorschlag – bitte vor dem Versand prüfen]` und ist als KI-Vorschlag gespeichert.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

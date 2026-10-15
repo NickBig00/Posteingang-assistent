@@ -17,12 +17,21 @@ from app.models import (
     ItemStatus,
     RuleOutcome,
     RuleResult,
+    Suggestion,
     ValidationStatus,
 )
 from app.profiles import DocumentType, Profile
 from app.rules import RuleCheck, RuleContext, run_rules
-from app.rules.engine import find_member, typed_fields
+from app.rules.engine import FieldValue, find_member, typed_fields
 from app.status import transition_status
+from app.suggestions import (
+    TemplateRenderError,
+    draft_reply,
+    label_draft,
+    render_template,
+    select_action,
+    template_values,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -123,21 +132,24 @@ def process_item(
     if fields is None:
         return _manual_review(session, item, item_id, "Extraktion ungültig", result.document_type)
 
-    checks = check_rules(session, item, doc_type, fields.model_dump(mode="json"))
+    typed = typed_fields(doc_type, fields.model_dump(mode="json"))
+    checks = check_rules(session, item, doc_type, typed)
+    suggestion_error = suggest(session, item_id, text, profile, doc_type, typed, checks, client)
     if any(check.outcome == RuleOutcome.ERROR for check in checks):
         return _manual_review(session, item, item_id, "Regelprüfung mit Fehler", doc_type.key)
+    if suggestion_error:
+        return _manual_review(session, item, item_id, suggestion_error, doc_type.key)
 
     transition_status(session, item, ItemStatus.PROCESSED)
     return ProcessResult(item_id, item.status, result.document_type)
 
 
 def check_rules(
-    session: Session, item: InboxItem, doc_type: DocumentType, raw_fields: dict
+    session: Session, item: InboxItem, doc_type: DocumentType, fields: dict[str, FieldValue]
 ) -> list[RuleCheck]:
     """Run the deterministic rules of the document type and store their results."""
     if item.id is None:
         raise ValueError("item must be persisted")
-    fields = typed_fields(doc_type, raw_fields)
     context = RuleContext(
         doc_type=doc_type,
         fields=fields,
@@ -158,6 +170,47 @@ def check_rules(
         )
     session.commit()
     return checks
+
+
+def suggest(
+    session: Session,
+    item_id: int,
+    text: str,
+    profile: Profile,
+    doc_type: DocumentType,
+    fields: dict[str, FieldValue],
+    checks: list[RuleCheck],
+    client: LLMClient,
+) -> str | None:
+    """Store the suggested action and, if it has a template, an AI-labelled reply draft.
+
+    Returns an error reason if no valid suggestion could be created.
+    """
+    values = template_values(fields, checks)
+    action = select_action(doc_type, values, checks)
+    if action is None:
+        return "kein Aktionsvorschlag im Profil"
+    draft: str | None = None
+    if action.reply_template:
+        try:
+            template_text = render_template(action.reply_template, values)
+        except TemplateRenderError:
+            return "Antwortvorlage nicht anwendbar"
+        provider = client.provider.name
+        call = _with_retry(
+            session,
+            item_id,
+            provider,
+            lambda: draft_reply(client, profile, template_text, text),
+        )
+        if call.output is None:
+            return "Antwortentwurf ungültig"
+        draft = label_draft(call.output)
+    session.add(
+        Suggestion(item_id=item_id, action=action.key, draft_text=draft, is_ai_suggestion=True)
+    )
+    session.commit()
+    return None
 
 
 def process_new_items(session: Session, profile: Profile, client: LLMClient) -> list[ProcessResult]:

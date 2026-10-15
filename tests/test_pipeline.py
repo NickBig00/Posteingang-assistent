@@ -301,8 +301,9 @@ def test_rule_results_are_stored(session: Session, profile: Profile) -> None:
     seed_members(session)
     item = _item(session)
 
+    draft = "Wir bestätigen die Kündigung M-10001 zum 31.10.2026."
     result = process_item(
-        session, item, profile, LLMClient(FakeProvider([CLASSIFY_OK, KUENDIGUNG]))
+        session, item, profile, LLMClient(FakeProvider([CLASSIFY_OK, KUENDIGUNG, draft]))
     )
 
     rules = {r.rule_name: r for r in session.exec(select(RuleResult)).all()}

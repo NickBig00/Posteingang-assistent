@@ -62,11 +62,24 @@ class RuleRef(_Strict):
     params: dict[str, JsonValue] = Field(default_factory=dict)
 
 
+RuleOutcomeName = Literal["ok", "warning", "error"]
+
+
 class ActionSpec(_Strict):
+    """Suggested next step. The first action whose conditions match is suggested."""
+
     key: str = Field(pattern=KEY_PATTERN)
     label: str = Field(min_length=1)
     # Jinja2 template for the reply draft (German); None if the action needs no reply.
     reply_template: str | None = None
+    # Applies if any of these values (fields or computed rule data) is missing.
+    when_missing: list[str] = Field(default_factory=list)
+    # Applies if any listed rule has one of the given outcomes.
+    when_rule: dict[str, list[RuleOutcomeName]] = Field(default_factory=dict)
+
+    @property
+    def is_default(self) -> bool:
+        return not self.when_missing and not self.when_rule
 
 
 class DocumentType(_Strict):
@@ -87,6 +100,8 @@ class DocumentType(_Strict):
             duplicates = sorted({n for n in names if names.count(n) > 1})
             if duplicates:
                 raise ValueError(f"duplicate {kind} names: {', '.join(duplicates)}")
+        if self.actions and not self.actions[-1].is_default:
+            raise ValueError("the last action must have no conditions (default action)")
         return self
 
     def field(self, name: str) -> FieldSpec:
