@@ -98,6 +98,7 @@ def draft_reply(
     if call.output is not None:
         missing = missing_facts(template_text, call.output)
         if missing:
-            call.error = f"invalid output: draft changes facts ({', '.join(missing)})"
+            # Only the count: the facts themselves may be personal data.
+            call.error = f"invalid output: draft changes {len(missing)} fact(s) of the template"
             call.output = None
     return call

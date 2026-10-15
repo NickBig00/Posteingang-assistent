@@ -88,7 +88,7 @@ def test_every_llm_step_is_audited(session: Session, profile: Profile) -> None:
         assert entry.input_hash == hash_input(f"{system}\n\n{user}")
         assert entry.step == task
         assert "Ich kündige" not in entry.model_dump_json()  # only the hash of the input
-    assert entries[1].output == KUENDIGUNG
+    assert entries[1].output_hash == hash_input(KUENDIGUNG)
 
 
 def test_invalid_classification_is_retried_once(session: Session, profile: Profile) -> None:
@@ -105,7 +105,7 @@ def test_invalid_classification_is_retried_once(session: Session, profile: Profi
         ("extract", 1),
     ]
     assert entries[0].error is not None and "invalid output" in entries[0].error
-    assert entries[0].output == "kein JSON"
+    assert entries[0].output_hash == hash_input("kein JSON")
 
 
 def test_twice_invalid_classification_needs_manual_review(
@@ -157,7 +157,7 @@ def test_provider_failure_needs_manual_review_and_is_audited(
     entries = _audit(session)
     assert len(entries) == 2
     assert entries[0].model == "fake"
-    assert entries[0].output is None
+    assert entries[0].output_hash is None
     assert entries[0].error is not None and "LLMProviderError" in entries[0].error
 
 

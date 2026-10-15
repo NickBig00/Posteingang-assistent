@@ -87,7 +87,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Bericht wird erzeugt; Ergebnis im PR dokumentiert.
 
-## [ ] M10 – Löschkonzept und Datenschutz-Funktionen
+## [x] M10 – Löschkonzept und Datenschutz-Funktionen
 
 - Konfigurierbare Aufbewahrungsdauer, Löschfunktion je Eingang
 - Audit behält nach Löschung nur Hashes und Metadaten

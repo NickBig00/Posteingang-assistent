@@ -5,7 +5,7 @@ from sqlalchemy import Engine, delete, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app.audit import AuditEntryImmutableError, hash_input, write_audit_entry
+from app.audit import AuditEntryImmutableError, audit_outputs, hash_input, write_audit_entry
 from app.models import AuditEntry
 
 
@@ -32,7 +32,8 @@ def test_write_audit_entry_persists_all_fields(session: Session) -> None:
     assert stored.model == "fake"
     assert stored.model_params == {"temperature": 0.0}
     assert stored.prompt_version == "classify_v1"
-    assert stored.output == '{"type": "sonstiges"}'
+    assert stored.output_hash == hash_input('{"type": "sonstiges"}')
+    assert audit_outputs(session, [stored.id or 0]) == {stored.id: '{"type": "sonstiges"}'}
     assert stored.duration_ms == 12
     assert stored.error is None
     assert stored.created_at is not None
@@ -65,7 +66,7 @@ def test_audit_entry_may_exist_without_inbox_item(session: Session) -> None:
 
 def test_orm_update_is_blocked(session: Session) -> None:
     entry = _write(session)
-    entry.output = "manipuliert"
+    entry.step = "manipuliert"
     session.add(entry)
 
     with pytest.raises(AuditEntryImmutableError):
@@ -84,7 +85,7 @@ def test_bulk_update_is_blocked_by_database(session: Session) -> None:
     _write(session)
 
     with pytest.raises(IntegrityError, match="immutable"):
-        session.exec(update(AuditEntry).values(output="manipuliert"))  # type: ignore[call-overload]
+        session.exec(update(AuditEntry).values(step="manipuliert"))  # type: ignore[call-overload]
 
 
 def test_bulk_delete_is_blocked_by_database(session: Session) -> None:
@@ -98,13 +99,13 @@ def test_raw_sql_modification_is_blocked(engine: Engine, session: Session) -> No
     _write(session)
 
     with engine.connect() as connection, pytest.raises(IntegrityError, match="immutable"):
-        connection.execute(text("UPDATE auditentry SET output = 'x'"))
+        connection.execute(text("UPDATE auditentry SET step = 'x'"))
 
 
 def test_entries_survive_blocked_modification(engine: Engine, session: Session) -> None:
-    _write(session, output="original")
+    _write(session, step="original")
     with engine.connect() as connection, pytest.raises(IntegrityError):
         connection.execute(text("DELETE FROM auditentry"))
 
     with Session(engine) as fresh:
-        assert fresh.exec(select(AuditEntry)).one().output == "original"
+        assert fresh.exec(select(AuditEntry)).one().step == "original"

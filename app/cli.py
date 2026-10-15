@@ -10,9 +10,11 @@ from app.evaluation import evaluate, write_report
 from app.ingest.service import DEFAULT_SAMPLES_DIR, import_samples
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
+from app.logging_config import setup_logging
 from app.models import ItemStatus
 from app.pipeline import process_new_items
 from app.profiles import load_active_profile
+from app.retention import purge_expired
 from app.rules import validate_profile_rules
 
 
@@ -22,10 +24,12 @@ def main(argv: list[str] | None = None) -> int:
     import_cmd = commands.add_parser("import-samples", help="Beispieldaten importieren")
     import_cmd.add_argument("--dir", type=Path, default=DEFAULT_SAMPLES_DIR)
     commands.add_parser("process", help="Neue Eingänge klassifizieren und extrahieren")
+    commands.add_parser("purge", help="Eingänge nach Ablauf der Aufbewahrungsfrist löschen")
     eval_cmd = commands.add_parser("evaluate", help="Pipeline gegen labels.json messen")
     eval_cmd.add_argument("--samples", type=Path, default=None)
     eval_cmd.add_argument("--out", type=Path, default=Path("docs/evaluation"))
     args = parser.parse_args(argv)
+    setup_logging()
 
     if args.command == "evaluate":
         profile = load_active_profile()
@@ -47,6 +51,12 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"{summary.imported} Eingänge importiert, {summary.skipped} bereits vorhanden, "
                 f"{summary.members_seeded} Mitglieder angelegt."
+            )
+        elif args.command == "purge":
+            summary = purge_expired(session)
+            print(
+                f"{len(summary.deleted_item_ids)} Eingänge gelöscht "
+                f"(eingegangen vor {summary.cutoff:%d.%m.%Y %H:%M} UTC)."
             )
         elif args.command == "process":
             client = LLMClient(get_provider())

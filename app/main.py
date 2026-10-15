@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app.audit import audit_outputs
 from app.db import engine, get_session, init_db
 from app.ingest.normalize import SUPPORTED_SUFFIXES, UnsupportedFileTypeError
 from app.ingest.service import (
@@ -22,9 +23,11 @@ from app.ingest.service import (
 )
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
+from app.logging_config import setup_logging
 from app.models import Classification, InboxItem, ItemSource, ItemStatus, ReviewDecision, RuleResult
 from app.pipeline import process_new_items
 from app.profiles import Profile, load_active_profile
+from app.retention import delete_item, retention_days
 from app.review import (
     ItemDetails,
     ReviewNotAllowedError,
@@ -42,6 +45,7 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    setup_logging()
     init_db(engine)
     yield
 
@@ -125,6 +129,7 @@ def index(request: Request, session: SessionDep) -> HTMLResponse:
             "message": None,
             "error": False,
             "accepted_suffixes": ",".join(sorted(SUPPORTED_SUFFIXES)),
+            "retention_days": retention_days(),
         },
     )
 
@@ -200,8 +205,10 @@ def item_detail(request: Request, session: SessionDep, item_id: int) -> HTMLResp
 def item_audit(request: Request, session: SessionDep, item_id: int) -> HTMLResponse:
     """Chronological trail of all AI steps for one item."""
     details = _details_or_404(session, item_id)
+    entries = audit_trail(session, item_id)
+    outputs = audit_outputs(session, [e.id for e in entries if e.id is not None])
     return templates.TemplateResponse(
-        request, "audit.html", {"item": details.item, "entries": audit_trail(session, item_id)}
+        request, "audit.html", {"item": details.item, "entries": entries, "outputs": outputs}
     )
 
 
@@ -247,3 +254,11 @@ def item_export(session: SessionDep, item_id: int) -> PlainTextResponse:
     return PlainTextResponse(
         text, headers={"Content-Disposition": f'attachment; filename="antwort-{item_id}.txt"'}
     )
+
+
+@app.post("/items/{item_id}/delete")
+def item_delete(session: SessionDep, item_id: int) -> RedirectResponse:
+    """Delete an item with all content; the audit trail keeps only hashes and metadata."""
+    if not delete_item(session, item_id):
+        raise HTTPException(status_code=404, detail="Eingang nicht gefunden")
+    return RedirectResponse("/", status_code=303)
