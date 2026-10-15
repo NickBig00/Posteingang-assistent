@@ -131,6 +131,18 @@ anpassen. Entwürfe, die Zahlen, Daten oder Beträge der Vorlage verändern, wer
 Demo-Durchlauf: Beispieldaten laden → Eingänge verarbeiten → Eingang öffnen → prüfen →
 freigeben → ausführen → exportieren.
 
+## Evaluation
+
+```bash
+uv run python -m app.cli evaluate            # Anbieter per LLM_PROVIDER
+```
+
+Das Skript importiert die Beispieldaten des aktiven Profils in eine temporäre Datenbank,
+lässt die Pipeline laufen und vergleicht mit `labels.json`. Ergebnis: Genauigkeit je Typ,
+Feld-Trefferquote (gesamt und je Feld) und eine Fehlerliste unter
+`docs/evaluation/<profil>_<anbieter>.md` (plus `.json`). Ziel laut SPEC: ≥ 90 % korrekte
+Klassifizierung.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

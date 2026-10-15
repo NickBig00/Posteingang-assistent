@@ -1,0 +1,968 @@
+{
+  "profile": "fitness",
+  "provider": "fake",
+  "model": "fake-heuristic-v1",
+  "created_at": "2026-10-15 18:16 UTC",
+  "accuracy": 0.9629629629629629,
+  "field_hit_rate": 0.22429906542056074,
+  "per_type": {
+    "kuendigung": {
+      "total": 8,
+      "correct": 8
+    },
+    "probetraining_anfrage": {
+      "total": 5,
+      "correct": 5
+    },
+    "rechnung": {
+      "total": 6,
+      "correct": 6
+    },
+    "sonstiges": {
+      "total": 3,
+      "correct": 3
+    },
+    "vertragspause": {
+      "total": 5,
+      "correct": 4
+    }
+  },
+  "items": [
+    {
+      "file": "001_kuendigung_standard.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.9,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Erika Beispiel",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10001",
+          "actual": "M-10001",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-09-14",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": "2026-10-31",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "002_kuendigung_naechstmoeglich.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.9,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Max Mustermann",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10002",
+          "actual": "M-10002",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-09-21",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "003_kuendigung_ohne_mitgliedsnummer.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Lena Testfrau",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-09-25",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": "2026-11-30",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "004_kuendigung_unklar.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.7,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Ben Beispielmann",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10003",
+          "actual": "M-10003",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-10-02",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "005_kuendigung_brief.pdf",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Jonas Demo",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10004",
+          "actual": "M-10004",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-09-20",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": "2026-12-31",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "006_kuendigung_als_anhang.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.9,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Paula Platzhalter",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10005",
+          "actual": "M-10005",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-09-18",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": "2026-12-31",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "007_kuendigung_frist_knapp.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Tim Testmann",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10006",
+          "actual": "M-10006",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-09-30",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": "2026-10-31",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "008_kuendigung_mit_rechnungsfrage.eml",
+      "expected_type": "kuendigung",
+      "predicted_type": "kuendigung",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Nora Nachname",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10007",
+          "actual": "M-10007",
+          "hit": true
+        },
+        {
+          "name": "eingangsdatum",
+          "expected": "2026-10-05",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "gewuenschtes_kuendigungsdatum",
+          "expected": "2026-11-30",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "009_probetraining_standard.eml",
+      "expected_type": "probetraining_anfrage",
+      "predicted_type": "probetraining_anfrage",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Sophie Beispielfrau",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "kontakt",
+          "expected": "sophie.beispielfrau@example.com",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-10-20",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "interesse",
+          "expected": "Krafttraining",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "010_probetraining_telefon_relativer_termin.eml",
+      "expected_type": "probetraining_anfrage",
+      "predicted_type": "probetraining_anfrage",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Paul Probe",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "kontakt",
+          "expected": "030 23125 456",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "interesse",
+          "expected": "Kurse",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "011_probetraining_kontaktformular.pdf",
+      "expected_type": "probetraining_anfrage",
+      "predicted_type": "probetraining_anfrage",
+      "confidence": 0.9,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Mia Muster",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "kontakt",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-10-24",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "interesse",
+          "expected": "Yoga",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "012_probetraining_mit_preisfrage.eml",
+      "expected_type": "probetraining_anfrage",
+      "predicted_type": "probetraining_anfrage",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Leon Lorem",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "kontakt",
+          "expected": "leon.lorem@example.net",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-10-15",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "interesse",
+          "expected": "Ausdauertraining",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "013_probetraining_kurz.eml",
+      "expected_type": "probetraining_anfrage",
+      "predicted_type": "probetraining_anfrage",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Hanna Hypothetisch",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "kontakt",
+          "expected": "hanna.hypothetisch@example.com",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "interesse",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "014_vertragspause_beruflich.eml",
+      "expected_type": "vertragspause",
+      "predicted_type": "vertragspause",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Felix Fiktiv",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10008",
+          "actual": "M-10008",
+          "hit": true
+        },
+        {
+          "name": "zeitraum_von",
+          "expected": "2026-11-01",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "zeitraum_bis",
+          "expected": "2027-01-31",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "grund_kategorie",
+          "expected": "beruflich",
+          "actual": "beruflich",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "015_vertragspause_reise.eml",
+      "expected_type": "vertragspause",
+      "predicted_type": "probetraining_anfrage",
+      "confidence": 0.9,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Clara Probe",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10009",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "zeitraum_von",
+          "expected": "2026-12-01",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "zeitraum_bis",
+          "expected": "2026-12-31",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "grund_kategorie",
+          "expected": "reise",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "016_vertragspause_zu_lang.eml",
+      "expected_type": "vertragspause",
+      "predicted_type": "vertragspause",
+      "confidence": 0.7,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Ben Beispielmann",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10003",
+          "actual": "M-10003",
+          "hit": true
+        },
+        {
+          "name": "zeitraum_von",
+          "expected": "2026-11-01",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "zeitraum_bis",
+          "expected": "2027-06-30",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "grund_kategorie",
+          "expected": "reise",
+          "actual": "reise",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "017_vertragspause_ohne_zeitraum.eml",
+      "expected_type": "vertragspause",
+      "predicted_type": "vertragspause",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Erika Beispiel",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": "M-10001",
+          "actual": "M-10001",
+          "hit": true
+        },
+        {
+          "name": "zeitraum_von",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "zeitraum_bis",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "grund_kategorie",
+          "expected": "sonstiges",
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "018_vertragspause_ohne_mitgliedsnummer.eml",
+      "expected_type": "vertragspause",
+      "predicted_type": "vertragspause",
+      "confidence": 0.8,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Tim Testmann",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "mitgliedsnummer",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "zeitraum_von",
+          "expected": "2027-01-01",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "zeitraum_bis",
+          "expected": "2027-02-28",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "grund_kategorie",
+          "expected": "beruflich",
+          "actual": "beruflich",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "019_rechnung_getraenke.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Durstlöscher Demo GmbH",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "RE-2026-0815",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-09-10",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "betrag",
+          "expected": "499.80",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "020_rechnung_reinigung.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Blitzblank Beispiel GmbH",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "BB-2026-09-77",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-09-30",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "betrag",
+          "expected": "1428.00",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "021_rechnung_summe_falsch.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Sportbedarf Exempel AG",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "SE-55012",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-09-17",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "betrag",
+          "expected": "416.50",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "022_rechnung_als_anhang.eml",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Gerätewartung Muster KG",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "GW-2026-117",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-09-22",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "betrag",
+          "expected": "535.50",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "023_rechnung_xrechnung.eml",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Handtuchservice Exempel GmbH",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "HT-2026-0042",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-10-01",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "betrag",
+          "expected": "297.50",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "e_rechnung",
+          "expected": true,
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "024_rechnung_ohne_nummer.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 0.95,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Getränke Dummy OHG",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-10-04",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "betrag",
+          "expected": "178.50",
+          "actual": null,
+          "hit": false
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": null,
+          "hit": false
+        }
+      ]
+    },
+    {
+      "file": "025_sonstiges_lob.eml",
+      "expected_type": "sonstiges",
+      "predicted_type": "sonstiges",
+      "confidence": 0.8,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": []
+    },
+    {
+      "file": "026_sonstiges_newsletter.eml",
+      "expected_type": "sonstiges",
+      "predicted_type": "sonstiges",
+      "confidence": 0.8,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": []
+    },
+    {
+      "file": "027_sonstiges_oeffnungszeiten.eml",
+      "expected_type": "sonstiges",
+      "predicted_type": "sonstiges",
+      "confidence": 0.8,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": []
+    }
+  ]
+}

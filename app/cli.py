@@ -6,6 +6,7 @@ from pathlib import Path
 from sqlmodel import Session
 
 from app.db import engine, init_db
+from app.evaluation import evaluate, write_report
 from app.ingest.service import DEFAULT_SAMPLES_DIR, import_samples
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
@@ -21,7 +22,23 @@ def main(argv: list[str] | None = None) -> int:
     import_cmd = commands.add_parser("import-samples", help="Beispieldaten importieren")
     import_cmd.add_argument("--dir", type=Path, default=DEFAULT_SAMPLES_DIR)
     commands.add_parser("process", help="Neue Eingänge klassifizieren und extrahieren")
+    eval_cmd = commands.add_parser("evaluate", help="Pipeline gegen labels.json messen")
+    eval_cmd.add_argument("--samples", type=Path, default=None)
+    eval_cmd.add_argument("--out", type=Path, default=Path("docs/evaluation"))
     args = parser.parse_args(argv)
+
+    if args.command == "evaluate":
+        profile = load_active_profile()
+        validate_profile_rules(profile)
+        client = LLMClient(get_provider())
+        samples = args.samples or DEFAULT_SAMPLES_DIR.parent / profile.key
+        report = evaluate(profile, client, samples)
+        markdown, _ = write_report(report, args.out)
+        print(
+            f"Genauigkeit {report.accuracy:.1%}, Feld-Trefferquote {report.field_hit_rate:.1%} "
+            f"– Bericht: {markdown}"
+        )
+        return 0
 
     init_db(engine)
     with Session(engine) as session:
