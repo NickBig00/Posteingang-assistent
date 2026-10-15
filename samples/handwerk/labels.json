@@ -1,0 +1,263 @@
+{
+  "profile": "handwerk",
+  "synthetic": true,
+  "description": "Erwartete Ergebnisse für die fiktiven Beispiel-Eingänge.",
+  "items": [
+    {
+      "file": "101_angebot_bad.eml",
+      "expected_type": "angebotsanfrage",
+      "expected_fields": {
+        "name": "Karl Kunde",
+        "kontakt": "karl.kunde@example.com",
+        "leistung": "sanitaer",
+        "einsatzort": "Musterstadt",
+        "wunschtermin": "2026-11-09"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "102_angebot_heizung.eml",
+      "expected_type": "angebotsanfrage",
+      "expected_fields": {
+        "name": "Otto Objekt",
+        "kontakt": "otto.objekt@example.org",
+        "leistung": "heizung",
+        "einsatzort": "Beispielhausen",
+        "wunschtermin": null
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "103_angebot_elektro_telefon.eml",
+      "expected_type": "angebotsanfrage",
+      "expected_fields": {
+        "name": "Frieda Fiktiv",
+        "kontakt": "030 23125 311",
+        "leistung": "elektro",
+        "einsatzort": "Musterstadt",
+        "wunschtermin": null
+      },
+      "difficulty": "normal",
+      "notes": "Rückruf ausdrücklich per Telefon gewünscht."
+    },
+    {
+      "file": "104_angebot_kontaktformular.pdf",
+      "expected_type": "angebotsanfrage",
+      "expected_fields": {
+        "name": "Hugo Hypothese",
+        "kontakt": null,
+        "leistung": "sanitaer",
+        "einsatzort": "Musterdorf",
+        "wunschtermin": "2026-11-20"
+      },
+      "difficulty": "hard",
+      "notes": "Ausdruck Kontaktformular, Kontaktangabe fehlt."
+    },
+    {
+      "file": "105_angebot_mit_rueckfrage.eml",
+      "expected_type": "angebotsanfrage",
+      "expected_fields": {
+        "name": "Ida Irgendwer",
+        "kontakt": "ida.irgendwer@example.com",
+        "leistung": "heizung",
+        "einsatzort": "Musterstadt",
+        "wunschtermin": null
+      },
+      "difficulty": "hard",
+      "notes": "Mischform: Angebot plus Frage nach Förderung."
+    },
+    {
+      "file": "106_reparatur_heizung_notfall.eml",
+      "expected_type": "reparaturauftrag",
+      "expected_fields": {
+        "name": "Lars Lorem",
+        "kontakt": "lars.lorem@example.org",
+        "leistung": "heizung",
+        "einsatzort": "Musterstadt",
+        "dringend": true,
+        "wunschtermin": null
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "107_reparatur_wasserhahn.eml",
+      "expected_type": "reparaturauftrag",
+      "expected_fields": {
+        "name": "Sven Sample",
+        "kontakt": "sven.sample@example.com",
+        "leistung": "sanitaer",
+        "einsatzort": "Beispielhausen",
+        "dringend": false,
+        "wunschtermin": "2026-10-22"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "108_reparatur_steckdose_relativ.eml",
+      "expected_type": "reparaturauftrag",
+      "expected_fields": {
+        "name": "Tina Test",
+        "kontakt": "tina.test@example.net",
+        "leistung": "elektro",
+        "einsatzort": "Musterstadt",
+        "dringend": false,
+        "wunschtermin": null
+      },
+      "difficulty": "hard",
+      "notes": "Relativer Termin ('Anfang nächster Woche') wird nicht als Datum erwartet."
+    },
+    {
+      "file": "109_reparatur_ohne_ort.eml",
+      "expected_type": "reparaturauftrag",
+      "expected_fields": {
+        "name": "Karl Kunde",
+        "kontakt": "karl.kunde@example.com",
+        "leistung": "sanitaer",
+        "einsatzort": null,
+        "dringend": false,
+        "wunschtermin": null
+      },
+      "difficulty": "hard",
+      "notes": "Einsatzort fehlt."
+    },
+    {
+      "file": "110_reparatur_mit_bewertung.eml",
+      "expected_type": "reparaturauftrag",
+      "expected_fields": {
+        "name": "Otto Objekt",
+        "kontakt": "otto.objekt@example.org",
+        "leistung": "elektro",
+        "einsatzort": "Beispielhausen",
+        "dringend": false,
+        "wunschtermin": "2026-10-28"
+      },
+      "difficulty": "hard",
+      "notes": "Mischform: Lob für letzten Einsatz plus neuer Reparaturauftrag."
+    },
+    {
+      "file": "111_reklamation_heizkoerper.eml",
+      "expected_type": "reklamation",
+      "expected_fields": {
+        "name": "Frieda Fiktiv",
+        "kontakt": "frieda.fiktiv@example.net",
+        "auftragsnummer": "A-2026-104",
+        "auftragsdatum": "2026-09-03"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "112_reklamation_brief.pdf",
+      "expected_type": "reklamation",
+      "expected_fields": {
+        "name": "Greta Gast",
+        "kontakt": "030 23125 233",
+        "auftragsnummer": "A-2026-118",
+        "auftragsdatum": "2026-09-15"
+      },
+      "difficulty": "normal",
+      "notes": "Reklamation als Brief (PDF)."
+    },
+    {
+      "file": "113_reklamation_ohne_auftragsnummer.eml",
+      "expected_type": "reklamation",
+      "expected_fields": {
+        "name": "Sven Sample",
+        "kontakt": "sven.sample@example.com",
+        "auftragsnummer": null,
+        "auftragsdatum": null
+      },
+      "difficulty": "hard",
+      "notes": "Auftragsnummer und Auftragsdatum fehlen."
+    },
+    {
+      "file": "114_reklamation_als_anhang.eml",
+      "expected_type": "reklamation",
+      "expected_fields": {
+        "name": "Greta Gast",
+        "kontakt": "030 23125 233",
+        "auftragsnummer": "A-2026-118",
+        "auftragsdatum": "2026-09-15"
+      },
+      "difficulty": "hard",
+      "notes": "Inhalt nur im PDF-Anhang (gleiches Schreiben wie 112, andere Datei)."
+    },
+    {
+      "file": "115_rechnung_material.eml",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Rohrgroßhandel Exempel KG",
+        "rechnungsnummer": "RG-2026-3310",
+        "rechnungsdatum": "2026-09-21",
+        "betrag": "476.00",
+        "e_rechnung": false
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "116_rechnung_werkzeug.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Werkzeugverleih Demo GmbH",
+        "rechnungsnummer": "WV-881",
+        "rechnungsdatum": "2026-09-30",
+        "betrag": "214.20",
+        "e_rechnung": false
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "117_rechnung_summe_falsch.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Fliesen Fiktiv OHG",
+        "rechnungsnummer": "FF-2026-77",
+        "rechnungsdatum": "2026-10-02",
+        "betrag": "952.00",
+        "e_rechnung": false
+      },
+      "difficulty": "hard",
+      "notes": "Summen nicht plausibel: Positionen 700.00, Netto ausgewiesen 800.00."
+    },
+    {
+      "file": "118_rechnung_ohne_nummer.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Elektro Dummy KG",
+        "rechnungsnummer": null,
+        "rechnungsdatum": "2026-10-08",
+        "betrag": "119.00",
+        "e_rechnung": false
+      },
+      "difficulty": "hard",
+      "notes": "Pflichtangabe Rechnungsnummer fehlt."
+    },
+    {
+      "file": "119_sonstiges_bewerbung_ausbildung.eml",
+      "expected_type": "sonstiges",
+      "expected_fields": {},
+      "difficulty": "normal",
+      "notes": "Frage nach Ausbildungsplätzen, keine Kundenanfrage."
+    },
+    {
+      "file": "120_sonstiges_newsletter.eml",
+      "expected_type": "sonstiges",
+      "expected_fields": {},
+      "difficulty": "normal",
+      "notes": "Werbe-Newsletter eines Lieferanten."
+    },
+    {
+      "file": "121_sonstiges_lob.eml",
+      "expected_type": "sonstiges",
+      "expected_fields": {},
+      "difficulty": "normal",
+      "notes": ""
+    }
+  ]
+}

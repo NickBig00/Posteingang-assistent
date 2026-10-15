@@ -101,7 +101,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Neue Mails im Test-Postfach erscheinen im Posteingang.
 
-## [ ] M12 – Zweites Branchenprofil „Handwerksbetrieb“
+## [x] M12 – Zweites Branchenprofil „Handwerksbetrieb“
 
 - Neues Profil inkl. Beispieldaten und Labels, ohne Änderungen am Kern-Code
 

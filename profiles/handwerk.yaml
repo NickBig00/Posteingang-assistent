@@ -1,0 +1,177 @@
+# Branchenprofil "Handwerksbetrieb" (Sanitär, Heizung, Elektro). Nur Konfiguration, kein Code.
+# Keine Felder mit Gesundheitsbezug – der Loader lehnt solche Felder ab.
+key: handwerk
+name: Handwerksbetrieb
+version: 1
+# Unterhalb dieser Konfidenz geht ein Eingang in die manuelle Prüfung.
+confidence_threshold: 0.7
+fallback_type: sonstiges
+
+document_types:
+  - key: angebotsanfrage
+    label: Angebotsanfrage
+    description: >-
+      Eine Kundin oder ein Kunde bittet um ein Angebot oder einen Kostenvoranschlag für eine
+      geplante Leistung (z. B. Badsanierung, neue Heizung, Wallbox).
+    keywords: [angebot, kostenvoranschlag, sanieren, sanierung, austausch, interessiere]
+    fields:
+      - {name: name, type: string, required: true, description: Name der anfragenden Person}
+      - {name: kontakt, type: string, required: true, description: "E-Mail-Adresse oder Telefonnummer für die Rückmeldung; ausdrücklich gewünschter Rückrufweg hat Vorrang"}
+      - name: leistung
+        type: string
+        required: true
+        allowed_values: [heizung, sanitaer, elektro, sonstiges]
+        description: Gewerk der angefragten Leistung
+      - {name: einsatzort, type: string, description: "Ort (Stadt/Gemeinde) des Einsatzes"}
+      - {name: wunschtermin, type: date, description: "Ausdrücklich genanntes Datum für Besichtigung oder Termin"}
+    rules:
+      - {rule: required_fields}
+    actions:
+      - key: kontakt_ermitteln
+        label: Kontaktangabe fehlt – manuell ermitteln
+        when_missing: [kontakt]
+      - key: besichtigung_vereinbaren
+        label: Besichtigungstermin vereinbaren
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          vielen Dank für Ihre Anfrage. Für ein verbindliches Angebot schauen wir uns die Situation
+          gerne vor Ort an. {% if wunschtermin %}Den {{ wunschtermin }} merken wir uns gern vor und
+          bestätigen Ihnen die Uhrzeit.{% else %}Bitte nennen Sie uns einen passenden Termin.{% endif %}
+
+          Freundliche Grüße
+          Ihre Muster Haustechnik GmbH
+
+  - key: reparaturauftrag
+    label: Reparaturauftrag
+    description: >-
+      Etwas ist defekt oder ausgefallen und soll repariert werden (z. B. Heizung aus,
+      Wasserhahn tropft, Steckdose defekt), auch Notfälle.
+    keywords: [defekt, kaputt, ausgefallen, tropft, reparatur, notdienst, läuft ständig]
+    fields:
+      - {name: name, type: string, required: true, description: Name der auftraggebenden Person}
+      - {name: kontakt, type: string, required: true, description: "E-Mail-Adresse oder Telefonnummer für die Rückmeldung"}
+      - name: leistung
+        type: string
+        required: true
+        allowed_values: [heizung, sanitaer, elektro, sonstiges]
+        description: Gewerk der Reparatur
+      - {name: einsatzort, type: string, required: true, description: "Ort (Stadt/Gemeinde) des Einsatzes"}
+      - {name: dringend, type: boolean, required: true, description: "true, wenn ausdrücklich dringend/Notfall"}
+      - {name: wunschtermin, type: date, description: "Ausdrücklich genanntes Datum für den Termin"}
+    rules:
+      - {rule: required_fields}
+    actions:
+      - key: rueckfrage_einsatzort
+        label: Rückfrage zum Einsatzort
+        when_missing: [einsatzort]
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          vielen Dank für Ihre Nachricht. Damit wir den Einsatz planen können, teilen Sie uns bitte
+          noch die Adresse mit, an der die Reparatur erfolgen soll.
+
+          Freundliche Grüße
+          Ihre Muster Haustechnik GmbH
+      - key: termin_bestaetigen
+        label: Reparaturtermin vorschlagen
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          vielen Dank für Ihren Auftrag. {% if dringend %}Da es dringend ist, planen wir Sie
+          bevorzugt ein und rufen Sie heute noch an. {% endif %}{% if wunschtermin %}Gerne kommen wir am {{ wunschtermin }}
+          zu Ihnen nach {{ einsatzort }}.{% else %}Wir melden uns kurzfristig mit einem Terminvorschlag
+          für {{ einsatzort }}.{% endif %}
+
+          Freundliche Grüße
+          Ihre Muster Haustechnik GmbH
+
+  - key: reklamation
+    label: Reklamation
+    description: Beanstandung einer bereits ausgeführten Leistung (Mangel, Nachbesserung, Beschwerde).
+    keywords: [reklamation, mangel, nachbesserung, beschwerde, beanstand, nicht warm, beschädigt]
+    fields:
+      - {name: name, type: string, required: true, description: Name der reklamierenden Person}
+      - {name: kontakt, type: string, required: true, description: "E-Mail-Adresse oder Telefonnummer für die Rückmeldung"}
+      - name: auftragsnummer
+        type: string
+        required: true
+        pattern: "A-\\d{4}-\\d{3}"
+        description: Auftragsnummer im Format A-2026-123
+      - {name: auftragsdatum, type: date, description: Datum des ursprünglichen Auftrags bzw. Einsatzes}
+    rules:
+      - {rule: required_fields}
+    actions:
+      - key: rueckfrage_auftragsnummer
+        label: Rückfrage zur Auftragsnummer
+        when_missing: [auftragsnummer]
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          es tut uns leid, dass Sie nicht zufrieden sind. Damit wir Ihre Reklamation zuordnen
+          können, nennen Sie uns bitte die Auftragsnummer oder das Datum des Einsatzes.
+
+          Freundliche Grüße
+          Ihre Muster Haustechnik GmbH
+      - key: nachbesserung_anbieten
+        label: Nachbesserung anbieten
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          vielen Dank für Ihren Hinweis zu Auftrag {{ auftragsnummer }}. Es tut uns leid, dass es
+          Probleme gibt. Wir melden uns kurzfristig, um einen Termin zur Nachbesserung zu vereinbaren.
+
+          Freundliche Grüße
+          Ihre Muster Haustechnik GmbH
+
+  - key: rechnung
+    label: Rechnung
+    description: Rechnung eines Lieferanten oder Dienstleisters an den Betrieb (auch E-Rechnung).
+    keywords: [rechnung, rechnungsnummer, gesamtbetrag, umsatzsteuer, invoice]
+    fields:
+      - {name: lieferant, type: string, required: true, description: Name des Rechnungsstellers}
+      - {name: rechnungsnummer, type: string, required: true, description: Rechnungsnummer}
+      - {name: rechnungsdatum, type: date, required: true, description: Rechnungsdatum}
+      - {name: betrag, type: decimal, required: true, description: Gesamtbetrag brutto in EUR}
+      - {name: e_rechnung, type: boolean, required: true, description: "true, wenn eine strukturierte E-Rechnung (XRechnung/ZUGFeRD) vorliegt"}
+    rules:
+      - {rule: required_fields}
+      - rule: invoice_totals
+        params:
+          vat_rates: ["0.19", "0.07"]
+          net_patterns:
+            - 'Nettobetrag: (?P<amount>\d+\.\d{2}) EUR'
+            - 'TaxExclusiveAmount currencyID="EUR">(?P<amount>\d+\.\d{2})<'
+          vat_patterns:
+            - 'Umsatzsteuer \d+ %: (?P<amount>\d+\.\d{2}) EUR'
+            - 'TaxAmount currencyID="EUR">(?P<amount>\d+\.\d{2})<'
+          gross_patterns:
+            - 'Gesamtbetrag: (?P<amount>\d+\.\d{2}) EUR'
+            - 'PayableAmount currencyID="EUR">(?P<amount>\d+\.\d{2})<'
+          position_patterns:
+            - '^(?!Nettobetrag|Umsatzsteuer|Gesamtbetrag)[^\n:]+: (?P<amount>\d+\.\d{2}) EUR$'
+    actions:
+      - key: rueckfrage_lieferant
+        label: Rückfrage beim Lieferanten
+        when_rule: {required_fields: [error], invoice_totals: [error]}
+        reply_template: |-
+          Sehr geehrte Damen und Herren,
+
+          zu Ihrer Rechnung{% if rechnungsnummer %} {{ rechnungsnummer }}{% endif %} vom
+          {{ rechnungsdatum or "(ohne Datum)" }} haben wir eine Rückfrage: Die Rechnung ist
+          unvollständig oder die Beträge sind nicht nachvollziehbar. Bitte senden Sie uns eine
+          korrigierte Rechnung.
+
+          Mit freundlichen Grüßen
+          Muster Haustechnik GmbH
+      - key: zur_zahlung_vormerken
+        label: Zur Zahlung vormerken
+
+  - key: sonstiges
+    label: Sonstiges
+    description: Alles, was keinem anderen Typ zuzuordnen ist (z. B. Lob, Werbung, allgemeine Fragen).
+    fields:
+      - {name: kurzbeschreibung, type: string, description: "Kurze sachliche Zusammenfassung in einem Satz"}
+    actions:
+      - key: zur_kenntnis
+        label: Zur Kenntnis nehmen

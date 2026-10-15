@@ -8,13 +8,13 @@ from sqlmodel import Session
 from app.db import engine, init_db
 from app.evaluation import evaluate, write_report
 from app.ingest.imap import fetch_new_mail, imap_config_from_env
-from app.ingest.service import DEFAULT_SAMPLES_DIR, import_samples, storage_dir
+from app.ingest.service import import_samples, samples_dir_for, storage_dir
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
 from app.logging_config import setup_logging
 from app.models import ItemStatus
 from app.pipeline import process_new_items
-from app.profiles import load_active_profile
+from app.profiles import active_profile_key, load_active_profile
 from app.retention import purge_expired
 from app.rules import validate_profile_rules
 
@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="Posteingangs-Assistent")
     commands = parser.add_subparsers(dest="command", required=True)
     import_cmd = commands.add_parser("import-samples", help="Beispieldaten importieren")
-    import_cmd.add_argument("--dir", type=Path, default=DEFAULT_SAMPLES_DIR)
+    import_cmd.add_argument("--dir", type=Path, default=None)
     commands.add_parser("process", help="Neue Eingänge klassifizieren und extrahieren")
     commands.add_parser("fetch-mail", help="Neue E-Mails aus dem IMAP-Testpostfach abrufen")
     commands.add_parser("purge", help="Eingänge nach Ablauf der Aufbewahrungsfrist löschen")
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
         profile = load_active_profile()
         validate_profile_rules(profile)
         client = LLMClient(get_provider())
-        samples = args.samples or DEFAULT_SAMPLES_DIR.parent / profile.key
+        samples = args.samples or samples_dir_for(profile.key)
         report = evaluate(profile, client, samples)
         markdown, _ = write_report(report, args.out)
         print(
@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
     init_db(engine)
     with Session(engine) as session:
         if args.command == "import-samples":
-            summary = import_samples(session, args.dir)
+            summary = import_samples(session, args.dir or samples_dir_for(active_profile_key()))
             print(
                 f"{summary.imported} Eingänge importiert, {summary.skipped} bereits vorhanden, "
                 f"{summary.members_seeded} Mitglieder angelegt."

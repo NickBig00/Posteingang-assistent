@@ -22,10 +22,10 @@ from app.ingest.imap import (
 )
 from app.ingest.normalize import SUPPORTED_SUFFIXES, UnsupportedFileTypeError
 from app.ingest.service import (
-    DEFAULT_SAMPLES_DIR,
     MAX_UPLOAD_BYTES,
     import_samples,
     ingest_file,
+    samples_dir_for,
     storage_dir,
 )
 from app.llm.client import LLMClient
@@ -33,7 +33,7 @@ from app.llm.factory import get_provider
 from app.logging_config import setup_logging
 from app.models import Classification, InboxItem, ItemSource, ItemStatus, ReviewDecision, RuleResult
 from app.pipeline import process_new_items
-from app.profiles import Profile, load_active_profile
+from app.profiles import Profile, active_profile_key, load_active_profile
 from app.retention import delete_item, retention_days
 from app.review import (
     ItemDetails,
@@ -66,7 +66,7 @@ def get_storage_dir() -> Path:
 
 
 def get_samples_dir() -> Path:
-    return DEFAULT_SAMPLES_DIR
+    return samples_dir_for(active_profile_key())
 
 
 def get_llm_client() -> LLMClient:

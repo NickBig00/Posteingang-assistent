@@ -46,12 +46,18 @@ Tests rufen nie echte LLM-APIs auf.
 
 ## Beispieldaten
 
-`samples/fitness/` enthält 27 fiktive Eingänge (`.eml` und PDF) für das Profil „Fitnessstudio“,
-die erwarteten Ergebnisse in `labels.json` und fiktive Mitglieds- und Vertragsdaten in
-`members.json`. Alle Dateien werden von einem Skript erzeugt; nach Änderungen am Skript:
+Je Profil liegen fiktive Eingänge (`.eml` und PDF) mit den erwarteten Ergebnissen in
+`labels.json` unter `samples/<profil>/`:
+
+- `samples/fitness/`: 27 Eingänge für „Fitnessstudio“, dazu fiktive Mitglieds- und
+  Vertragsdaten in `members.json`
+- `samples/handwerk/`: 21 Eingänge für „Handwerksbetrieb“
+
+Alle Dateien werden von Skripten erzeugt; nach Änderungen an einem Skript:
 
 ```bash
-uv run python scripts/generate_samples.py
+uv run python scripts/generate_samples.py            # Fitnessstudio
+uv run python scripts/generate_samples_handwerk.py   # Handwerksbetrieb
 ```
 
 Ein Test stellt sicher, dass die eingecheckten Dateien zum Generator passen.
@@ -72,6 +78,10 @@ gehen direkt in die manuelle Prüfung, solange keine OCR angebunden ist.
 - Das aktive Branchenprofil kommt aus `profiles/<PROFILE>.yaml` (Standard: `fitness`). Es legt
   Dokumenttypen, Felder, Regeln und Antwortvorlagen fest. Ungültige Profile werden beim Laden
   mit einer genauen Fehlermeldung abgelehnt; Felder mit Gesundheitsbezug sind nicht erlaubt.
+- Verfügbare Profile: `fitness` (Fitnessstudio) und `handwerk` (Handwerksbetrieb: Angebots-
+  anfrage, Reparaturauftrag, Reklamation, Rechnung, Sonstiges). Umschalten per Konfiguration,
+  z. B. `PROFILE=handwerk uv run uvicorn app.main:app`; Beispieldaten und Evaluation folgen
+  dem aktiven Profil.
 - Prompts liegen versioniert in `prompts/` (`classify_v1.md`, `extract_v1.md`, `draft_v1.md`).
 - Der LLM-Anbieter wird per `LLM_PROVIDER` gewählt:
   - `fake` (Standard): deterministisch und offline, für Tests und die Demo ohne API-Key.
