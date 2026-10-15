@@ -57,7 +57,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Pipeline läuft für alle Beispieldaten durch. Audit-Einträge vollständig.
 
-## [ ] M6 – Regelprüfung
+## [x] M6 – Regelprüfung
 
 - Regel-Engine (reiner Python-Code), Regeln per Profil konfiguriert
 - Regeln aus SPEC: Kündigungsfrist und frühestmögliches Vertragsende, Pflichtfelder, Zeitraum Vertragspause, Rechnungs-Plausibilität

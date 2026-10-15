@@ -292,3 +292,31 @@ def test_cli_process(
     out = capsys.readouterr().out
     assert "27 Eingänge verarbeitet" in out
     assert "Anbieter: fake" in out
+
+
+def test_rule_results_are_stored(session: Session, profile: Profile) -> None:
+    from app.models import RuleResult
+    from app.seed import seed_members
+
+    seed_members(session)
+    item = _item(session)
+
+    result = process_item(
+        session, item, profile, LLMClient(FakeProvider([CLASSIFY_OK, KUENDIGUNG]))
+    )
+
+    rules = {r.rule_name: r for r in session.exec(select(RuleResult)).all()}
+    assert result.status == ItemStatus.PROCESSED
+    assert set(rules) == {"required_fields", "notice_period"}
+    assert rules["notice_period"].data["vertragsende"] == "2026-10-31"
+
+
+def test_rule_error_needs_manual_review(session: Session, profile: Profile) -> None:
+    item = _item(session)
+    missing_number = json.loads(KUENDIGUNG) | {"mitgliedsnummer": None}
+    client = LLMClient(FakeProvider([CLASSIFY_OK, json.dumps(missing_number)]))
+
+    result = process_item(session, item, profile, client)
+
+    assert result.status == ItemStatus.NEEDS_MANUAL_REVIEW
+    assert result.reason == "Regelprüfung mit Fehler"

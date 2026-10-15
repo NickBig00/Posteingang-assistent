@@ -92,6 +92,21 @@ Hash der Eingabe, Ausgabe, Dauer, Fehler). Ungültige Ausgaben werden einmal wie
 bei Konfidenz unter dem Schwellwert des Profils oder ohne extrahierbaren Text geht der Eingang
 in `needs_manual_review`. Es wird dabei nichts ausgeführt oder versendet.
 
+## Regelprüfung
+
+Nach der Extraktion prüft deterministischer Python-Code (`app/rules/`) die Regeln, die das
+Profil je Dokumenttyp konfiguriert – nie das LLM:
+
+| Regel | Prüft |
+|---|---|
+| `required_fields` | Pflichtangaben laut Profil vorhanden |
+| `notice_period` | Kündigungsfrist anhand der Vertragsdaten, frühestmögliches Vertragsende |
+| `pause_period` | Zeitraum vollständig, Reihenfolge, Maximaldauer, nicht in der Vergangenheit |
+| `invoice_totals` | Positionen = Netto, Netto + USt = Brutto, zulässiger Steuersatz, Betrag |
+
+Jedes Ergebnis (`ok`/`warning`/`error`) hat eine Begründung; bei `error` geht der Eingang in
+die manuelle Prüfung. Fristen folgen § 188 BGB (Monatsenden, Schaltjahre).
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

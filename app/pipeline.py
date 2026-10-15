@@ -10,8 +10,18 @@ from sqlmodel import Session, select
 from app.audit import write_audit_entry
 from app.llm.client import LLMCall, LLMClient
 from app.llm.schemas import ClassificationOutput
-from app.models import Classification, Extraction, InboxItem, ItemStatus, ValidationStatus
-from app.profiles import Profile
+from app.models import (
+    Classification,
+    Extraction,
+    InboxItem,
+    ItemStatus,
+    RuleOutcome,
+    RuleResult,
+    ValidationStatus,
+)
+from app.profiles import DocumentType, Profile
+from app.rules import RuleCheck, RuleContext, run_rules
+from app.rules.engine import find_member, typed_fields
 from app.status import transition_status
 
 logger = logging.getLogger(__name__)
@@ -113,8 +123,41 @@ def process_item(
     if fields is None:
         return _manual_review(session, item, item_id, "Extraktion ungültig", result.document_type)
 
+    checks = check_rules(session, item, doc_type, fields.model_dump(mode="json"))
+    if any(check.outcome == RuleOutcome.ERROR for check in checks):
+        return _manual_review(session, item, item_id, "Regelprüfung mit Fehler", doc_type.key)
+
     transition_status(session, item, ItemStatus.PROCESSED)
     return ProcessResult(item_id, item.status, result.document_type)
+
+
+def check_rules(
+    session: Session, item: InboxItem, doc_type: DocumentType, raw_fields: dict
+) -> list[RuleCheck]:
+    """Run the deterministic rules of the document type and store their results."""
+    if item.id is None:
+        raise ValueError("item must be persisted")
+    fields = typed_fields(doc_type, raw_fields)
+    context = RuleContext(
+        doc_type=doc_type,
+        fields=fields,
+        text=item.text or "",
+        received_on=item.received_at.date(),
+        member=find_member(session, fields.get("mitgliedsnummer")),
+    )
+    checks = run_rules(context)
+    for check in checks:
+        session.add(
+            RuleResult(
+                item_id=item.id,
+                rule_name=check.rule,
+                outcome=check.outcome,
+                reason=check.reason,
+                data=check.data,
+            )
+        )
+    session.commit()
+    return checks
 
 
 def process_new_items(session: Session, profile: Profile, client: LLMClient) -> list[ProcessResult]:
