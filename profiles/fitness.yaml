@@ -27,23 +27,27 @@ document_types:
       - {rule: required_fields}
       - {rule: notice_period}
     actions:
-      - key: kuendigung_bestaetigen
-        label: Kündigung bestätigen
-        reply_template: |-
-          Guten Tag {{ name }},
-
-          vielen Dank für Ihre Nachricht. Wir bestätigen die Kündigung Ihrer Mitgliedschaft
-          {{ mitgliedsnummer }}. Ihr Vertrag endet zum {{ vertragsende }}.
-
-          Mit freundlichen Grüßen
-          Ihr FitDemo-Team
       - key: rueckfrage_mitgliedsnummer
         label: Rückfrage zur Mitgliedsnummer
+        when_missing: [mitgliedsnummer]
         reply_template: |-
-          Guten Tag {{ name }},
+          Guten Tag{% if name %} {{ name }}{% endif %},
 
           vielen Dank für Ihre Nachricht. Damit wir Ihre Kündigung bearbeiten können, nennen Sie
           uns bitte Ihre Mitgliedsnummer.
+
+          Mit freundlichen Grüßen
+          Ihr FitDemo-Team
+      - key: vertragsdaten_pruefen
+        label: Vertragsdaten manuell prüfen
+        when_missing: [vertragsende]
+      - key: kuendigung_bestaetigen
+        label: Kündigung bestätigen
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          vielen Dank für Ihre Nachricht. Wir bestätigen die Kündigung Ihrer Mitgliedschaft
+          {{ mitgliedsnummer }}. Ihr Vertrag endet zum {{ vertragsende }}.
 
           Mit freundlichen Grüßen
           Ihr FitDemo-Team
@@ -60,10 +64,13 @@ document_types:
     rules:
       - {rule: required_fields}
     actions:
+      - key: kontakt_ermitteln
+        label: Kontaktangabe fehlt – manuell ermitteln
+        when_missing: [kontakt]
       - key: termin_vorschlagen
         label: Termin vorschlagen
         reply_template: |-
-          Guten Tag {{ name }},
+          Guten Tag{% if name %} {{ name }}{% endif %},
 
           vielen Dank für Ihr Interesse an einem Probetraining. {% if wunschtermin %}Gerne
           reservieren wir Ihnen einen Termin am {{ wunschtermin }}.{% else %}Bitte nennen Sie uns
@@ -93,23 +100,46 @@ document_types:
       - {rule: required_fields}
       - {rule: pause_period, params: {max_months: 6}}
     actions:
-      - key: pause_bestaetigen
-        label: Vertragspause bestätigen
-        reply_template: |-
-          Guten Tag {{ name }},
-
-          wir bestätigen die Pause Ihrer Mitgliedschaft {{ mitgliedsnummer }} vom
-          {{ zeitraum_von }} bis {{ zeitraum_bis }}.
-
-          Mit freundlichen Grüßen
-          Ihr FitDemo-Team
       - key: rueckfrage_zeitraum
         label: Rückfrage zum Zeitraum
+        when_missing: [zeitraum_von, zeitraum_bis]
         reply_template: |-
-          Guten Tag {{ name }},
+          Guten Tag{% if name %} {{ name }}{% endif %},
 
           gerne pausieren wir Ihre Mitgliedschaft. Bitte teilen Sie uns den genauen Zeitraum
           (Beginn und Ende) mit.
+
+          Mit freundlichen Grüßen
+          Ihr FitDemo-Team
+      - key: rueckfrage_mitgliedsnummer
+        label: Rückfrage zur Mitgliedsnummer
+        when_missing: [mitgliedsnummer]
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          gerne pausieren wir Ihre Mitgliedschaft vom {{ zeitraum_von }} bis {{ zeitraum_bis }}.
+          Bitte nennen Sie uns dazu noch Ihre Mitgliedsnummer.
+
+          Mit freundlichen Grüßen
+          Ihr FitDemo-Team
+      - key: pause_zu_lang
+        label: Pause nur verkürzt möglich
+        when_rule: {pause_period: [error]}
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          eine Pause Ihrer Mitgliedschaft {{ mitgliedsnummer }} ist höchstens bis zum {{ max_bis }}
+          möglich. Bitte teilen Sie uns mit, ob wir die Pause für diesen Zeitraum einrichten sollen.
+
+          Mit freundlichen Grüßen
+          Ihr FitDemo-Team
+      - key: pause_bestaetigen
+        label: Vertragspause bestätigen
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          wir bestätigen die Pause Ihrer Mitgliedschaft {{ mitgliedsnummer }} vom
+          {{ zeitraum_von }} bis {{ zeitraum_bis }}.
 
           Mit freundlichen Grüßen
           Ihr FitDemo-Team
@@ -143,19 +173,21 @@ document_types:
           position_patterns:
             - '^(?!Nettobetrag|Umsatzsteuer|Gesamtbetrag)[^\n:]+: (?P<amount>\d+\.\d{2}) EUR$'
     actions:
-      - key: zur_zahlung_vormerken
-        label: Zur Zahlung vormerken
       - key: rueckfrage_lieferant
         label: Rückfrage beim Lieferanten
+        when_rule: {required_fields: [error], invoice_totals: [error]}
         reply_template: |-
           Sehr geehrte Damen und Herren,
 
-          zu Ihrer Rechnung {{ rechnungsnummer }} haben wir eine Rückfrage: Die Rechnung ist
+          zu Ihrer Rechnung{% if rechnungsnummer %} {{ rechnungsnummer }}{% endif %} vom
+          {{ rechnungsdatum or "(ohne Datum)" }} haben wir eine Rückfrage: Die Rechnung ist
           unvollständig oder die Beträge sind nicht nachvollziehbar. Bitte senden Sie uns eine
           korrigierte Rechnung.
 
           Mit freundlichen Grüßen
           FitDemo Studio
+      - key: zur_zahlung_vormerken
+        label: Zur Zahlung vormerken
 
   - key: sonstiges
     label: Sonstiges

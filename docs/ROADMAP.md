@@ -65,7 +65,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Umfangreiche Unit-Tests inkl. Grenzfälle (Monatsenden, Schaltjahre, fehlende Daten).
 
-## [ ] M7 – Vorschläge und Antwortentwürfe
+## [x] M7 – Vorschläge und Antwortentwürfe
 
 - Aktionsvorschlag je Typ aus dem Profil
 - Antwortentwurf auf Basis der Vorlagen, Regelergebnisse fließen ein (z. B. berechnetes Vertragsende)
