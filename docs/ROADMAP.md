@@ -15,7 +15,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** `uv run pytest` und `uv run ruff check` laufen grün, lokal und in GitHub Actions. App startet und Health-Endpoint antwortet.
 
-## [ ] M1 – Datenmodell und Audit-Log
+## [x] M1 – Datenmodell und Audit-Log
 
 - SQLModel-Modelle gemäß SPEC Abschnitt 6, SQLite
 - `AuditEntry` technisch unveränderlich (kein Update/Delete über die Anwendung)
