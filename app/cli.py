@@ -7,7 +7,8 @@ from sqlmodel import Session
 
 from app.db import engine, init_db
 from app.evaluation import evaluate, write_report
-from app.ingest.service import DEFAULT_SAMPLES_DIR, import_samples
+from app.ingest.imap import fetch_new_mail, imap_config_from_env
+from app.ingest.service import DEFAULT_SAMPLES_DIR, import_samples, storage_dir
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
 from app.logging_config import setup_logging
@@ -24,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
     import_cmd = commands.add_parser("import-samples", help="Beispieldaten importieren")
     import_cmd.add_argument("--dir", type=Path, default=DEFAULT_SAMPLES_DIR)
     commands.add_parser("process", help="Neue Eingänge klassifizieren und extrahieren")
+    commands.add_parser("fetch-mail", help="Neue E-Mails aus dem IMAP-Testpostfach abrufen")
     commands.add_parser("purge", help="Eingänge nach Ablauf der Aufbewahrungsfrist löschen")
     eval_cmd = commands.add_parser("evaluate", help="Pipeline gegen labels.json messen")
     eval_cmd.add_argument("--samples", type=Path, default=None)
@@ -51,6 +53,16 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"{summary.imported} Eingänge importiert, {summary.skipped} bereits vorhanden, "
                 f"{summary.members_seeded} Mitglieder angelegt."
+            )
+        elif args.command == "fetch-mail":
+            config = imap_config_from_env()
+            if config is None:
+                print("Kein IMAP-Postfach konfiguriert (IMAP_HOST fehlt).")
+                return 1
+            fetched = fetch_new_mail(session, config, storage_dir())
+            print(
+                f"{fetched.imported} neue E-Mails abgerufen, {fetched.duplicates} bereits "
+                f"vorhanden, {fetched.skipped} übersprungen."
             )
         elif args.command == "purge":
             summary = purge_expired(session)

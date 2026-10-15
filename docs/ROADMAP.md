@@ -95,7 +95,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Tests für Löschung und Log-Inhalte.
 
-## [ ] M11 – IMAP-Anbindung
+## [x] M11 – IMAP-Anbindung
 
 - Abruf aus einem Test-Postfach per IMAP (Zugangsdaten nur per Umgebungsvariable)
 
