@@ -67,6 +67,17 @@ Eigene Dateien (`.eml`, PDF, PNG/JPG, max. 10 MB) lassen sich über die Startsei
 Rohdateien landen unter `data/raw/` (konfigurierbar per `STORAGE_DIR`). Bilder ohne Textebene
 gehen direkt in die manuelle Prüfung, solange keine OCR angebunden ist.
 
+## Branchenprofil und LLM
+
+- Das aktive Branchenprofil kommt aus `profiles/<PROFILE>.yaml` (Standard: `fitness`). Es legt
+  Dokumenttypen, Felder, Regeln und Antwortvorlagen fest. Ungültige Profile werden beim Laden
+  mit einer genauen Fehlermeldung abgelehnt; Felder mit Gesundheitsbezug sind nicht erlaubt.
+- Prompts liegen versioniert in `prompts/` (`classify_v1.md`, `extract_v1.md`, `draft_v1.md`).
+- Der LLM-Anbieter wird per `LLM_PROVIDER` gewählt:
+  - `fake` (Standard): deterministisch und offline, für Tests und die Demo ohne API-Key.
+  - `anthropic`: Claude-API; benötigt `ANTHROPIC_API_KEY`, Modell über `LLM_MODEL`
+    (Standard `claude-opus-5-5`), Aufwand über `LLM_EFFORT` (Standard `medium`).
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.
