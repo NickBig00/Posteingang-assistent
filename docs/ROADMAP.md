@@ -73,7 +73,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Jeder verarbeitete Eingang hat einen Vorschlag oder ist `needs_manual_review`.
 
-## [ ] M8 – Oberfläche mit Freigabe
+## [x] M8 – Oberfläche mit Freigabe
 
 - Posteingang, Detailansicht, Audit-Ansicht gemäß SPEC Abschnitt 9
 - Freigeben, Bearbeiten, Verwerfen; keine Ausführung ohne Freigabe

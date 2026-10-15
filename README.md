@@ -117,6 +117,20 @@ anpassen. Entwürfe, die Zahlen, Daten oder Beträge der Vorlage verändern, wer
 (ein Retry, danach manuelle Prüfung). Jeder Entwurf beginnt mit
 `[KI-Vorschlag – bitte vor dem Versand prüfen]` und ist als KI-Vorschlag gespeichert.
 
+## Oberfläche und Freigabe
+
+- **Posteingang** (`/`): alle Eingänge mit Typ (KI), Konfidenz, Ampel aus der Regelprüfung und
+  Status; Buttons „Beispieldaten laden“, „Eingänge verarbeiten“ und Upload.
+- **Detailansicht** (`/items/<id>`): Original links; Typ, extrahierte Felder, Regelergebnisse und
+  Vorschlag rechts. Der Entwurf ist bearbeitbar; **Freigeben** oder **Verwerfen**.
+- **Ausführung (Demo)**: erst nach Freigabe möglich – setzt den Status auf `done` und gibt die
+  freigegebene Antwort als Textdatei zum Export frei (`/items/<id>/export`). Es wird nichts
+  automatisch versendet.
+- **Audit-Ansicht** (`/items/<id>/audit`): chronologischer Verlauf aller KI-Schritte.
+
+Demo-Durchlauf: Beispieldaten laden → Eingänge verarbeiten → Eingang öffnen → prüfen →
+freigeben → ausführen → exportieren.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.
