@@ -66,15 +66,20 @@ def make_pdf(lines: tuple[str, ...]) -> bytes:
     return bytes(pdf.output())
 
 
-def make_eml(sample: Sample, index: int) -> bytes:
+def make_eml(
+    sample: Sample,
+    index: int,
+    recipient: str = f"{STUDIO_NAME} <{STUDIO_MAIL}>",
+    id_domain: str = "fitdemo.example.com",
+) -> bytes:
     if sample.sent_at is None:
         raise ValueError(f"e-mail sample {sample.file} needs sent_at")
     message = EmailMessage()
     message["From"] = sample.sender
-    message["To"] = f"{STUDIO_NAME} <{STUDIO_MAIL}>"
+    message["To"] = recipient
     message["Subject"] = sample.subject
     message["Date"] = format_datetime(sample.sent_at)
-    message["Message-ID"] = f"<sample-{index:03d}@fitdemo.example.com>"
+    message["Message-ID"] = f"<sample-{index:03d}@{id_domain}>"
     message.set_content(sample.body)
     for attachment in sample.attachments:
         maintype, subtype = attachment.content_type.split("/")

@@ -16,8 +16,14 @@ from app.status import transition_status
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DEFAULT_SAMPLES_DIR = PROJECT_ROOT / "samples" / "fitness"
+SAMPLES_ROOT = PROJECT_ROOT / "samples"
+DEFAULT_SAMPLES_DIR = SAMPLES_ROOT / "fitness"
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+
+def samples_dir_for(profile_key: str) -> Path:
+    """Sample data of a profile: `samples/<profile>/`."""
+    return SAMPLES_ROOT / profile_key
 
 
 def storage_dir() -> Path:
