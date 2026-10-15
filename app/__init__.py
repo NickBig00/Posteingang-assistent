@@ -1,0 +1,1 @@
+"""Posteingangs-Assistent demo application."""

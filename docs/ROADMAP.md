@@ -4,7 +4,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 ---
 
-## [ ] M0 – Projektgerüst
+## [x] M0 – Projektgerüst
 
 - Projektstruktur (`app/`, `app/llm/`, `app/rules/`, `profiles/`, `prompts/`, `samples/`, `tests/`, `docs/`)
 - `pyproject.toml` mit uv, ruff, pytest
