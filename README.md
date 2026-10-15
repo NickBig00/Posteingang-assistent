@@ -157,6 +157,19 @@ Klassifizierung.
   Log-Filter E-Mail-Adressen, Telefonnummern, IBANs und Mitgliedsnummern und verwirft
   Tracebacks. Ein Test prüft, dass ein kompletter Durchlauf keine personenbezogenen Daten loggt.
 
+## IMAP-Testpostfach
+
+Neue E-Mails lassen sich aus einem Test-Postfach abrufen. Zugangsdaten nur per Umgebungsvariable
+(`IMAP_HOST`, `IMAP_USER`, `IMAP_PASSWORD`, optional `IMAP_PORT`, `IMAP_FOLDER`, `IMAP_SSL`):
+
+```bash
+uv run python -m app.cli fetch-mail
+```
+
+Ist IMAP konfiguriert, erscheint auf der Startseite zusätzlich der Button „Postfach abrufen“.
+Abgerufen werden nur ungelesene Nachrichten; sie werden erst nach erfolgreichem Import als
+gelesen markiert. Nur ein Test-Postfach mit fiktiven Nachrichten verwenden.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

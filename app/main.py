@@ -13,6 +13,13 @@ from sqlmodel import Session, select
 
 from app.audit import audit_outputs
 from app.db import engine, get_session, init_db
+from app.ingest.imap import (
+    ImapConfig,
+    ImapFetchError,
+    ImapNotConfiguredError,
+    fetch_new_mail,
+    imap_config_from_env,
+)
 from app.ingest.normalize import SUPPORTED_SUFFIXES, UnsupportedFileTypeError
 from app.ingest.service import (
     DEFAULT_SAMPLES_DIR,
@@ -72,7 +79,15 @@ def get_profile() -> Profile:
     return profile
 
 
+def get_imap_config() -> ImapConfig | None:
+    try:
+        return imap_config_from_env()
+    except ImapNotConfiguredError:
+        return None
+
+
 SessionDep = Annotated[Session, Depends(get_session)]
+ImapDep = Annotated[ImapConfig | None, Depends(get_imap_config)]
 ClientDep = Annotated[LLMClient, Depends(get_llm_client)]
 ProfileDep = Annotated[Profile, Depends(get_profile)]
 StorageDep = Annotated[Path, Depends(get_storage_dir)]
@@ -119,7 +134,7 @@ def _render_inbox(
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, session: SessionDep) -> HTMLResponse:
+def index(request: Request, session: SessionDep, imap: ImapDep) -> HTMLResponse:
     """Render the inbox start page."""
     return templates.TemplateResponse(
         request,
@@ -130,6 +145,7 @@ def index(request: Request, session: SessionDep) -> HTMLResponse:
             "error": False,
             "accepted_suffixes": ",".join(sorted(SUPPORTED_SUFFIXES)),
             "retention_days": retention_days(),
+            "imap_enabled": imap is not None,
         },
     )
 
@@ -262,3 +278,20 @@ def item_delete(session: SessionDep, item_id: int) -> RedirectResponse:
     if not delete_item(session, item_id):
         raise HTTPException(status_code=404, detail="Eingang nicht gefunden")
     return RedirectResponse("/", status_code=303)
+
+
+@app.post("/mail/fetch", response_class=HTMLResponse)
+def mail_fetch(
+    request: Request, session: SessionDep, raw_dir: StorageDep, imap: ImapDep
+) -> HTMLResponse:
+    """Fetch unread messages from the configured test mailbox."""
+    if imap is None:
+        return _render_inbox(request, session, "Kein IMAP-Postfach konfiguriert.", error=True)
+    try:
+        summary = fetch_new_mail(session, imap, raw_dir)
+    except ImapFetchError as error:
+        return _render_inbox(request, session, str(error), error=True)
+    message = f"{summary.imported} neue E-Mails abgerufen"
+    if summary.duplicates or summary.skipped:
+        message += f" ({summary.duplicates} bereits vorhanden, {summary.skipped} übersprungen)"
+    return _render_inbox(request, session, message + ".")
