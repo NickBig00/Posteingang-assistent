@@ -56,6 +56,17 @@ uv run python scripts/generate_samples.py
 
 Ein Test stellt sicher, dass die eingecheckten Dateien zum Generator passen.
 
+Beispieldaten in den Posteingang laden – per Button „Beispieldaten laden“ auf der Startseite
+oder per Befehl:
+
+```bash
+uv run python -m app.cli import-samples
+```
+
+Eigene Dateien (`.eml`, PDF, PNG/JPG, max. 10 MB) lassen sich über die Startseite hochladen.
+Rohdateien landen unter `data/raw/` (konfigurierbar per `STORAGE_DIR`). Bilder ohne Textebene
+gehen direkt in die manuelle Prüfung, solange keine OCR angebunden ist.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

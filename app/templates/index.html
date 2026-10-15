@@ -1,8 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="bg-white rounded-lg border border-slate-200 p-6">
-  <h2 class="text-lg font-semibold mb-2">Posteingang</h2>
-  <p class="text-slate-600">Noch keine Eingänge vorhanden.</p>
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+    <h2 class="text-lg font-semibold">Posteingang</h2>
+    <div class="flex flex-wrap items-center gap-3">
+      <form hx-post="/items/upload" hx-encoding="multipart/form-data" hx-target="#inbox"
+            class="flex items-center gap-2">
+        <input type="file" name="file" accept="{{ accepted_suffixes }}" required
+               class="text-sm" aria-label="Datei für den Posteingang">
+        <button type="submit"
+                class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
+          Hochladen
+        </button>
+      </form>
+      <button hx-post="/samples/import" hx-target="#inbox"
+              class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">
+        Beispieldaten laden
+      </button>
+    </div>
+  </div>
+  <div id="inbox">
+    {% include "_inbox.html" %}
+  </div>
 </section>
 <aside class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
   <strong>Hinweis zur KI-Nutzung:</strong>
