@@ -5,21 +5,25 @@
 {% if items %}
 <table class="w-full text-left text-sm">
   <thead class="border-b border-slate-200 text-slate-500">
-    <tr><th class="py-2">Nr.</th><th>Datei</th><th>Quelle</th><th>Eingang</th><th>Typ (KI)</th><th>Status</th></tr>
+    <tr>
+      <th class="py-2">Nr.</th><th>Datei</th><th>Eingang</th><th>Typ (KI)</th>
+      <th>Prüfung</th><th>Status</th><th></th>
+    </tr>
   </thead>
   <tbody>
-    {% for item, classification in items %}
+    {% for item, classification, light in items %}
     <tr class="border-b border-slate-100">
       <td class="py-2">{{ item.id }}</td>
       <td>{{ item.filename or "–" }}</td>
-      <td>{{ item.source.value }}</td>
       <td>{{ item.received_at.strftime("%d.%m.%Y %H:%M") }}</td>
       <td>
         {% if classification %}{{ classification.document_type }}
         <span class="text-slate-500">({{ "%.0f"|format(classification.confidence * 100) }} %)</span>
         {% else %}–{% endif %}
       </td>
+      <td>{% include "_light.html" %}</td>
       <td><span class="rounded bg-slate-100 px-2 py-0.5">{{ item.status.value }}</span></td>
+      <td><a class="text-blue-700 hover:underline" href="/items/{{ item.id }}">Öffnen</a></td>
     </tr>
     {% endfor %}
   </tbody>

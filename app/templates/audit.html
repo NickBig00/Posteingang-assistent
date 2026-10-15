@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Audit Eingang {{ item.id }} – Posteingangs-Assistent{% endblock %}
+{% block content %}
+<a href="/items/{{ item.id }}" class="text-sm text-blue-700 hover:underline">← Eingang {{ item.id }}</a>
+<h2 class="mb-1 text-lg font-semibold">Audit-Verlauf für Eingang {{ item.id }}</h2>
+<p class="mb-4 text-sm text-slate-500">Alle KI-Verarbeitungsschritte in zeitlicher Reihenfolge. Einträge sind unveränderlich;
+  gespeichert wird nur ein Hash der Eingabe.</p>
+{% if entries %}
+<ol class="space-y-3">
+  {% for e in entries %}
+  <li class="rounded-lg border {{ 'border-red-200' if e.error else 'border-slate-200' }} bg-white p-3 text-sm">
+    <div class="flex flex-wrap gap-x-4 text-slate-600">
+      <span>{{ e.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</span>
+      <strong class="text-slate-900">{{ e.step }}</strong>
+      <span>Modell: {{ e.model }}</span>
+      <span>Prompt: {{ e.prompt_version or "–" }}</span>
+      <span>Dauer: {{ e.duration_ms }} ms</span>
+      <span>Versuch: {{ e.model_params.get("attempt", "–") }}</span>
+    </div>
+    <div class="mt-1 font-mono text-xs text-slate-500">Eingabe-Hash: {{ e.input_hash }}</div>
+    {% if e.error %}<div class="mt-1 text-red-700">Fehler: {{ e.error }}</div>{% endif %}
+    {% if e.output %}<pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{{ e.output }}</pre>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}<p class="text-slate-500">Keine KI-Schritte protokolliert.</p>{% endif %}
+{% endblock %}

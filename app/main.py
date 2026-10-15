@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -22,9 +22,19 @@ from app.ingest.service import (
 )
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
-from app.models import Classification, InboxItem, ItemSource
+from app.models import Classification, InboxItem, ItemSource, ItemStatus, ReviewDecision, RuleResult
 from app.pipeline import process_new_items
 from app.profiles import Profile, load_active_profile
+from app.review import (
+    ItemDetails,
+    ReviewNotAllowedError,
+    audit_trail,
+    execute_item,
+    final_text,
+    load_details,
+    review_item,
+    traffic_light,
+)
 from app.rules import validate_profile_rules
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -77,13 +87,21 @@ def health() -> HealthResponse:
     return HealthResponse(status="ok")
 
 
-def _inbox_items(session: Session) -> list[tuple[InboxItem, Classification | None]]:
+def _inbox_items(
+    session: Session,
+) -> list[tuple[InboxItem, Classification | None, str | None]]:
     statement = (
         select(InboxItem, Classification)
         .join(Classification, isouter=True)
         .order_by(InboxItem.id.desc())  # type: ignore[union-attr]
     )
-    return [(item, classification) for item, classification in session.exec(statement).all()]
+    rules: dict[int, list[RuleResult]] = {}
+    for result in session.exec(select(RuleResult)).all():
+        rules.setdefault(result.item_id, []).append(result)
+    return [
+        (item, classification, traffic_light(rules.get(item.id or 0, [])))
+        for item, classification in session.exec(statement).all()
+    ]
 
 
 def _render_inbox(
@@ -151,3 +169,81 @@ def process_items(
     review = sum(r.status == "needs_manual_review" for r in results)
     message = f"{len(results)} Eingänge verarbeitet, davon {review} zur manuellen Prüfung."
     return _render_inbox(request, session, message)
+
+
+def _details_or_404(session: Session, item_id: int) -> ItemDetails:
+    details = load_details(session, item_id)
+    if details is None:
+        raise HTTPException(status_code=404, detail="Eingang nicht gefunden")
+    return details
+
+
+def _render_detail(
+    request: Request, session: Session, item_id: int, error: str | None = None, status: int = 200
+) -> HTMLResponse:
+    details = _details_or_404(session, item_id)
+    return templates.TemplateResponse(
+        request,
+        "detail.html",
+        {"d": details, "error": error, "final_text": final_text(session, details.item)},
+        status_code=status,
+    )
+
+
+@app.get("/items/{item_id}", response_class=HTMLResponse)
+def item_detail(request: Request, session: SessionDep, item_id: int) -> HTMLResponse:
+    """Detail view: original left, fields, rule results and suggestion right."""
+    return _render_detail(request, session, item_id)
+
+
+@app.get("/items/{item_id}/audit", response_class=HTMLResponse)
+def item_audit(request: Request, session: SessionDep, item_id: int) -> HTMLResponse:
+    """Chronological trail of all AI steps for one item."""
+    details = _details_or_404(session, item_id)
+    return templates.TemplateResponse(
+        request, "audit.html", {"item": details.item, "entries": audit_trail(session, item_id)}
+    )
+
+
+@app.post("/items/{item_id}/review", response_model=None)
+def item_review(
+    request: Request,
+    session: SessionDep,
+    item_id: int,
+    decision: Annotated[ReviewDecision, Form()],
+    edited_text: Annotated[str | None, Form()] = None,
+) -> HTMLResponse | RedirectResponse:
+    """Human decision: approve (optionally with edited text) or reject."""
+    item = _details_or_404(session, item_id).item
+    try:
+        review_item(session, item, decision, edited_text)
+    except ReviewNotAllowedError as error:
+        return _render_detail(request, session, item_id, str(error), status=409)
+    return RedirectResponse(f"/items/{item_id}", status_code=303)
+
+
+@app.post("/items/{item_id}/execute", response_model=None)
+def item_execute(
+    request: Request, session: SessionDep, item_id: int
+) -> HTMLResponse | RedirectResponse:
+    """Demo execution after approval: set status to done (reply becomes exportable)."""
+    item = _details_or_404(session, item_id).item
+    try:
+        execute_item(session, item)
+    except ReviewNotAllowedError as error:
+        return _render_detail(request, session, item_id, str(error), status=409)
+    return RedirectResponse(f"/items/{item_id}", status_code=303)
+
+
+@app.get("/items/{item_id}/export", response_class=PlainTextResponse)
+def item_export(session: SessionDep, item_id: int) -> PlainTextResponse:
+    """Download the released reply text – only for executed (approved) items."""
+    item = _details_or_404(session, item_id).item
+    if item.status != ItemStatus.DONE:
+        raise HTTPException(status_code=409, detail="Export erst nach Freigabe und Ausführung")
+    text = final_text(session, item)
+    if not text:
+        raise HTTPException(status_code=404, detail="Kein Antworttext vorhanden")
+    return PlainTextResponse(
+        text, headers={"Content-Disposition": f'attachment; filename="antwort-{item_id}.txt"'}
+    )
