@@ -40,7 +40,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Alle Beispieldateien werden importiert und liefern nicht-leeren Text. Tests vorhanden.
 
-## [ ] M4 – Branchenprofil und LLM-Interface
+## [x] M4 – Branchenprofil und LLM-Interface
 
 - YAML-Schema für Profile + `profiles/fitness.yaml` gemäß SPEC Abschnitt 4
 - Profil-Loader mit Validierung
