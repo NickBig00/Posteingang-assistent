@@ -1,0 +1,295 @@
+# Evaluationsbericht – Profil `fitness`
+
+- Anbieter: `fake`, Modell: `fake-heuristic-v1`
+- Erstellt: 2026-10-15 18:16 UTC
+- Eingänge: 27
+- **Klassifizierungsgenauigkeit: 96.3 %** (Ziel ≥ 90.0 %: erreicht)
+- **Feld-Trefferquote: 22.4 %** (24/107 Felder)
+- Status: needs_manual_review 24, processed 3
+
+## Genauigkeit je Typ
+
+| Typ | Eingänge | korrekt | Genauigkeit |
+|---|---:|---:|---:|
+| kuendigung | 8 | 8 | 100.0 % |
+| probetraining_anfrage | 5 | 5 | 100.0 % |
+| rechnung | 6 | 6 | 100.0 % |
+| sonstiges | 3 | 3 | 100.0 % |
+| vertragspause | 5 | 4 | 80.0 % |
+
+## Trefferquote je Feld
+
+| Feld | Werte | Treffer | Quote |
+|---|---:|---:|---:|
+| kuendigung.eingangsdatum | 8 | 0 | 0.0 % |
+| kuendigung.gewuenschtes_kuendigungsdatum | 8 | 2 | 25.0 % |
+| kuendigung.mitgliedsnummer | 8 | 8 | 100.0 % |
+| kuendigung.name | 8 | 0 | 0.0 % |
+| probetraining_anfrage.interesse | 5 | 1 | 20.0 % |
+| probetraining_anfrage.kontakt | 5 | 1 | 20.0 % |
+| probetraining_anfrage.name | 5 | 0 | 0.0 % |
+| probetraining_anfrage.wunschtermin | 5 | 2 | 40.0 % |
+| rechnung.betrag | 6 | 0 | 0.0 % |
+| rechnung.e_rechnung | 6 | 0 | 0.0 % |
+| rechnung.lieferant | 6 | 0 | 0.0 % |
+| rechnung.rechnungsdatum | 6 | 0 | 0.0 % |
+| rechnung.rechnungsnummer | 6 | 1 | 16.7 % |
+| vertragspause.grund_kategorie | 5 | 3 | 60.0 % |
+| vertragspause.mitgliedsnummer | 5 | 4 | 80.0 % |
+| vertragspause.name | 5 | 0 | 0.0 % |
+| vertragspause.zeitraum_bis | 5 | 1 | 20.0 % |
+| vertragspause.zeitraum_von | 5 | 1 | 20.0 % |
+
+## Fehlerliste
+
+### 001_kuendigung_standard.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Erika Beispiel | – |
+| eingangsdatum | 2026-09-14 | – |
+| gewuenschtes_kuendigungsdatum | 2026-10-31 | – |
+
+### 002_kuendigung_naechstmoeglich.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Max Mustermann | – |
+| eingangsdatum | 2026-09-21 | – |
+
+### 003_kuendigung_ohne_mitgliedsnummer.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Lena Testfrau | – |
+| eingangsdatum | 2026-09-25 | – |
+| gewuenschtes_kuendigungsdatum | 2026-11-30 | – |
+
+### 004_kuendigung_unklar.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Ben Beispielmann | – |
+| eingangsdatum | 2026-10-02 | – |
+
+### 005_kuendigung_brief.pdf
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Jonas Demo | – |
+| eingangsdatum | 2026-09-20 | – |
+| gewuenschtes_kuendigungsdatum | 2026-12-31 | – |
+
+### 006_kuendigung_als_anhang.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Paula Platzhalter | – |
+| eingangsdatum | 2026-09-18 | – |
+| gewuenschtes_kuendigungsdatum | 2026-12-31 | – |
+
+### 007_kuendigung_frist_knapp.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Tim Testmann | – |
+| eingangsdatum | 2026-09-30 | – |
+| gewuenschtes_kuendigungsdatum | 2026-10-31 | – |
+
+### 008_kuendigung_mit_rechnungsfrage.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Nora Nachname | – |
+| eingangsdatum | 2026-10-05 | – |
+| gewuenschtes_kuendigungsdatum | 2026-11-30 | – |
+
+### 009_probetraining_standard.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Sophie Beispielfrau | – |
+| kontakt | sophie.beispielfrau@example.com | – |
+| wunschtermin | 2026-10-20 | – |
+| interesse | Krafttraining | – |
+
+### 010_probetraining_telefon_relativer_termin.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Paul Probe | – |
+| kontakt | 030 23125 456 | – |
+| interesse | Kurse | – |
+
+### 011_probetraining_kontaktformular.pdf (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Mia Muster | – |
+| wunschtermin | 2026-10-24 | – |
+| interesse | Yoga | – |
+
+### 012_probetraining_mit_preisfrage.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Leon Lorem | – |
+| kontakt | leon.lorem@example.net | – |
+| wunschtermin | 2026-10-15 | – |
+| interesse | Ausdauertraining | – |
+
+### 013_probetraining_kurz.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Hanna Hypothetisch | – |
+| kontakt | hanna.hypothetisch@example.com | – |
+
+### 014_vertragspause_beruflich.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Felix Fiktiv | – |
+| zeitraum_von | 2026-11-01 | – |
+| zeitraum_bis | 2027-01-31 | – |
+
+### 015_vertragspause_reise.eml
+
+- Typ: erwartet `vertragspause`, erkannt `probetraining_anfrage` (Konfidenz 0.9)
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Clara Probe | – |
+| mitgliedsnummer | M-10009 | – |
+| zeitraum_von | 2026-12-01 | – |
+| zeitraum_bis | 2026-12-31 | – |
+| grund_kategorie | reise | – |
+
+### 016_vertragspause_zu_lang.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Ben Beispielmann | – |
+| zeitraum_von | 2026-11-01 | – |
+| zeitraum_bis | 2027-06-30 | – |
+
+### 017_vertragspause_ohne_zeitraum.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Erika Beispiel | – |
+| grund_kategorie | sonstiges | – |
+
+### 018_vertragspause_ohne_mitgliedsnummer.eml (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| name | Tim Testmann | – |
+| zeitraum_von | 2027-01-01 | – |
+| zeitraum_bis | 2027-02-28 | – |
+
+### 019_rechnung_getraenke.pdf
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| lieferant | Durstlöscher Demo GmbH | – |
+| rechnungsnummer | RE-2026-0815 | – |
+| rechnungsdatum | 2026-09-10 | – |
+| betrag | 499.80 | – |
+| e_rechnung | False | – |
+
+### 020_rechnung_reinigung.pdf
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| lieferant | Blitzblank Beispiel GmbH | – |
+| rechnungsnummer | BB-2026-09-77 | – |
+| rechnungsdatum | 2026-09-30 | – |
+| betrag | 1428.00 | – |
+| e_rechnung | False | – |
+
+### 021_rechnung_summe_falsch.pdf (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| lieferant | Sportbedarf Exempel AG | – |
+| rechnungsnummer | SE-55012 | – |
+| rechnungsdatum | 2026-09-17 | – |
+| betrag | 416.50 | – |
+| e_rechnung | False | – |
+
+### 022_rechnung_als_anhang.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| lieferant | Gerätewartung Muster KG | – |
+| rechnungsnummer | GW-2026-117 | – |
+| rechnungsdatum | 2026-09-22 | – |
+| betrag | 535.50 | – |
+| e_rechnung | False | – |
+
+### 023_rechnung_xrechnung.eml
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| lieferant | Handtuchservice Exempel GmbH | – |
+| rechnungsnummer | HT-2026-0042 | – |
+| rechnungsdatum | 2026-10-01 | – |
+| betrag | 297.50 | – |
+| e_rechnung | True | – |
+
+### 024_rechnung_ohne_nummer.pdf (schwieriger Fall)
+
+- Status: `needs_manual_review` – Regelprüfung mit Fehler
+
+| Feld | erwartet | extrahiert |
+|---|---|---|
+| lieferant | Getränke Dummy OHG | – |
+| rechnungsdatum | 2026-10-04 | – |
+| betrag | 178.50 | – |
+| e_rechnung | False | – |

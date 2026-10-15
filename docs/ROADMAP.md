@@ -81,7 +81,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Kompletter Durchlauf in der UI möglich: Beispieldaten laden → prüfen → freigeben. Test, dass ohne Freigabe nichts ausgeführt wird.
 
-## [ ] M9 – Evaluation
+## [x] M9 – Evaluation
 
 - Skript, das die Pipeline gegen `labels.json` misst und einen Bericht erzeugt (Genauigkeit je Typ, Feld-Trefferquote, Fehlerliste)
 
