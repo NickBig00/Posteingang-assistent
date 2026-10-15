@@ -1,0 +1,90 @@
+%PDF-1.3
+%éëñ¿
+1 0 obj
+<<
+/Count 1
+/Kids [3 0 R]
+/MediaBox [0 0 595.28 841.89]
+/Type /Pages
+>>
+endobj
+2 0 obj
+<<
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+/Pages 1 0 R
+/Type /Catalog
+>>
+endobj
+3 0 obj
+<<
+/Contents 4 0 R
+/Parent 1 0 R
+/Resources 6 0 R
+/Type /Page
+>>
+endobj
+4 0 obj
+<<
+/Length 810
+>>
+stream
+2 J
+0.57 w
+BT /F1 11.00 Tf ET
+BT 31.18 801.74 Td (Getränke Dummy OHG) Tj ET
+BT 31.18 784.73 Td (Flaschenhof 2, 12345 Musterstadt) Tj ET
+BT 31.18 750.72 Td (An: FitDemo Studio, Beispielweg 1, 12345 Musterstadt) Tj ET
+BT 31.18 716.70 Td (RECHNUNG) Tj ET
+BT 31.18 699.69 Td (Rechnungsdatum: 04.10.2026) Tj ET
+BT 31.18 682.68 Td (Leistungszeitraum: September 2026) Tj ET
+BT 31.18 648.67 Td (Isotonische Getränke \(25 Kisten\): 150.00 EUR) Tj ET
+BT 31.18 614.65 Td (Nettobetrag: 150.00 EUR) Tj ET
+BT 31.18 597.65 Td (Umsatzsteuer 19 %: 28.50 EUR) Tj ET
+BT 31.18 580.64 Td (Gesamtbetrag: 178.50 EUR) Tj ET
+BT 31.18 546.62 Td (Zahlbar innerhalb von 14 Tagen ohne Abzug.) Tj ET
+BT 31.18 529.61 Td (IBAN: DE00 0000 0000 0000 0000 00 \(Beispiel-IBAN\)) Tj ET
+BT 31.18 512.61 Td (USt-IdNr.: DE000000000 \(fiktiv\)) Tj ET
+
+endstream
+endobj
+5 0 obj
+<<
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+/Subtype /Type1
+/Type /Font
+>>
+endobj
+6 0 obj
+<<
+/Font <</F1 5 0 R>>
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+>>
+endobj
+7 0 obj
+<<
+/CreationDate (D:20260901000000Z)
+/Creator (posteingang-assistent sample generator)
+>>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000102 00000 n 
+0000000205 00000 n 
+0000000285 00000 n 
+0000001146 00000 n 
+0000001243 00000 n 
+0000001330 00000 n 
+trailer
+<<
+/Size 8
+/Root 2 0 R
+/Info 7 0 R
+/ID [<8B32ED92526806E5AA722A0DCFAFE24B><8B32ED92526806E5AA722A0DCFAFE24B>]
+>>
+startxref
+1435
+%%EOF
