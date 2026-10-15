@@ -126,7 +126,22 @@ document_types:
       - {name: e_rechnung, type: boolean, required: true, description: "true, wenn eine strukturierte E-Rechnung (XRechnung/ZUGFeRD) vorliegt"}
     rules:
       - {rule: required_fields}
-      - {rule: invoice_totals, params: {vat_rates: ["0.19", "0.07"]}}
+      - rule: invoice_totals
+        params:
+          vat_rates: ["0.19", "0.07"]
+          # Beträge werden deterministisch per Muster aus dem Dokumenttext gelesen
+          # (benannte Gruppe "amount"); zuerst PDF-Text, dann XRechnung (UBL).
+          net_patterns:
+            - 'Nettobetrag: (?P<amount>\d+\.\d{2}) EUR'
+            - 'TaxExclusiveAmount currencyID="EUR">(?P<amount>\d+\.\d{2})<'
+          vat_patterns:
+            - 'Umsatzsteuer \d+ %: (?P<amount>\d+\.\d{2}) EUR'
+            - 'TaxAmount currencyID="EUR">(?P<amount>\d+\.\d{2})<'
+          gross_patterns:
+            - 'Gesamtbetrag: (?P<amount>\d+\.\d{2}) EUR'
+            - 'PayableAmount currencyID="EUR">(?P<amount>\d+\.\d{2})<'
+          position_patterns:
+            - '^(?!Nettobetrag|Umsatzsteuer|Gesamtbetrag)[^\n:]+: (?P<amount>\d+\.\d{2}) EUR$'
     actions:
       - key: zur_zahlung_vormerken
         label: Zur Zahlung vormerken

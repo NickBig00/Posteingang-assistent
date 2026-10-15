@@ -25,6 +25,7 @@ from app.llm.factory import get_provider
 from app.models import Classification, InboxItem, ItemSource
 from app.pipeline import process_new_items
 from app.profiles import Profile, load_active_profile
+from app.rules import validate_profile_rules
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -52,7 +53,9 @@ def get_llm_client() -> LLMClient:
 
 
 def get_profile() -> Profile:
-    return load_active_profile()
+    profile = load_active_profile()
+    validate_profile_rules(profile)
+    return profile
 
 
 SessionDep = Annotated[Session, Depends(get_session)]

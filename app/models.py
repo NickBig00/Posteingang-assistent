@@ -89,6 +89,8 @@ class RuleResult(SQLModel, table=True):
     rule_name: str
     outcome: RuleOutcome
     reason: str
+    # Deterministically computed values, e.g. {"vertragsende": "2026-10-31"}.
+    data: dict[str, JsonValue] = Field(default_factory=dict, sa_column=Column(JSON))
 
 
 class Suggestion(SQLModel, table=True):
