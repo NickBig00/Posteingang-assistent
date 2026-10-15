@@ -1,0 +1,105 @@
+{
+  "synthetic": true,
+  "members": [
+    {
+      "member_number": "M-10001",
+      "name": "Erika Beispiel",
+      "email": "erika.beispiel@example.com",
+      "contract_start": "2024-03-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "39.90"
+    },
+    {
+      "member_number": "M-10002",
+      "name": "Max Mustermann",
+      "email": "max.mustermann@example.org",
+      "contract_start": "2025-01-15",
+      "minimum_term_months": 24,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "29.90"
+    },
+    {
+      "member_number": "M-10003",
+      "name": "Ben Beispielmann",
+      "email": "ben.beispielmann@example.com",
+      "contract_start": "2025-11-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "34.90"
+    },
+    {
+      "member_number": "M-10004",
+      "name": "Jonas Demo",
+      "email": "jonas.demo@example.net",
+      "contract_start": "2023-06-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 3,
+      "renewal_period_months": 12,
+      "monthly_fee_eur": "49.90"
+    },
+    {
+      "member_number": "M-10005",
+      "name": "Paula Platzhalter",
+      "email": "paula.platzhalter@example.org",
+      "contract_start": "2024-09-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "39.90"
+    },
+    {
+      "member_number": "M-10006",
+      "name": "Tim Testmann",
+      "email": "tim.testmann@example.com",
+      "contract_start": "2024-10-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "29.90"
+    },
+    {
+      "member_number": "M-10007",
+      "name": "Nora Nachname",
+      "email": "nora.nachname@example.net",
+      "contract_start": "2026-02-01",
+      "minimum_term_months": 6,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "39.90"
+    },
+    {
+      "member_number": "M-10008",
+      "name": "Felix Fiktiv",
+      "email": "felix.fiktiv@example.org",
+      "contract_start": "2025-04-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "44.90"
+    },
+    {
+      "member_number": "M-10009",
+      "name": "Clara Probe",
+      "email": "clara.probe@example.com",
+      "contract_start": "2026-05-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "39.90"
+    },
+    {
+      "member_number": "M-10010",
+      "name": "Lena Testfrau",
+      "email": "lena.testfrau@example.net",
+      "contract_start": "2022-08-01",
+      "minimum_term_months": 12,
+      "notice_period_months": 1,
+      "renewal_period_months": 1,
+      "monthly_fee_eur": "29.90"
+    }
+  ]
+}

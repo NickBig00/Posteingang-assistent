@@ -23,7 +23,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Tests für Anlegen, Statusübergänge und Unveränderlichkeit des Audit-Logs.
 
-## [ ] M2 – Synthetische Beispieldaten
+## [x] M2 – Synthetische Beispieldaten
 
 - 20–30 fiktive Eingänge für das Fitnessstudio-Profil: `.eml`-Dateien und einige PDFs, über alle Dokumenttypen verteilt, inkl. schwieriger Fälle (unklare Kündigung, fehlende Mitgliedsnummer, Mischformen)
 - Fiktive Mitglieder- und Vertragsdaten als Seed

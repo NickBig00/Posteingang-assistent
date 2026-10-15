@@ -44,6 +44,18 @@ uv run ruff format --check
 Dieselben Prüfungen laufen per GitHub Actions bei jedem Push und Pull Request.
 Tests rufen nie echte LLM-APIs auf.
 
+## Beispieldaten
+
+`samples/fitness/` enthält 27 fiktive Eingänge (`.eml` und PDF) für das Profil „Fitnessstudio“,
+die erwarteten Ergebnisse in `labels.json` und fiktive Mitglieds- und Vertragsdaten in
+`members.json`. Alle Dateien werden von einem Skript erzeugt; nach Änderungen am Skript:
+
+```bash
+uv run python scripts/generate_samples.py
+```
+
+Ein Test stellt sicher, dass die eingecheckten Dateien zum Generator passen.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

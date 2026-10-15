@@ -1,0 +1,327 @@
+{
+  "profile": "fitness",
+  "synthetic": true,
+  "description": "Erwartete Ergebnisse für die fiktiven Beispiel-Eingänge.",
+  "items": [
+    {
+      "file": "001_kuendigung_standard.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Erika Beispiel",
+        "mitgliedsnummer": "M-10001",
+        "eingangsdatum": "2026-09-14",
+        "gewuenschtes_kuendigungsdatum": "2026-10-31"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "002_kuendigung_naechstmoeglich.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Max Mustermann",
+        "mitgliedsnummer": "M-10002",
+        "eingangsdatum": "2026-09-21",
+        "gewuenschtes_kuendigungsdatum": null
+      },
+      "difficulty": "normal",
+      "notes": "Kein konkretes Datum: 'zum nächstmöglichen Zeitpunkt'."
+    },
+    {
+      "file": "003_kuendigung_ohne_mitgliedsnummer.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Lena Testfrau",
+        "mitgliedsnummer": null,
+        "eingangsdatum": "2026-09-25",
+        "gewuenschtes_kuendigungsdatum": "2026-11-30"
+      },
+      "difficulty": "hard",
+      "notes": "Mitgliedsnummer fehlt."
+    },
+    {
+      "file": "004_kuendigung_unklar.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Ben Beispielmann",
+        "mitgliedsnummer": "M-10003",
+        "eingangsdatum": "2026-10-02",
+        "gewuenschtes_kuendigungsdatum": null
+      },
+      "difficulty": "hard",
+      "notes": "Unklare Kündigung: Wunsch, den Vertrag zu beenden, ohne das Wort 'kündigen'."
+    },
+    {
+      "file": "005_kuendigung_brief.pdf",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Jonas Demo",
+        "mitgliedsnummer": "M-10004",
+        "eingangsdatum": "2026-09-20",
+        "gewuenschtes_kuendigungsdatum": "2026-12-31"
+      },
+      "difficulty": "normal",
+      "notes": "Brief als PDF; Eingangsdatum = Briefdatum."
+    },
+    {
+      "file": "006_kuendigung_als_anhang.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Paula Platzhalter",
+        "mitgliedsnummer": "M-10005",
+        "eingangsdatum": "2026-09-18",
+        "gewuenschtes_kuendigungsdatum": "2026-12-31"
+      },
+      "difficulty": "hard",
+      "notes": "Inhalt steht nur im PDF-Anhang."
+    },
+    {
+      "file": "007_kuendigung_frist_knapp.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Tim Testmann",
+        "mitgliedsnummer": "M-10006",
+        "eingangsdatum": "2026-09-30",
+        "gewuenschtes_kuendigungsdatum": "2026-10-31"
+      },
+      "difficulty": "normal",
+      "notes": "Grenzfall Kündigungsfrist: Eingang genau einen Monat vor Wunschtermin."
+    },
+    {
+      "file": "008_kuendigung_mit_rechnungsfrage.eml",
+      "expected_type": "kuendigung",
+      "expected_fields": {
+        "name": "Nora Nachname",
+        "mitgliedsnummer": "M-10007",
+        "eingangsdatum": "2026-10-05",
+        "gewuenschtes_kuendigungsdatum": "2026-11-30"
+      },
+      "difficulty": "hard",
+      "notes": "Mischform: Kündigung plus Frage zur letzten Abbuchung."
+    },
+    {
+      "file": "009_probetraining_standard.eml",
+      "expected_type": "probetraining_anfrage",
+      "expected_fields": {
+        "name": "Sophie Beispielfrau",
+        "kontakt": "sophie.beispielfrau@example.com",
+        "wunschtermin": "2026-10-20",
+        "interesse": "Krafttraining"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "010_probetraining_telefon_relativer_termin.eml",
+      "expected_type": "probetraining_anfrage",
+      "expected_fields": {
+        "name": "Paul Probe",
+        "kontakt": "030 23125 456",
+        "wunschtermin": null,
+        "interesse": "Kurse"
+      },
+      "difficulty": "hard",
+      "notes": "Relativer Wunschtermin ('nächsten Samstag') wird nicht als Datum erwartet; Rückruf ausdrücklich per Telefon gewünscht."
+    },
+    {
+      "file": "011_probetraining_kontaktformular.pdf",
+      "expected_type": "probetraining_anfrage",
+      "expected_fields": {
+        "name": "Mia Muster",
+        "kontakt": null,
+        "wunschtermin": "2026-10-24",
+        "interesse": "Yoga"
+      },
+      "difficulty": "hard",
+      "notes": "Ausdruck Kontaktformular, Kontaktangabe fehlt."
+    },
+    {
+      "file": "012_probetraining_mit_preisfrage.eml",
+      "expected_type": "probetraining_anfrage",
+      "expected_fields": {
+        "name": "Leon Lorem",
+        "kontakt": "leon.lorem@example.net",
+        "wunschtermin": "2026-10-15",
+        "interesse": "Ausdauertraining"
+      },
+      "difficulty": "hard",
+      "notes": "Mischform: Probetraining plus Frage nach Preisen."
+    },
+    {
+      "file": "013_probetraining_kurz.eml",
+      "expected_type": "probetraining_anfrage",
+      "expected_fields": {
+        "name": "Hanna Hypothetisch",
+        "kontakt": "hanna.hypothetisch@example.com",
+        "wunschtermin": null,
+        "interesse": null
+      },
+      "difficulty": "normal",
+      "notes": "Sehr kurze Anfrage ohne Termin und Interesse."
+    },
+    {
+      "file": "014_vertragspause_beruflich.eml",
+      "expected_type": "vertragspause",
+      "expected_fields": {
+        "name": "Felix Fiktiv",
+        "mitgliedsnummer": "M-10008",
+        "zeitraum_von": "2026-11-01",
+        "zeitraum_bis": "2027-01-31",
+        "grund_kategorie": "beruflich"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "015_vertragspause_reise.eml",
+      "expected_type": "vertragspause",
+      "expected_fields": {
+        "name": "Clara Probe",
+        "mitgliedsnummer": "M-10009",
+        "zeitraum_von": "2026-12-01",
+        "zeitraum_bis": "2026-12-31",
+        "grund_kategorie": "reise"
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "016_vertragspause_zu_lang.eml",
+      "expected_type": "vertragspause",
+      "expected_fields": {
+        "name": "Ben Beispielmann",
+        "mitgliedsnummer": "M-10003",
+        "zeitraum_von": "2026-11-01",
+        "zeitraum_bis": "2027-06-30",
+        "grund_kategorie": "reise"
+      },
+      "difficulty": "hard",
+      "notes": "Zeitraum von 8 Monaten überschreitet voraussichtlich die Maximaldauer."
+    },
+    {
+      "file": "017_vertragspause_ohne_zeitraum.eml",
+      "expected_type": "vertragspause",
+      "expected_fields": {
+        "name": "Erika Beispiel",
+        "mitgliedsnummer": "M-10001",
+        "zeitraum_von": null,
+        "zeitraum_bis": null,
+        "grund_kategorie": "sonstiges"
+      },
+      "difficulty": "hard",
+      "notes": "Zeitraum unklar ('ab nächsten Monat für eine Weile')."
+    },
+    {
+      "file": "018_vertragspause_ohne_mitgliedsnummer.eml",
+      "expected_type": "vertragspause",
+      "expected_fields": {
+        "name": "Tim Testmann",
+        "mitgliedsnummer": null,
+        "zeitraum_von": "2027-01-01",
+        "zeitraum_bis": "2027-02-28",
+        "grund_kategorie": "beruflich"
+      },
+      "difficulty": "hard",
+      "notes": "Mitgliedsnummer fehlt."
+    },
+    {
+      "file": "019_rechnung_getraenke.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Durstlöscher Demo GmbH",
+        "rechnungsnummer": "RE-2026-0815",
+        "rechnungsdatum": "2026-09-10",
+        "betrag": "499.80",
+        "e_rechnung": false
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "020_rechnung_reinigung.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Blitzblank Beispiel GmbH",
+        "rechnungsnummer": "BB-2026-09-77",
+        "rechnungsdatum": "2026-09-30",
+        "betrag": "1428.00",
+        "e_rechnung": false
+      },
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "021_rechnung_summe_falsch.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Sportbedarf Exempel AG",
+        "rechnungsnummer": "SE-55012",
+        "rechnungsdatum": "2026-09-17",
+        "betrag": "416.50",
+        "e_rechnung": false
+      },
+      "difficulty": "hard",
+      "notes": "Summen nicht plausibel: Positionen ergeben 300.00, Netto ausgewiesen 350.00."
+    },
+    {
+      "file": "022_rechnung_als_anhang.eml",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Gerätewartung Muster KG",
+        "rechnungsnummer": "GW-2026-117",
+        "rechnungsdatum": "2026-09-22",
+        "betrag": "535.50",
+        "e_rechnung": false
+      },
+      "difficulty": "normal",
+      "notes": "Rechnung als PDF-Anhang einer E-Mail."
+    },
+    {
+      "file": "023_rechnung_xrechnung.eml",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Handtuchservice Exempel GmbH",
+        "rechnungsnummer": "HT-2026-0042",
+        "rechnungsdatum": "2026-10-01",
+        "betrag": "297.50",
+        "e_rechnung": true
+      },
+      "difficulty": "normal",
+      "notes": "E-Rechnung im XRechnung-Format (XML-Anhang)."
+    },
+    {
+      "file": "024_rechnung_ohne_nummer.pdf",
+      "expected_type": "rechnung",
+      "expected_fields": {
+        "lieferant": "Getränke Dummy OHG",
+        "rechnungsnummer": null,
+        "rechnungsdatum": "2026-10-04",
+        "betrag": "178.50",
+        "e_rechnung": false
+      },
+      "difficulty": "hard",
+      "notes": "Pflichtangabe Rechnungsnummer fehlt."
+    },
+    {
+      "file": "025_sonstiges_lob.eml",
+      "expected_type": "sonstiges",
+      "expected_fields": {},
+      "difficulty": "normal",
+      "notes": ""
+    },
+    {
+      "file": "026_sonstiges_newsletter.eml",
+      "expected_type": "sonstiges",
+      "expected_fields": {},
+      "difficulty": "normal",
+      "notes": "Werbe-Newsletter eines Lieferanten, keine Rechnung."
+    },
+    {
+      "file": "027_sonstiges_oeffnungszeiten.eml",
+      "expected_type": "sonstiges",
+      "expected_fields": {},
+      "difficulty": "normal",
+      "notes": "Frage nach Öffnungszeiten und Parkplätzen."
+    }
+  ]
+}
