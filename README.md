@@ -78,6 +78,20 @@ gehen direkt in die manuelle Prüfung, solange keine OCR angebunden ist.
   - `anthropic`: Claude-API; benötigt `ANTHROPIC_API_KEY`, Modell über `LLM_MODEL`
     (Standard `claude-opus-5-5`), Aufwand über `LLM_EFFORT` (Standard `medium`).
 
+## Verarbeitung
+
+Neue Eingänge werden klassifiziert und die Felder ihres Typs extrahiert – per Button
+„Eingänge verarbeiten“ oder per Befehl:
+
+```bash
+uv run python -m app.cli process
+```
+
+Jeder LLM-Aufruf erzeugt einen unveränderlichen Audit-Eintrag (Modell, Parameter, Prompt-Version,
+Hash der Eingabe, Ausgabe, Dauer, Fehler). Ungültige Ausgaben werden einmal wiederholt; danach,
+bei Konfidenz unter dem Schwellwert des Profils oder ohne extrahierbaren Text geht der Eingang
+in `needs_manual_review`. Es wird dabei nichts ausgeführt oder versendet.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.
