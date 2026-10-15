@@ -57,6 +57,12 @@ class InboxItem(SQLModel, table=True):
     received_at: datetime = Field(default_factory=utcnow, sa_column=_timestamp_column())
     raw_content_ref: str
     status: ItemStatus = Field(default=ItemStatus.NEW, index=True)
+    # Original file name (metadata only; the raw file is stored under its content hash).
+    filename: str | None = None
+    # SHA-256 of the raw content, used to skip duplicate imports.
+    content_hash: str | None = Field(default=None, unique=True, index=True)
+    # Normalized plain text (e-mail body, attachments, PDF text); None if not extractable.
+    text: str | None = None
 
 
 class Classification(SQLModel, table=True):

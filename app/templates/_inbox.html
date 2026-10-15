@@ -1,0 +1,24 @@
+{% if message %}
+<p class="mb-3 rounded px-3 py-2 text-sm {{ 'bg-red-50 text-red-800' if error else 'bg-green-50 text-green-800' }}"
+   role="status">{{ message }}</p>
+{% endif %}
+{% if items %}
+<table class="w-full text-left text-sm">
+  <thead class="border-b border-slate-200 text-slate-500">
+    <tr><th class="py-2">Nr.</th><th>Datei</th><th>Quelle</th><th>Eingang</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr class="border-b border-slate-100">
+      <td class="py-2">{{ item.id }}</td>
+      <td>{{ item.filename or "–" }}</td>
+      <td>{{ item.source.value }}</td>
+      <td>{{ item.received_at.strftime("%d.%m.%Y %H:%M") }}</td>
+      <td><span class="rounded bg-slate-100 px-2 py-0.5">{{ item.status.value }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-slate-600">Noch keine Eingänge vorhanden.</p>
+{% endif %}

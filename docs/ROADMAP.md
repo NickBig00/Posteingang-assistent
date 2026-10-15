@@ -32,7 +32,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Datensatz vollständig gelabelt; Test prüft, dass jede Beispieldatei ein Label hat.
 
-## [ ] M3 – Eingang und Normalisierung
+## [x] M3 – Eingang und Normalisierung
 
 - Upload für `.eml`, PDF, PNG/JPG
 - Import aller Beispieldaten per Befehl und per Button
