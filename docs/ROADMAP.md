@@ -49,7 +49,7 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 
 **Akzeptanz:** Ungültige Profile werden mit klarer Fehlermeldung abgelehnt. Tests laufen ausschließlich mit `FakeProvider`.
 
-## [ ] M5 – Klassifizierung und Extraktion
+## [x] M5 – Klassifizierung und Extraktion
 
 - Klassifizierung mit Konfidenz, Extraktion der Felder je Typ
 - Pydantic-Validierung, ein Retry bei ungültiger Ausgabe, danach `needs_manual_review`

@@ -20,7 +20,11 @@ from app.ingest.service import (
     ingest_file,
     storage_dir,
 )
-from app.models import InboxItem, ItemSource
+from app.llm.client import LLMClient
+from app.llm.factory import get_provider
+from app.models import Classification, InboxItem, ItemSource
+from app.pipeline import process_new_items
+from app.profiles import Profile, load_active_profile
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
@@ -43,7 +47,17 @@ def get_samples_dir() -> Path:
     return DEFAULT_SAMPLES_DIR
 
 
+def get_llm_client() -> LLMClient:
+    return LLMClient(get_provider())
+
+
+def get_profile() -> Profile:
+    return load_active_profile()
+
+
 SessionDep = Annotated[Session, Depends(get_session)]
+ClientDep = Annotated[LLMClient, Depends(get_llm_client)]
+ProfileDep = Annotated[Profile, Depends(get_profile)]
 StorageDep = Annotated[Path, Depends(get_storage_dir)]
 SamplesDep = Annotated[Path, Depends(get_samples_dir)]
 
@@ -60,9 +74,13 @@ def health() -> HealthResponse:
     return HealthResponse(status="ok")
 
 
-def _inbox_items(session: Session) -> list[InboxItem]:
-    statement = select(InboxItem).order_by(InboxItem.id.desc())  # type: ignore[union-attr]
-    return list(session.exec(statement).all())
+def _inbox_items(session: Session) -> list[tuple[InboxItem, Classification | None]]:
+    statement = (
+        select(InboxItem, Classification)
+        .join(Classification, isouter=True)
+        .order_by(InboxItem.id.desc())  # type: ignore[union-attr]
+    )
+    return [(item, classification) for item, classification in session.exec(statement).all()]
 
 
 def _render_inbox(
@@ -118,4 +136,15 @@ async def upload_item(
         message = "Dateityp nicht unterstützt. Erlaubt: .eml, .pdf, .png, .jpg"
         return _render_inbox(request, session, message, error=True)
     message = "Datei hochgeladen." if result.created else "Datei ist bereits im Posteingang."
+    return _render_inbox(request, session, message)
+
+
+@app.post("/items/process", response_class=HTMLResponse)
+def process_items(
+    request: Request, session: SessionDep, client: ClientDep, profile: ProfileDep
+) -> HTMLResponse:
+    """Classify and extract all new items. Nothing is executed or sent."""
+    results = process_new_items(session, profile, client)
+    review = sum(r.status == "needs_manual_review" for r in results)
+    message = f"{len(results)} Eingänge verarbeitet, davon {review} zur manuellen Prüfung."
     return _render_inbox(request, session, message)
