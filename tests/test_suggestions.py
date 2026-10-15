@@ -194,7 +194,7 @@ def test_draft_changing_facts_is_retried_then_manual_review(
     assert session.exec(select(Suggestion)).all() == []
     drafts = session.exec(select(AuditEntry).where(AuditEntry.step == "draft")).all()
     assert len(drafts) == 2
-    assert all(d.error and "changes facts" in d.error for d in drafts)
+    assert all(d.error and "changes 1 fact(s)" in d.error for d in drafts)
 
 
 def test_action_without_template_needs_no_llm_call(session: Session, profile: Profile) -> None:

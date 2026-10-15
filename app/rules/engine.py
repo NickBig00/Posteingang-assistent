@@ -92,7 +92,8 @@ def run_rules(context: RuleContext) -> list[RuleCheck]:
         try:
             checks.append(function(context, ref.params))
         except Exception as error:  # noqa: BLE001 - a rule bug must never pass silently as ok
-            logger.exception("rule %s failed", ref.rule)
+            # No traceback: exception messages may contain document data.
+            logger.error("rule %s failed with %s", ref.rule, type(error).__name__)
             checks.append(
                 RuleCheck(
                     ref.rule, RuleOutcome.ERROR, f"Regel fehlgeschlagen ({type(error).__name__})"

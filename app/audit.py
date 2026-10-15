@@ -4,15 +4,15 @@ import hashlib
 from collections.abc import Mapping
 
 from pydantic import JsonValue
-from sqlmodel import Session
+from sqlmodel import Session, select
 
-from app.models import AuditEntry, AuditEntryImmutableError
+from app.models import AuditEntry, AuditEntryImmutableError, AuditOutput
 
-__all__ = ["AuditEntryImmutableError", "hash_input", "write_audit_entry"]
+__all__ = ["AuditEntryImmutableError", "audit_outputs", "hash_input", "write_audit_entry"]
 
 
 def hash_input(text: str) -> str:
-    """Return the SHA-256 hex digest of the LLM input. The raw input is never stored."""
+    """Return the SHA-256 hex digest of a text (LLM input or output)."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
@@ -39,11 +39,22 @@ def write_audit_entry(
         model_params=dict(model_params or {}),
         prompt_version=prompt_version,
         input_hash=hash_input(input_text),
-        output=output,
+        output_hash=hash_input(output) if output is not None else None,
         duration_ms=duration_ms,
         error=error,
     )
     session.add(entry)
     session.commit()
     session.refresh(entry)
+    if output is not None and entry.id is not None:
+        session.add(AuditOutput(audit_entry_id=entry.id, item_id=item_id, output=output))
+        session.commit()
     return entry
+
+
+def audit_outputs(session: Session, entry_ids: list[int]) -> dict[int, str]:
+    """Stored raw outputs by audit entry id (absent once the item has been deleted)."""
+    if not entry_ids:
+        return {}
+    rows = session.exec(select(AuditOutput).where(AuditOutput.audit_entry_id.in_(entry_ids)))  # type: ignore[attr-defined]
+    return {row.audit_entry_id: row.output for row in rows}

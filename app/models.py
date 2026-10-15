@@ -130,6 +130,8 @@ class AuditEntry(SQLModel, table=True):
 
     `item_id` deliberately has no foreign key: audit entries must outlive the deletion of
     an inbox item (SPEC section 7, deletion concept). Raw input is never stored, only its hash.
+    The model output may contain personal data; it lives in the deletable `AuditOutput`
+    table, the entry itself keeps only its hash.
     """
 
     id: int | None = Field(default=None, primary_key=True)
@@ -140,9 +142,18 @@ class AuditEntry(SQLModel, table=True):
     model_params: dict[str, JsonValue] = Field(default_factory=dict, sa_column=Column(JSON))
     prompt_version: str | None = None
     input_hash: str
-    output: str | None = None
+    output_hash: str | None = None
     duration_ms: int
     error: str | None = None
+
+
+class AuditOutput(SQLModel, table=True):
+    """Raw model output of an audit entry. Deleted together with its inbox item."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    audit_entry_id: int = Field(foreign_key="auditentry.id", unique=True, index=True)
+    item_id: int | None = Field(default=None, index=True)
+    output: str
 
 
 class AuditEntryImmutableError(RuntimeError):

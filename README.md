@@ -143,6 +143,20 @@ Feld-Trefferquote (gesamt und je Feld) und eine Fehlerliste unter
 `docs/evaluation/<profil>_<anbieter>.md` (plus `.json`). Ziel laut SPEC: ≥ 90 % korrekte
 Klassifizierung.
 
+## Löschkonzept und Datenschutz
+
+- **Löschen je Eingang**: Button „Eingang löschen“ in der Detailansicht. Entfernt Rohdatei,
+  Text, Klassifizierung, Felder, Regelergebnisse, Vorschlag, Entscheidungen und die
+  gespeicherten Modellausgaben.
+- **Aufbewahrungsdauer**: `RETENTION_DAYS` (Standard 90). `uv run python -m app.cli purge`
+  löscht alle älteren Eingänge (z. B. täglich per Cron).
+- **Audit nach Löschung**: Audit-Einträge bleiben unverändert bestehen, enthalten aber nur
+  Hashes (Eingabe, Ausgabe) und Metadaten; die Rohausgaben liegen in einer separaten,
+  mitgelöschten Tabelle.
+- **Logs**: Der Code protokolliert nur IDs, Anzahlen und Typen; zusätzlich maskiert ein
+  Log-Filter E-Mail-Adressen, Telefonnummern, IBANs und Mitgliedsnummern und verwirft
+  Tracebacks. Ein Test prüft, dass ein kompletter Durchlauf keine personenbezogenen Daten loggt.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

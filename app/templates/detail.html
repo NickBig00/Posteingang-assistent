@@ -94,5 +94,9 @@
     </section>
   </div>
 </div>
+<form method="post" action="/items/{{ item.id }}/delete" class="mt-6"
+      onsubmit="return confirm('Eingang mit allen Inhalten endgültig löschen? Der Audit-Verlauf behält nur Hashes und Metadaten.');">
+  <button class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50">Eingang löschen</button>
+</form>
 <div class="mt-6">{% include "_ai_notice.html" %}</div>
 {% endblock %}

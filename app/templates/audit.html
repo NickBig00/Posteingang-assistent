@@ -19,7 +19,9 @@
     </div>
     <div class="mt-1 font-mono text-xs text-slate-500">Eingabe-Hash: {{ e.input_hash }}</div>
     {% if e.error %}<div class="mt-1 text-red-700">Fehler: {{ e.error }}</div>{% endif %}
-    {% if e.output %}<pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{{ e.output }}</pre>{% endif %}
+    {% if e.output_hash %}<div class="font-mono text-xs text-slate-500">Ausgabe-Hash: {{ e.output_hash }}</div>{% endif %}
+    {% if outputs.get(e.id) %}<pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{{ outputs[e.id] }}</pre>
+    {% elif e.output_hash %}<p class="mt-1 text-xs text-slate-500">Ausgabe gelöscht (nur Hash und Metadaten aufbewahrt).</p>{% endif %}
   </li>
   {% endfor %}
 </ol>
