@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -42,6 +42,8 @@ from app.review import (
     execute_item,
     final_text,
     load_details,
+    reopen_item,
+    reprocess_item,
     review_item,
     traffic_light,
 )
@@ -295,3 +297,57 @@ def mail_fetch(
     if summary.duplicates or summary.skipped:
         message += f" ({summary.duplicates} bereits vorhanden, {summary.skipped} übersprungen)"
     return _render_inbox(request, session, message + ".")
+
+
+_ORIGINAL_MEDIA_TYPES = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".eml": "text/plain; charset=utf-8",
+}
+
+
+@app.get("/items/{item_id}/original", response_model=None)
+def item_original(session: SessionDep, item_id: int) -> Response:
+    """The stored original file, e.g. to compare an OCR transcription with the image."""
+    item = _details_or_404(session, item_id).item
+    path = Path(item.raw_content_ref)
+    media_type = _ORIGINAL_MEDIA_TYPES.get(path.suffix.lower())
+    if media_type is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="Originaldatei nicht vorhanden")
+    return Response(
+        path.read_bytes(),
+        media_type=media_type,
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@app.post("/items/{item_id}/reprocess", response_model=None)
+def item_reprocess(
+    request: Request,
+    session: SessionDep,
+    client: ClientDep,
+    profile: ProfileDep,
+    item_id: int,
+) -> HTMLResponse | RedirectResponse:
+    """Run the AI pipeline again for an item in manual review (recorded in the audit trail)."""
+    item = _details_or_404(session, item_id).item
+    try:
+        reprocess_item(session, item, profile, client)
+    except ReviewNotAllowedError as error:
+        return _render_detail(request, session, item_id, str(error), status=409)
+    return RedirectResponse(f"/items/{item_id}", status_code=303)
+
+
+@app.post("/items/{item_id}/reopen", response_model=None)
+def item_reopen(
+    request: Request, session: SessionDep, item_id: int
+) -> HTMLResponse | RedirectResponse:
+    """Reopen a rejected item for a new decision (recorded in the audit trail)."""
+    item = _details_or_404(session, item_id).item
+    try:
+        reopen_item(session, item)
+    except ReviewNotAllowedError as error:
+        return _render_detail(request, session, item_id, str(error), status=409)
+    return RedirectResponse(f"/items/{item_id}", status_code=303)

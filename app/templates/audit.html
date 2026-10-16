@@ -3,8 +3,8 @@
 {% block content %}
 <a href="/items/{{ item.id }}" class="text-sm text-blue-700 hover:underline">← Eingang {{ item.id }}</a>
 <h2 class="mb-1 text-lg font-semibold">Audit-Verlauf für Eingang {{ item.id }}</h2>
-<p class="mb-4 text-sm text-slate-500">Alle KI-Verarbeitungsschritte in zeitlicher Reihenfolge. Einträge sind unveränderlich;
-  gespeichert wird nur ein Hash der Eingabe.</p>
+<p class="mb-4 text-sm text-slate-500">Alle KI-Verarbeitungsschritte und Eingriffe von Menschen (neu verarbeiten,
+  wieder öffnen) in zeitlicher Reihenfolge. Einträge sind unveränderlich; gespeichert wird nur ein Hash der Eingabe.</p>
 {% if entries %}
 <ol class="space-y-3">
   {% for e in entries %}
@@ -12,10 +12,15 @@
     <div class="flex flex-wrap gap-x-4 text-slate-600">
       <span>{{ e.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</span>
       <strong class="text-slate-900">{{ e.step }}</strong>
-      <span>Modell: {{ e.model }}</span>
+      {% if e.model == "mensch" %}
+      <span>durch Mensch: {{ e.model_params.get("actor", "–") }}</span>
+      <span>Status: {{ e.model_params.get("from_status", "–") }} → {{ e.model_params.get("to_status", "–") }}</span>
+      {% else %}
+      <span>Modell: {{ e.model }}{% if e.model_params.get("fallback_used") %} (Fallback; angefragt: {{ e.model_params.get("requested_model") }}){% endif %}</span>
       <span>Prompt: {{ e.prompt_version or "–" }}</span>
       <span>Dauer: {{ e.duration_ms }} ms</span>
       <span>Versuch: {{ e.model_params.get("attempt", "–") }}</span>
+      {% endif %}
     </div>
     <div class="mt-1 font-mono text-xs text-slate-500">Eingabe-Hash: {{ e.input_hash }}</div>
     {% if e.error %}<div class="mt-1 text-red-700">Fehler: {{ e.error }}</div>{% endif %}

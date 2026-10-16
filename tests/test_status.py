@@ -101,13 +101,25 @@ def test_done_requires_approving_review(session: Session) -> None:
         transition_status(session, item, ItemStatus.DONE)
 
 
-@pytest.mark.parametrize("start", [ItemStatus.REJECTED, ItemStatus.DONE])
 @pytest.mark.parametrize("target", list(ItemStatus))
-def test_terminal_states_allow_no_transition(
-    session: Session, start: ItemStatus, target: ItemStatus
-) -> None:
+def test_done_is_final(session: Session, target: ItemStatus) -> None:
     with pytest.raises(InvalidStatusTransitionError):
-        transition_status(session, _item(session, start), target)
+        transition_status(session, _item(session, ItemStatus.DONE), target)
+
+
+@pytest.mark.parametrize("target", [s for s in ItemStatus if s != ItemStatus.NEEDS_MANUAL_REVIEW])
+def test_rejected_can_only_be_reopened_for_review(session: Session, target: ItemStatus) -> None:
+    with pytest.raises(InvalidStatusTransitionError):
+        transition_status(session, _item(session, ItemStatus.REJECTED), target)
+
+
+def test_reopen_and_reprocess_transitions_need_no_review(session: Session) -> None:
+    item = _item(session, ItemStatus.REJECTED)
+
+    transition_status(session, item, ItemStatus.NEEDS_MANUAL_REVIEW)
+    transition_status(session, item, ItemStatus.NEW)
+
+    assert item.status == ItemStatus.NEW
 
 
 def test_every_status_has_transition_rules() -> None:

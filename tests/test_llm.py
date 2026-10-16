@@ -1,5 +1,6 @@
 import json
 import re
+from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -10,7 +11,14 @@ import httpx2
 import pytest
 
 from app.llm.anthropic_provider import AnthropicProvider
-from app.llm.base import Completion, LLMProvider, LLMProviderError, LLMRefusalError, LLMTask
+from app.llm.base import (
+    Completion,
+    LLMProvider,
+    LLMProviderError,
+    LLMRefusalError,
+    LLMTask,
+    VisualInput,
+)
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
 from app.llm.fake import FakeProvider
@@ -339,7 +347,14 @@ def test_custom_provider_can_implement_interface(profile: Profile) -> None:
     class EchoProvider(LLMProvider):
         name = "echo"
 
-        def complete(self, *, task: LLMTask, system: str, user: str) -> Completion:
+        def complete(
+            self,
+            *,
+            task: LLMTask,
+            system: str,
+            user: str,
+            visuals: Sequence[VisualInput] = (),
+        ) -> Completion:
             return Completion(text='{"document_type": "sonstiges", "confidence": 0.5}', model="e")
 
     assert LLMClient(EchoProvider()).classify("x", profile).ok
