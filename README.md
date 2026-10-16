@@ -91,6 +91,14 @@ Textebene werden bei der Verarbeitung per Vision-Modell gelesen (OCR, siehe unte
     (Standard `claude-opus-5-5`), Aufwand über `LLM_EFFORT` (Standard `medium`).
     `LLM_FALLBACK=true` lässt bei einer Ablehnung ein anderes Claude-Modell antworten
     (Standard: aus); das tatsächlich genutzte Modell steht dann im Audit.
+  - `openai`: OpenAI-API (Chat Completions); benötigt `OPENAI_API_KEY` und `LLM_MODEL`
+    (kein Standardmodell – die Wahl ist bewusst zu treffen). Klassifizierung und Extraktion
+    laufen im JSON-Modus; Bilder und PDFs für die OCR werden als Bild- bzw. Datei-Teil gesendet.
+    Im Audit steht das Modell, das laut API tatsächlich geantwortet hat.
+
+  Für alle Anbieter gilt dieselbe Verarbeitung: Ausgaben werden strikt gegen die
+  Pydantic-Schemas geprüft (nicht repariert), bei ungültiger Ausgabe gibt es genau einen
+  erneuten Versuch, danach `needs_manual_review`; jeder Aufruf erzeugt einen Audit-Eintrag.
 
 ## Verarbeitung
 
