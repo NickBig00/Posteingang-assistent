@@ -277,7 +277,7 @@ def test_factory_selects_anthropic(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_factory_rejects_unknown_provider() -> None:
     with pytest.raises(ValueError, match="unknown LLM provider"):
-        get_provider("openai")
+        get_provider("mistral")
 
 
 # --- anthropic provider (no network: stubbed messages API) ---

@@ -5,7 +5,7 @@ import os
 from app.llm.base import LLMProvider
 from app.llm.fake import FakeProvider
 
-PROVIDERS = ("fake", "anthropic")
+PROVIDERS = ("fake", "anthropic", "openai")
 
 
 def get_provider(name: str | None = None) -> LLMProvider:
@@ -17,4 +17,8 @@ def get_provider(name: str | None = None) -> LLMProvider:
         from app.llm.anthropic_provider import AnthropicProvider  # noqa: PLC0415 - optional backend
 
         return AnthropicProvider()
+    if name == "openai":
+        from app.llm.openai_provider import OpenAIProvider  # noqa: PLC0415 - optional backend
+
+        return OpenAIProvider()
     raise ValueError(f"unknown LLM provider {name!r}; expected one of: {', '.join(PROVIDERS)}")
