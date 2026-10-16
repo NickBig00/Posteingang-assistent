@@ -10,7 +10,14 @@ from app.llm.base import LLMTask
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent / "prompts"
 USER_SEPARATOR = "=== USER ==="
-DEFAULT_VERSIONS: dict[LLMTask, str] = {"classify": "v1", "extract": "v1", "draft": "v1"}
+DEFAULT_VERSIONS: dict[LLMTask, str] = {
+    "classify": "v1",
+    "extract": "v1",
+    "draft": "v1",
+    "ocr": "v1",
+}
+# Exact answer of the OCR prompt when a document contains no readable text.
+NO_TEXT_MARKER = "[KEIN TEXT]"
 
 _env = Environment(undefined=StrictUndefined, autoescape=False, keep_trailing_newline=False)  # noqa: S701 - plain-text prompts, not HTML
 

@@ -70,8 +70,8 @@ uv run python -m app.cli import-samples
 ```
 
 Eigene Dateien (`.eml`, PDF, PNG/JPG, max. 10 MB) lassen sich über die Startseite hochladen.
-Rohdateien landen unter `data/raw/` (konfigurierbar per `STORAGE_DIR`). Bilder ohne Textebene
-gehen direkt in die manuelle Prüfung, solange keine OCR angebunden ist.
+Rohdateien landen unter `data/raw/` (konfigurierbar per `STORAGE_DIR`). Bilder und PDFs ohne
+Textebene werden bei der Verarbeitung per Vision-Modell gelesen (OCR, siehe unten).
 
 ## Branchenprofil und LLM
 
@@ -82,11 +82,15 @@ gehen direkt in die manuelle Prüfung, solange keine OCR angebunden ist.
   anfrage, Reparaturauftrag, Reklamation, Rechnung, Sonstiges). Umschalten per Konfiguration,
   z. B. `PROFILE=handwerk uv run uvicorn app.main:app`; Beispieldaten und Evaluation folgen
   dem aktiven Profil.
-- Prompts liegen versioniert in `prompts/` (`classify_v1.md`, `extract_v1.md`, `draft_v1.md`).
+- Prompts liegen versioniert in `prompts/` (`classify_v1.md`, `extract_v1.md`, `draft_v1.md`,
+  `ocr_v1.md`).
 - Der LLM-Anbieter wird per `LLM_PROVIDER` gewählt:
-  - `fake` (Standard): deterministisch und offline, für Tests und die Demo ohne API-Key.
+  - `fake` (Standard): deterministisch und offline, für Tests und die Demo ohne API-Key. Kann
+    keine Bilder lesen (OCR liefert „kein Text erkannt“).
   - `anthropic`: Claude-API; benötigt `ANTHROPIC_API_KEY`, Modell über `LLM_MODEL`
     (Standard `claude-opus-5-5`), Aufwand über `LLM_EFFORT` (Standard `medium`).
+    `LLM_FALLBACK=true` lässt bei einer Ablehnung ein anderes Claude-Modell antworten
+    (Standard: aus); das tatsächlich genutzte Modell steht dann im Audit.
 
 ## Verarbeitung
 
@@ -101,6 +105,16 @@ Jeder LLM-Aufruf erzeugt einen unveränderlichen Audit-Eintrag (Modell, Paramete
 Hash der Eingabe, Ausgabe, Dauer, Fehler). Ungültige Ausgaben werden einmal wiederholt; danach,
 bei Konfidenz unter dem Schwellwert des Profils oder ohne extrahierbaren Text geht der Eingang
 in `needs_manual_review`. Es wird dabei nichts ausgeführt oder versendet.
+
+- **OCR:** Bilder (PNG/JPG) und PDFs ohne Textebene werden über das LLM-Interface an ein
+  Vision-Modell geschickt (`prompts/ocr_v1.md`). Der erkannte Text ist in der Detailansicht
+  als KI-Ergebnis markiert und lässt sich mit der Originaldatei vergleichen. Im Audit steht
+  nur ein Hash des Bildes. Tesseract als lokale Alternative ist für später vorgesehen.
+- **Neu verarbeiten:** Eingänge in `needs_manual_review` lassen sich per Button erneut durch
+  die Pipeline schicken (z. B. nach einer Profiländerung).
+- **Wieder öffnen:** Verworfene Eingänge (`rejected`) lassen sich zur erneuten Prüfung wieder
+  öffnen; ausgeführte (`done`) nicht. Beide Eingriffe stehen mit Person und Statuswechsel im
+  Audit-Verlauf.
 
 ## Regelprüfung
 

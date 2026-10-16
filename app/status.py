@@ -9,9 +9,13 @@ ALLOWED_TRANSITIONS: dict[ItemStatus, frozenset[ItemStatus]] = {
     ItemStatus.PROCESSED: frozenset(
         {ItemStatus.NEEDS_MANUAL_REVIEW, ItemStatus.APPROVED, ItemStatus.REJECTED}
     ),
-    ItemStatus.NEEDS_MANUAL_REVIEW: frozenset({ItemStatus.APPROVED, ItemStatus.REJECTED}),
+    # -> NEW: a human requests reprocessing (app.review.reprocess_item).
+    ItemStatus.NEEDS_MANUAL_REVIEW: frozenset(
+        {ItemStatus.APPROVED, ItemStatus.REJECTED, ItemStatus.NEW}
+    ),
     ItemStatus.APPROVED: frozenset({ItemStatus.DONE}),
-    ItemStatus.REJECTED: frozenset(),
+    # -> NEEDS_MANUAL_REVIEW: a human reopens a rejected item (app.review.reopen_item).
+    ItemStatus.REJECTED: frozenset({ItemStatus.NEEDS_MANUAL_REVIEW}),
     ItemStatus.DONE: frozenset(),
 }
 

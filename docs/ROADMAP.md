@@ -106,3 +106,12 @@ Jeder Meilenstein wird einzeln umgesetzt, auf eigenem Branch, mit Pull Request. 
 - Neues Profil inkl. Beispieldaten und Labels, ohne Änderungen am Kern-Code
 
 **Akzeptanz:** Profil per Konfiguration umschaltbar; Evaluation läuft für beide Profile.
+
+---
+
+## Offene Punkte für einen Echtbetrieb
+
+Bewusste Vereinfachungen der Demo, die vor einem produktiven Einsatz gelöst werden müssen:
+
+- [ ] **Anmeldung und CSRF-Schutz:** Die Demo hat einen einzigen Demo-Benutzer ohne Login (SPEC Abschnitt 2); Formulare sind nicht gegen CSRF geschützt. Für den Echtbetrieb: Benutzerverwaltung mit Rollen, echte Namen der Prüfenden im Review und Audit, CSRF-Tokens.
+- [ ] **PostgreSQL und Migrationen:** Die Unveränderlichkeit des Audit-Logs ist auf Datenbankebene nur für SQLite (Trigger) umgesetzt; für PostgreSQL braucht es ein Gegenstück (Trigger oder Rechteentzug für UPDATE/DELETE). Schemaänderungen erfordern derzeit das Löschen der lokalen Datenbank; nötig ist ein Migrationswerkzeug (z. B. Alembic).

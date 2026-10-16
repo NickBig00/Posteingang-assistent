@@ -7,8 +7,10 @@ exporting the approved reply text.
 
 from dataclasses import dataclass
 
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, delete, select
 
+from app.audit import write_human_audit_entry
+from app.llm.client import LLMClient
 from app.models import (
     AuditEntry,
     Classification,
@@ -21,11 +23,20 @@ from app.models import (
     RuleResult,
     Suggestion,
 )
+from app.pipeline import ProcessResult, process_item
+from app.profiles import Profile
 from app.status import latest_review, transition_status
 from app.suggestions import strip_ai_label
 
 DEMO_REVIEWER = "demo"
 REVIEWABLE = frozenset({ItemStatus.PROCESSED, ItemStatus.NEEDS_MANUAL_REVIEW})
+# Results of one pipeline run; replaced on reprocessing (audit entries and reviews stay).
+_PROCESSING_RESULTS: tuple[type[SQLModel], ...] = (
+    Suggestion,
+    RuleResult,
+    Extraction,
+    Classification,
+)
 
 
 class ReviewNotAllowedError(ValueError):
@@ -40,6 +51,8 @@ class ItemDetails:
     rule_results: list[RuleResult]
     suggestion: Suggestion | None
     reviews: list[Review]
+    # True if the item text was produced by AI text recognition (OCR) – a KI result.
+    text_from_ocr: bool = False
 
     @property
     def traffic_light(self) -> str | None:
@@ -77,6 +90,8 @@ def load_details(session: Session, item_id: int) -> ItemDetails | None:
         rule_results=list(rules),
         suggestion=_latest(session, Suggestion, item_id),
         reviews=list(reviews),
+        text_from_ocr=item.text is not None
+        and any(e.step == "ocr" and e.error is None for e in audit_trail(session, item_id)),
     )
 
 
@@ -136,3 +151,51 @@ def execute_item(session: Session, item: InboxItem) -> str | None:
     text = final_text(session, item)
     transition_status(session, item, ItemStatus.DONE)
     return text
+
+
+def reprocess_item(
+    session: Session,
+    item: InboxItem,
+    profile: Profile,
+    client: LLMClient,
+    actor: str = DEMO_REVIEWER,
+) -> ProcessResult:
+    """Run the AI pipeline again for an item in manual review (e.g. after a profile change).
+
+    The previous results are replaced; their audit entries stay. The request itself is
+    recorded in the audit trail.
+    """
+    if item.id is None or item.status != ItemStatus.NEEDS_MANUAL_REVIEW:
+        raise ReviewNotAllowedError(
+            "Neu verarbeiten ist nur für Eingänge in manueller Prüfung möglich"
+        )
+    item_id = item.id
+    write_human_audit_entry(
+        session,
+        item_id=item_id,
+        step="reprocess",
+        actor=actor,
+        details={"from_status": item.status.value, "to_status": ItemStatus.NEW.value},
+    )
+    for model in _PROCESSING_RESULTS:
+        session.exec(delete(model).where(model.item_id == item_id))  # type: ignore[attr-defined,call-overload]
+    session.commit()
+    transition_status(session, item, ItemStatus.NEW)
+    return process_item(session, item, profile, client)
+
+
+def reopen_item(session: Session, item: InboxItem, actor: str = DEMO_REVIEWER) -> InboxItem:
+    """Reopen a rejected item for a new human decision. Executed items (`done`) stay closed."""
+    if item.id is None or item.status != ItemStatus.REJECTED:
+        raise ReviewNotAllowedError("Nur verworfene Eingänge können wieder geöffnet werden")
+    write_human_audit_entry(
+        session,
+        item_id=item.id,
+        step="reopen",
+        actor=actor,
+        details={
+            "from_status": item.status.value,
+            "to_status": ItemStatus.NEEDS_MANUAL_REVIEW.value,
+        },
+    )
+    return transition_status(session, item, ItemStatus.NEEDS_MANUAL_REVIEW)

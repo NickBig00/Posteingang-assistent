@@ -7,7 +7,7 @@ Lies vor jeder Aufgabe `docs/SPEC.md` und `docs/ROADMAP.md`.
 ## Arbeitsweise
 
 - Arbeite immer genau **einen Meilenstein** aus `docs/ROADMAP.md` ab, nie mehrere auf einmal.
-- Jeder Meilenstein bekommt einen eigenen Branch (`milestone/<nummer>-<kurzname>`) und endet mit einem Pull Request.
+- Jeder Meilenstein endet mit genau einem eigenen Pull Request. Der Branch-Name ist frei wählbar.
 - Die PR-Beschreibung enthält: was umgesetzt wurde, wie es getestet wurde, offene Punkte und bewusst getroffene Annahmen.
 - Hake den Meilenstein in `docs/ROADMAP.md` erst ab, wenn alle Akzeptanzkriterien erfüllt sind und die Tests grün sind.
 - Wenn eine Anforderung unklar ist oder der SPEC widerspricht: nicht raten. Treffe die konservativste Annahme, dokumentiere sie im PR und markiere sie als offene Frage.
@@ -36,7 +36,7 @@ Lies vor jeder Aufgabe `docs/SPEC.md` und `docs/ROADMAP.md`.
 - **Nur synthetische Daten.** Niemals echte Namen, E-Mail-Adressen, Telefonnummern oder Dokumente ins Repository, in Tests oder in Beispieldaten. Beispieldaten erkennbar fiktiv halten.
 - **Keine Gesundheitsdaten** in der Demo. Das System trifft keine medizinischen Einschätzungen.
 - **Mensch in der Schleife:** Keine Antwort, keine Aufgabe und keine Statusänderung wird ohne explizite menschliche Freigabe ausgeführt oder versendet.
-- **Kennzeichnung:** Jeder KI-generierte Entwurf ist in der Oberfläche und im Text als KI-Vorschlag erkennbar.
-- **Protokollierung:** Jede KI-Verarbeitung erzeugt einen Audit-Eintrag (siehe SPEC). Audit-Einträge sind unveränderlich.
+- **Kennzeichnung:** Jedes KI-Ergebnis (Entwurf, Klassifizierung, extrahierte Felder, per OCR erkannter Text) ist in der Oberfläche und in der Speicherung als KI-Vorschlag erkennbar. Bei der Freigabe wird die Kennzeichnung aus dem Antworttext entfernt, weil ab dann der freigebende Mensch den Inhalt verantwortet.
+- **Protokollierung:** Jede KI-Verarbeitung erzeugt einen Audit-Eintrag (siehe SPEC), ebenso menschliche Eingriffe in die KI-Verarbeitung (neu verarbeiten, wieder öffnen). Audit-Einträge sind unveränderlich.
 - **Datensparsamkeit:** An das LLM wird nur gesendet, was für die Aufgabe nötig ist. Keine personenbezogenen Daten in Anwendungs-Logs.
 - **Secrets** (API-Keys) nur über Umgebungsvariablen, nie im Code oder im Repository. `.env` steht in `.gitignore`.

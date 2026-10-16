@@ -58,8 +58,15 @@ def test_raw_file_is_stored_under_content_hash(session: Session, raw_dir: Path) 
     assert result.item.filename == "brief.pdf"
 
 
-def test_item_without_text_goes_to_manual_review(session: Session, raw_dir: Path) -> None:
+def test_image_stays_new_for_ocr(session: Session, raw_dir: Path) -> None:
     result = ingest_file(session, "scan.png", b"\x89PNG", ItemSource.UPLOAD, raw_dir)
+
+    assert result.item.text is None
+    assert result.item.status == ItemStatus.NEW
+
+
+def test_empty_email_goes_to_manual_review(session: Session, raw_dir: Path) -> None:
+    result = ingest_file(session, "leer.eml", b"", ItemSource.UPLOAD, raw_dir)
 
     assert result.item.text is None
     assert result.item.status == ItemStatus.NEEDS_MANUAL_REVIEW

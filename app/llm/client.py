@@ -1,13 +1,14 @@
 """High-level LLM operations: render prompt, call provider, validate output."""
 
+import hashlib
 import json
 import time
 from dataclasses import dataclass
 
 from pydantic import BaseModel, JsonValue, ValidationError
 
-from app.llm.base import Completion, LLMError, LLMProvider, LLMTask
-from app.llm.prompts import PromptTemplate, RenderedPrompt, load_prompt
+from app.llm.base import Completion, LLMError, LLMProvider, LLMTask, VisualInput
+from app.llm.prompts import NO_TEXT_MARKER, PromptTemplate, RenderedPrompt, load_prompt
 from app.llm.schemas import ClassificationOutput, extraction_model
 from app.profiles import DocumentType, Profile
 
@@ -23,6 +24,8 @@ class LLMCall[T]:
     completion: Completion | None = None
     output: T | None = None
     error: str | None = None
+    # SHA-256 of an image/PDF sent along (OCR); part of the hashed audit input.
+    visual_hash: str | None = None
 
     @property
     def ok(self) -> bool:
@@ -31,7 +34,8 @@ class LLMCall[T]:
     @property
     def prompt_text(self) -> str:
         """Full input sent to the model (hashed for the audit trail, never stored)."""
-        return f"{self.prompt.system}\n\n{self.prompt.user}"
+        text = f"{self.prompt.system}\n\n{self.prompt.user}"
+        return f"{text}\n\n[visual sha256={self.visual_hash}]" if self.visual_hash else text
 
 
 def _parse_json_object(text: str) -> dict[str, JsonValue]:
@@ -48,15 +52,17 @@ class LLMClient:
     ) -> None:
         self.provider = provider
         self.prompts = prompts or {
-            task: load_prompt(task) for task in ("classify", "extract", "draft")
+            task: load_prompt(task) for task in ("classify", "extract", "draft", "ocr")
         }
 
     def _call(
-        self, task: LLMTask, prompt: RenderedPrompt
+        self, task: LLMTask, prompt: RenderedPrompt, visuals: tuple[VisualInput, ...] = ()
     ) -> tuple[Completion | None, str | None, int]:
         started = time.perf_counter()
         try:
-            completion = self.provider.complete(task=task, system=prompt.system, user=prompt.user)
+            completion = self.provider.complete(
+                task=task, system=prompt.system, user=prompt.user, visuals=visuals
+            )
             error = None
         except LLMError as exc:
             completion, error = None, f"{type(exc).__name__}: {exc}"
@@ -135,6 +141,33 @@ class LLMClient:
                 call.output = completion.text.strip()
             else:
                 call.error = "invalid output: empty draft"
+        return call
+
+    def ocr(self, visual: VisualInput) -> LLMCall[str]:
+        """Transcribe the text of an image or scanned PDF (vision model).
+
+        Output "" means: the model found no readable text. An empty answer is invalid.
+        """
+        template = self.prompts["ocr"]
+        prompt = template.render()
+        completion, error, duration = self._call("ocr", prompt, (visual,))
+        call: LLMCall[str] = LLMCall(
+            "ocr",
+            template.prompt_id,
+            prompt,
+            duration,
+            completion,
+            error=error,
+            visual_hash=hashlib.sha256(visual.data).hexdigest(),
+        )
+        if completion is not None:
+            text = completion.text.strip()
+            if text == NO_TEXT_MARKER:
+                call.output = ""
+            elif text:
+                call.output = text
+            else:
+                call.error = "invalid output: empty transcription"
         return call
 
 

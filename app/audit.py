@@ -8,7 +8,17 @@ from sqlmodel import Session, select
 
 from app.models import AuditEntry, AuditEntryImmutableError, AuditOutput
 
-__all__ = ["AuditEntryImmutableError", "audit_outputs", "hash_input", "write_audit_entry"]
+__all__ = [
+    "HUMAN_ACTOR_MODEL",
+    "AuditEntryImmutableError",
+    "audit_outputs",
+    "hash_input",
+    "write_audit_entry",
+    "write_human_audit_entry",
+]
+
+# `model` value of audit entries for actions taken by a person instead of an AI model.
+HUMAN_ACTOR_MODEL = "mensch"
 
 
 def hash_input(text: str) -> str:
@@ -58,3 +68,26 @@ def audit_outputs(session: Session, entry_ids: list[int]) -> dict[int, str]:
         return {}
     rows = session.exec(select(AuditOutput).where(AuditOutput.audit_entry_id.in_(entry_ids)))  # type: ignore[attr-defined]
     return {row.audit_entry_id: row.output for row in rows}
+
+
+def write_human_audit_entry(
+    session: Session,
+    *,
+    item_id: int,
+    step: str,
+    actor: str,
+    details: Mapping[str, JsonValue] | None = None,
+) -> AuditEntry:
+    """Record a human action that changes the AI processing (e.g. reprocess, reopen).
+
+    Uses the same immutable trail as the AI steps so the history of an item is complete.
+    """
+    return write_audit_entry(
+        session,
+        item_id=item_id,
+        step=step,
+        model=HUMAN_ACTOR_MODEL,
+        model_params={"actor": actor, **(details or {})},
+        input_text=f"{step}:{item_id}",
+        duration_ms=0,
+    )

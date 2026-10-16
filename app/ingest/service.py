@@ -77,8 +77,9 @@ def ingest_file(
     session.add(item)
     session.commit()
     session.refresh(item)
-    if not document.text:
-        # Nothing to process automatically (e.g. image without OCR): a human has to look.
+    if not document.text and not document.needs_ocr:
+        # Nothing to process automatically (e.g. empty e-mail): a human has to look.
+        # Images and PDFs without text layer stay `new`: the pipeline runs OCR on them.
         transition_status(session, item, ItemStatus.NEEDS_MANUAL_REVIEW)
     logger.info("inbox item %s created (source=%s, type=%s)", item.id, source, suffix)
     return IngestResult(item=item, created=True)

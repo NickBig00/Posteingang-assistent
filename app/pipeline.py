@@ -3,11 +3,13 @@
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.audit import write_audit_entry
+from app.llm.base import VisualInput
 from app.llm.client import LLMCall, LLMClient
 from app.llm.schemas import ClassificationOutput
 from app.models import (
@@ -78,6 +80,23 @@ def _with_retry[T](
     return call
 
 
+_VISUAL_MEDIA_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".pdf": "application/pdf",
+}
+
+
+def visual_input(item: InboxItem) -> VisualInput | None:
+    """The stored raw file as OCR input, if it is an image or PDF that still exists."""
+    path = Path(item.raw_content_ref)
+    media_type = _VISUAL_MEDIA_TYPES.get(path.suffix.lower())
+    if media_type is None or not path.is_file():
+        return None
+    return VisualInput(media_type=media_type, data=path.read_bytes())
+
+
 def _manual_review(
     session: Session, item: InboxItem, item_id: int, reason: str, doc_type: str | None
 ) -> ProcessResult:
@@ -98,7 +117,17 @@ def process_item(
     item_id = item.id
     provider = client.provider.name
     if not item.text:
-        return _manual_review(session, item, item_id, "kein Text extrahierbar", None)
+        visual = visual_input(item)
+        if visual is None:
+            return _manual_review(session, item, item_id, "kein Text extrahierbar", None)
+        ocr = _with_retry(session, item_id, provider, lambda: client.ocr(visual))
+        if not ocr.ok:
+            return _manual_review(session, item, item_id, "Texterkennung fehlgeschlagen", None)
+        if not ocr.output:
+            return _manual_review(session, item, item_id, "kein Text erkannt", None)
+        item.text = ocr.output
+        session.add(item)
+        session.commit()
     text = item.text
 
     classification = _with_retry(session, item_id, provider, lambda: client.classify(text, profile))

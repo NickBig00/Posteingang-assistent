@@ -9,9 +9,10 @@ values for extraction, and the given template for drafts.
 import json
 import re
 from collections import deque
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 
-from app.llm.base import Completion, LLMProvider, LLMProviderError, LLMTask
+from app.llm.base import Completion, LLMProvider, LLMProviderError, LLMTask, VisualInput
+from app.llm.prompts import NO_TEXT_MARKER
 
 Responder = Callable[[LLMTask, str, str], str]
 
@@ -32,6 +33,7 @@ class FakeProvider(LLMProvider):
         elif responses is not None:
             self._queue = deque(responses)
         self.calls: list[tuple[LLMTask, str, str]] = []
+        self.visuals: list[tuple[VisualInput, ...]] = []
 
     @property
     def model(self) -> str:
@@ -41,8 +43,16 @@ class FakeProvider(LLMProvider):
             else "fake-scripted"
         )
 
-    def complete(self, *, task: LLMTask, system: str, user: str) -> Completion:
+    def complete(
+        self,
+        *,
+        task: LLMTask,
+        system: str,
+        user: str,
+        visuals: Sequence[VisualInput] = (),
+    ) -> Completion:
         self.calls.append((task, system, user))
+        self.visuals.append(tuple(visuals))
         if self._responder is not None:
             text = self._responder(task, system, user)
         elif self._queue is not None:
@@ -85,8 +95,14 @@ def _draft(user: str) -> str:
     return _section(user, "vorlage")
 
 
+def _ocr(user: str) -> str:
+    # The offline fake cannot read images: it reports that no text was recognised.
+    return NO_TEXT_MARKER
+
+
 _HEURISTICS: dict[LLMTask, Callable[[str], str]] = {
     "classify": _classify,
     "extract": _extract,
     "draft": _draft,
+    "ocr": _ocr,
 }
