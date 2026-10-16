@@ -22,6 +22,7 @@ from app.models import (
     Suggestion,
 )
 from app.status import latest_review, transition_status
+from app.suggestions import strip_ai_label
 
 DEMO_REVIEWER = "demo"
 REVIEWABLE = frozenset({ItemStatus.PROCESSED, ItemStatus.NEEDS_MANUAL_REVIEW})
@@ -108,16 +109,21 @@ def review_item(
 
 
 def final_text(session: Session, item: InboxItem) -> str | None:
-    """Reply text released by the reviewer: the edited text, else the suggested draft."""
+    """Reply text released by the reviewer: the edited text, else the suggested draft.
+
+    The internal "KI-Vorschlag" label is removed: it marks the draft for the reviewer
+    and is not part of the reply that is sent.
+    """
     if item.id is None:
         return None
     review = latest_review(session, item.id)
     if review is None or review.decision != ReviewDecision.APPROVED:
         return None
-    if review.edited_text:
-        return review.edited_text
-    suggestion = _latest(session, Suggestion, item.id)
-    return suggestion.draft_text if suggestion else None
+    text = review.edited_text
+    if not text:
+        suggestion = _latest(session, Suggestion, item.id)
+        text = suggestion.draft_text if suggestion else None
+    return (strip_ai_label(text) or None) if text else None
 
 
 def execute_item(session: Session, item: InboxItem) -> str | None:

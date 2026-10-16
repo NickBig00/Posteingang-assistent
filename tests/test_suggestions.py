@@ -76,6 +76,40 @@ def test_rule_outcome_selects_action(profile: Profile) -> None:
     assert action is not None and action.key == "rueckfrage_lieferant"
 
 
+def test_missed_notice_period_suggests_next_possible_date(profile: Profile) -> None:
+    checks = [RuleCheck("notice_period", RuleOutcome.ERROR, "x", {"vertragsende": "2026-11-30"})]
+    values = template_values({"mitgliedsnummer": "M-1"}, checks)
+
+    action = select_action(_type(profile, "kuendigung"), values, checks)
+
+    assert action is not None and action.key == "kuendigung_zum_naechsten_termin"
+
+
+@pytest.mark.parametrize(
+    ("dringend", "expected"),
+    [(True, "notdienst_einplanen"), (False, "termin_bestaetigen"), (None, "termin_bestaetigen")],
+)
+def test_when_value_selects_emergency_action(dringend: bool | None, expected: str) -> None:
+    handwerk = load_profile(PROFILES_DIR / "handwerk.yaml")
+    values = {"einsatzort": "Musterstadt", "dringend": dringend}
+
+    action = select_action(handwerk.document_type("reparaturauftrag"), values, [])
+
+    assert action is not None and action.key == expected
+
+
+def test_when_value_requires_same_type(profile: Profile) -> None:
+    data = _type(profile, "sonstiges").model_dump()
+    data["actions"] = [
+        {"key": "a", "label": "A", "when_value": {"flag": [True]}},
+        {"key": "b", "label": "B"},
+    ]
+    doc_type = DocumentType.model_validate(data)
+
+    assert select_action(doc_type, {"flag": 1}, []).key == "b"  # type: ignore[union-attr]
+    assert select_action(doc_type, {"flag": True}, []).key == "a"  # type: ignore[union-attr]
+
+
 def test_rule_warning_does_not_trigger_error_action(profile: Profile) -> None:
     checks = [RuleCheck("invoice_totals", RuleOutcome.WARNING, "x")]
 

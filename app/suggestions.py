@@ -69,7 +69,16 @@ def select_action(
             return action
         if any(outcomes.get(rule) in allowed for rule, allowed in action.when_rule.items()):
             return action
+        if any(
+            _has_value(values.get(name), allowed) for name, allowed in action.when_value.items()
+        ):
+            return action
     return None
+
+
+def _has_value(value: FieldValue | JsonValue, allowed: Sequence[str | bool | int]) -> bool:
+    # Same type required: in Python True == 1, but `dringend: [true]` must not match 1.
+    return any(type(value) is type(candidate) and value == candidate for candidate in allowed)
 
 
 def render_template(template: str, values: Mapping[str, FieldValue | JsonValue]) -> str:
@@ -88,6 +97,11 @@ def missing_facts(template_text: str, draft: str) -> list[str]:
 def label_draft(draft: str) -> str:
     """Mark the text itself as AI suggestion (transparency requirement)."""
     return f"{AI_LABEL}\n\n{draft.strip()}"
+
+
+def strip_ai_label(text: str) -> str:
+    """Remove the internal AI label from a released reply; it is not sent to the recipient."""
+    return text.replace(AI_LABEL, "").strip()
 
 
 def draft_reply(

@@ -73,13 +73,23 @@ document_types:
 
           Freundliche Grüße
           Ihre Muster Haustechnik GmbH
+      - key: notdienst_einplanen
+        label: Notdienst einplanen
+        when_value: {dringend: [true]}
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          wir haben Ihre Meldung als dringend eingestuft. Unser Notdienst meldet sich umgehend
+          telefonisch bei Ihnen und kommt so schnell wie möglich zu Ihnen nach {{ einsatzort }}.
+
+          Freundliche Grüße
+          Ihre Muster Haustechnik GmbH
       - key: termin_bestaetigen
         label: Reparaturtermin vorschlagen
         reply_template: |-
           Guten Tag{% if name %} {{ name }}{% endif %},
 
-          vielen Dank für Ihren Auftrag. {% if dringend %}Da es dringend ist, planen wir Sie
-          bevorzugt ein und rufen Sie heute noch an. {% endif %}{% if wunschtermin %}Gerne kommen wir am {{ wunschtermin }}
+          vielen Dank für Ihren Auftrag. {% if wunschtermin %}Gerne kommen wir am {{ wunschtermin }}
           zu Ihnen nach {{ einsatzort }}.{% else %}Wir melden uns kurzfristig mit einem Terminvorschlag
           für {{ einsatzort }}.{% endif %}
 

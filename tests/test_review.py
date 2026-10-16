@@ -62,6 +62,22 @@ def test_edited_text_wins(session: Session) -> None:
     assert final_text(session, item) == "Geänderter Text"
 
 
+def test_released_text_does_not_contain_ai_label(session: Session) -> None:
+    item = _item(session, ItemStatus.PROCESSED, f"{AI_LABEL}\n\nGuten Tag")
+
+    review_item(session, item, ReviewDecision.APPROVED)
+
+    assert final_text(session, item) == "Guten Tag"
+
+
+def test_ai_label_left_in_edited_text_is_removed(session: Session) -> None:
+    item = _item(session, ItemStatus.PROCESSED)
+
+    review_item(session, item, ReviewDecision.APPROVED, f"{AI_LABEL}\n\nBearbeitet")
+
+    assert final_text(session, item) == "Bearbeitet"
+
+
 def test_reject(session: Session) -> None:
     item = _item(session, ItemStatus.PROCESSED)
 

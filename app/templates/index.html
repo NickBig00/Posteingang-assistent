@@ -29,8 +29,9 @@
       </button>
     </div>
   </div>
-  <p class="mb-3 text-xs text-slate-500">Eingänge werden nach {{ retention_days }} Tagen
-    automatisch gelöscht (Befehl <code>purge</code>); der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
+  <p class="mb-3 text-xs text-slate-500">Abgeschlossene Eingänge werden nach {{ retention_days }} Tagen
+    automatisch gelöscht (Befehl <code>purge</code>); offene Eingänge bleiben bis zur Erledigung erhalten.
+    Der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
   <div id="inbox">
     {% include "_inbox.html" %}
   </div>

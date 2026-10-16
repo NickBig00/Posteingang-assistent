@@ -79,9 +79,10 @@ def notice_period(context: RuleContext, params: Mapping[str, JsonValue]) -> Rule
             name, RuleOutcome.OK, f"Frühestmögliches Vertragsende: {_fmt(earliest)}", data
         )
     if requested < earliest:
+        # Not in time: a human must decide (manual review); the earliest end is suggested.
         return RuleCheck(
             name,
-            RuleOutcome.WARNING,
+            RuleOutcome.ERROR,
             f"Kündigungsfrist zum {_fmt(requested)} nicht eingehalten; "
             f"frühestmögliches Vertragsende: {_fmt(earliest)}",
             data,

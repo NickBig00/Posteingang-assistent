@@ -41,6 +41,19 @@ document_types:
       - key: vertragsdaten_pruefen
         label: Vertragsdaten manuell prüfen
         when_missing: [vertragsende]
+      - key: kuendigung_zum_naechsten_termin
+        label: Kündigung zum nächstmöglichen Termin bestätigen
+        when_rule: {notice_period: [error]}
+        reply_template: |-
+          Guten Tag{% if name %} {{ name }}{% endif %},
+
+          vielen Dank für Ihre Nachricht. Eine Kündigung Ihrer Mitgliedschaft {{ mitgliedsnummer }}
+          zum {{ gewuenschtes_kuendigungsdatum }} ist laut Vertrag leider nicht mehr fristgerecht
+          möglich. Wir haben Ihre Kündigung daher zum nächstmöglichen Termin vorgemerkt: Ihr Vertrag
+          endet zum {{ vertragsende }}.
+
+          Mit freundlichen Grüßen
+          Ihr FitDemo-Team
       - key: kuendigung_bestaetigen
         label: Kündigung bestätigen
         reply_template: |-
