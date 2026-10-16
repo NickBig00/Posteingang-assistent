@@ -76,10 +76,12 @@ class ActionSpec(_Strict):
     when_missing: list[str] = Field(default_factory=list)
     # Applies if any listed rule has one of the given outcomes.
     when_rule: dict[str, list[RuleOutcomeName]] = Field(default_factory=dict)
+    # Applies if any listed field has one of the given values, e.g. {dringend: [true]}.
+    when_value: dict[str, list[str | bool | int]] = Field(default_factory=dict)
 
     @property
     def is_default(self) -> bool:
-        return not self.when_missing and not self.when_rule
+        return not self.when_missing and not self.when_rule and not self.when_value
 
 
 class DocumentType(_Strict):

@@ -120,12 +120,14 @@ die manuelle Prüfung. Fristen folgen § 188 BGB (Monatsenden, Schaltjahre).
 ## Vorschläge und Antwortentwürfe
 
 Für jeden Eingang mit gültiger Extraktion wählt deterministischer Code die erste passende
-Aktion aus dem Profil (Bedingungen `when_missing` / `when_rule`, letzte Aktion = Standard).
+Aktion aus dem Profil (Bedingungen `when_missing`, `when_rule` und `when_value`, z. B.
+`when_value: {dringend: [true]}` für den Notdienst; letzte Aktion = Standard).
 Hat die Aktion eine Antwortvorlage, wird sie mit den extrahierten Feldern und den Ergebnissen
 der Regelprüfung (z. B. berechnetes Vertragsende) gefüllt; das LLM darf den Text nur sprachlich
 anpassen. Entwürfe, die Zahlen, Daten oder Beträge der Vorlage verändern, werden verworfen
 (ein Retry, danach manuelle Prüfung). Jeder Entwurf beginnt mit
-`[KI-Vorschlag – bitte vor dem Versand prüfen]` und ist als KI-Vorschlag gespeichert.
+`[KI-Vorschlag – bitte vor dem Versand prüfen]` und ist als KI-Vorschlag gespeichert. Diese
+interne Kennzeichnung wird beim Freigeben aus dem Antworttext entfernt und nicht versendet.
 
 ## Oberfläche und Freigabe
 
@@ -159,7 +161,8 @@ Klassifizierung.
   Text, Klassifizierung, Felder, Regelergebnisse, Vorschlag, Entscheidungen und die
   gespeicherten Modellausgaben.
 - **Aufbewahrungsdauer**: `RETENTION_DAYS` (Standard 90). `uv run python -m app.cli purge`
-  löscht alle älteren Eingänge (z. B. täglich per Cron).
+  löscht ältere **abgeschlossene** Eingänge (`done`, `rejected`), z. B. täglich per Cron.
+  Eingänge, die noch auf Verarbeitung, Prüfung oder Ausführung warten, bleiben erhalten.
 - **Audit nach Löschung**: Audit-Einträge bleiben unverändert bestehen, enthalten aber nur
   Hashes (Eingabe, Ausgabe) und Metadaten; die Rohausgaben liegen in einer separaten,
   mitgelöschten Tabelle.

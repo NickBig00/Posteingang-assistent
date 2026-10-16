@@ -18,6 +18,7 @@ from app.models import (
     Classification,
     Extraction,
     InboxItem,
+    ItemStatus,
     Review,
     RuleResult,
     Suggestion,
@@ -26,6 +27,9 @@ from app.models import (
 logger = logging.getLogger(__name__)
 
 DEFAULT_RETENTION_DAYS = 90
+# Only finished items are purged automatically; items still waiting for processing,
+# review or execution are kept until a human has dealt with them.
+PURGEABLE_STATUSES = frozenset({ItemStatus.DONE, ItemStatus.REJECTED})
 _DERIVED: tuple[type[SQLModel], ...] = (
     AuditOutput,
     Suggestion,
@@ -78,11 +82,12 @@ def _as_utc(moment: datetime) -> datetime:
 def purge_expired(
     session: Session, now: datetime | None = None, days: int | None = None
 ) -> PurgeSummary:
-    """Delete all items received longer ago than the retention period (any status)."""
+    """Delete finished items (`done`, `rejected`) received before the retention period."""
     cutoff = (now or datetime.now(UTC)) - timedelta(days=days or retention_days())
+    statement = select(InboxItem).where(InboxItem.status.in_(PURGEABLE_STATUSES))  # type: ignore[attr-defined]
     expired = [
         item.id
-        for item in session.exec(select(InboxItem)).all()
+        for item in session.exec(statement).all()
         if item.id is not None and _as_utc(item.received_at) < cutoff
     ]
     for item_id in expired:

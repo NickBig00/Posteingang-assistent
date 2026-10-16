@@ -173,7 +173,7 @@ def test_notice_kept_exactly_on_deadline(profile: Profile) -> None:
 def test_notice_one_day_late(profile: Profile) -> None:
     check = notice_period(_kuendigung(profile, date(2026, 10, 1), date(2026, 10, 31)), {})
 
-    assert check.outcome == RuleOutcome.WARNING
+    assert check.outcome == RuleOutcome.ERROR  # missed notice period → manual review
     assert "nicht eingehalten" in check.reason
     assert check.data["vertragsende"] == "2026-11-30"
 
@@ -196,7 +196,7 @@ def test_notice_requested_date_is_not_a_term_end(profile: Profile) -> None:
 def test_notice_during_minimum_term(profile: Profile) -> None:
     check = notice_period(_kuendigung(profile, date(2024, 6, 1), date(2024, 12, 31)), {})
 
-    assert check.outcome == RuleOutcome.WARNING
+    assert check.outcome == RuleOutcome.ERROR
     assert check.data["vertragsende"] == "2025-02-28"
 
 

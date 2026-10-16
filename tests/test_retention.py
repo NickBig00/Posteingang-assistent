@@ -21,6 +21,7 @@ from app.models import (
     Extraction,
     InboxItem,
     ItemSource,
+    ItemStatus,
     Review,
     ReviewDecision,
     RuleResult,
@@ -182,6 +183,7 @@ def test_purge_deletes_only_expired_items(session: Session) -> None:
                 source=ItemSource.UPLOAD,
                 raw_content_ref=f"/nonexistent/{name}",
                 filename=name,
+                status=ItemStatus.DONE,
                 received_at=now - timedelta(days=age, seconds=1 if name == "alt" else 0),
             )
         )
@@ -194,6 +196,26 @@ def test_purge_deletes_only_expired_items(session: Session) -> None:
     assert len(summary.deleted_item_ids) == 1
 
 
+def test_purge_keeps_items_still_waiting_for_a_human(session: Session) -> None:
+    now = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
+    for status in ItemStatus:
+        session.add(
+            InboxItem(
+                source=ItemSource.UPLOAD,
+                raw_content_ref=f"/nonexistent/{status.value}",
+                filename=status.value,
+                status=status,
+                received_at=now - timedelta(days=365),
+            )
+        )
+    session.commit()
+
+    purge_expired(session, now=now, days=30)
+
+    remaining = {i.filename for i in session.exec(select(InboxItem)).all()}
+    assert remaining == {"new", "processed", "needs_manual_review", "approved"}
+
+
 def test_cli_purge(
     engine: Engine, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
 ) -> None:
@@ -204,6 +226,7 @@ def test_cli_purge(
             InboxItem(
                 source=ItemSource.UPLOAD,
                 raw_content_ref="/nonexistent",
+                status=ItemStatus.REJECTED,
                 received_at=datetime.now(UTC) - timedelta(days=2),
             )
         )
