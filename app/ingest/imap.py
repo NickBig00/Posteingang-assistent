@@ -17,6 +17,9 @@ from app.models import ItemSource
 
 logger = logging.getLogger(__name__)
 
+# Socket timeout so an unresponsive server cannot block a web request indefinitely.
+IMAP_TIMEOUT_SECONDS = 30
+
 
 class ImapNotConfiguredError(RuntimeError):
     """IMAP_HOST, IMAP_USER or IMAP_PASSWORD is missing."""
@@ -67,8 +70,13 @@ class ImapClient(Protocol):
 
 def connect(config: ImapConfig) -> ImapClient:
     if config.use_ssl:
-        return imaplib.IMAP4_SSL(config.host, config.port, ssl_context=ssl.create_default_context())
-    return imaplib.IMAP4(config.host, config.port)
+        return imaplib.IMAP4_SSL(
+            config.host,
+            config.port,
+            ssl_context=ssl.create_default_context(),
+            timeout=IMAP_TIMEOUT_SECONDS,
+        )
+    return imaplib.IMAP4(config.host, config.port, timeout=IMAP_TIMEOUT_SECONDS)
 
 
 @dataclass
@@ -124,7 +132,7 @@ def fetch_new_mail(
                 summary.imported += 1
             else:
                 summary.duplicates += 1
-    except imaplib.IMAP4.error as error:
+    except (OSError, imaplib.IMAP4.error) as error:  # OSError: connection lost, timeout
         raise ImapFetchError(
             f"Postfach konnte nicht gelesen werden ({type(error).__name__})"
         ) from error

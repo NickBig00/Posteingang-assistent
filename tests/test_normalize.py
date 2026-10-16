@@ -1,9 +1,11 @@
+import logging
 from email.message import EmailMessage
 
 import pytest
 from fpdf import FPDF
 
 from app.ingest.normalize import UnsupportedFileTypeError, html_to_text, normalize, pdf_text
+from tests.conftest import SAMPLES_DIR
 
 
 def _pdf(text: str) -> bytes:
@@ -126,6 +128,58 @@ def test_pdf_without_text_layer_needs_ocr() -> None:
 
 def test_broken_pdf_yields_empty_text() -> None:
     assert pdf_text(b"%PDF-1.4 kaputt") == ""
+
+
+@pytest.mark.parametrize("error", [TypeError("x"), NotImplementedError("x"), RecursionError()])
+def test_unexpected_pdf_parser_errors_do_not_fail_the_intake(
+    monkeypatch: pytest.MonkeyPatch, error: Exception
+) -> None:
+    def broken_reader(_stream: object) -> None:
+        raise error
+
+    monkeypatch.setattr("app.ingest.normalize.PdfReader", broken_reader)
+
+    assert normalize("rechnung.pdf", b"%PDF-1.4").text == ""
+
+
+def test_damaged_pdf_content_does_not_reach_logs(caplog: pytest.LogCaptureFixture) -> None:
+    content = bytearray((SAMPLES_DIR / "005_kuendigung_brief.pdf").read_bytes())
+    # Byte damage that makes pypdf log a warning quoting the text object "(Jonas Demo)".
+    for position, value in ((483, 249), (344, 73), (306, 91)):
+        content[position] = value
+    caplog.set_level(logging.DEBUG)
+
+    pdf_text(bytes(content))
+
+    logged = " ".join(record.getMessage() for record in caplog.records)
+    assert "Jonas" not in logged
+    assert "Demo" not in logged
+
+
+def test_unknown_body_charset_falls_back_to_utf8() -> None:
+    raw = 'Subject: x\nContent-Type: text/plain; charset="x-unbekannt"\n\nKündigung'.encode()
+
+    assert "Kündigung" in normalize("mail.eml", raw).text
+
+
+def test_unknown_attachment_charset_falls_back_to_utf8() -> None:
+    raw = (
+        b"Subject: x\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=B\n\n"
+        b"--B\nContent-Type: text/plain\n\nHallo\n"
+        b"--B\nContent-Type: text/plain; charset=foo-bar\n"
+        b"Content-Disposition: attachment; filename=notiz.txt\n\nAnhangstext\n--B--\n"
+    )
+
+    text = normalize("mail.eml", raw).text
+
+    assert "Hallo" in text
+    assert "--- Anhang: notiz.txt ---\nAnhangstext" in text
+
+
+def test_body_charset_is_respected() -> None:
+    raw = b'Subject: x\nContent-Type: text/plain; charset="iso-8859-1"\n\nK\xfcndigung'
+
+    assert "Kündigung" in normalize("mail.eml", raw).text
 
 
 @pytest.mark.parametrize("filename", ["foto.png", "foto.jpg", "foto.JPEG"])

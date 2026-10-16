@@ -4,15 +4,17 @@ import io
 import logging
 from dataclasses import dataclass, field
 from email import policy
-from email.message import EmailMessage
+from email.message import EmailMessage, Message
 from email.parser import BytesParser
 from html.parser import HTMLParser
 from pathlib import PurePath
 
 from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 logger = logging.getLogger(__name__)
+# pypdf logs parser warnings that quote raw PDF content (e.g. names in text objects).
+# Document content must never reach the logs (SPEC section 7), so silence it.
+logging.getLogger("pypdf").setLevel(logging.CRITICAL + 1)
 
 EMAIL_SUFFIXES = frozenset({".eml"})
 PDF_SUFFIXES = frozenset({".pdf"})
@@ -60,7 +62,8 @@ def pdf_text(content: bytes) -> str:
     try:
         reader = PdfReader(io.BytesIO(content))
         pages = [page.extract_text() or "" for page in reader.pages]
-    except (PdfReadError, ValueError, KeyError) as error:
+    except Exception as error:  # noqa: BLE001 - untrusted input; pypdf raises many error types
+        # (TypeError, NotImplementedError, ... on damaged files): never fail the intake.
         logger.warning("PDF could not be read: %s", type(error).__name__)
         return ""
     return "\n".join(page.strip() for page in pages if page.strip()).strip()
@@ -91,7 +94,7 @@ def _normalize_email(content: bytes) -> NormalizedDocument:
             text = pdf_text(payload)
             needs_ocr = needs_ocr or not text
         elif content_type in _TEXT_ATTACHMENT_TYPES:
-            text = payload.decode(part.get_content_charset() or "utf-8", errors="replace").strip()
+            text = _decode(payload, part).strip()
         elif content_type in _IMAGE_TYPES:
             needs_ocr = True
             text = ""
@@ -109,12 +112,22 @@ def _email_body(message: EmailMessage) -> str:
     body = message.get_body(preferencelist=("plain", "html"))
     if body is None:
         return ""
-    content = body.get_content()
-    if not isinstance(content, str):
+    payload = body.get_payload(decode=True)
+    if not isinstance(payload, bytes):
         return ""
+    content = _decode(payload, body)
     if body.get_content_type() == "text/html":
         return html_to_text(content)
     return content.strip()
+
+
+def _decode(payload: bytes, part: Message) -> str:
+    """Decode a text part; unknown or bogus charsets fall back to UTF-8 instead of failing."""
+    charset = part.get_content_charset() or "utf-8"
+    try:
+        return payload.decode(charset, errors="replace")
+    except LookupError:
+        return payload.decode("utf-8", errors="replace")
 
 
 class _TextCollector(HTMLParser):

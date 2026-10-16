@@ -10,9 +10,11 @@ from sqlmodel import Session, select
 
 from app import cli
 from app.ingest.imap import (
+    IMAP_TIMEOUT_SECONDS,
     ImapConfig,
     ImapFetchError,
     ImapNotConfiguredError,
+    connect,
     fetch_new_mail,
     imap_config_from_env,
 )
@@ -145,6 +147,34 @@ def test_unknown_folder(session: Session, raw_dir: Path) -> None:
 
     with pytest.raises(ImapFetchError, match="Gibtsnicht"):
         _fetch(session, FakeImap({}), raw_dir, config)
+
+
+def test_connection_lost_during_fetch(session: Session, raw_dir: Path) -> None:
+    class DroppingImap(FakeImap):
+        def uid(self, command: str, *args: str | None) -> tuple[str, list]:
+            if command == "FETCH":
+                raise TimeoutError("timed out")
+            return super().uid(command, *args)
+
+    server = DroppingImap({"1": _mail("A")})
+
+    with pytest.raises(ImapFetchError, match="TimeoutError"):
+        _fetch(session, server, raw_dir)
+
+    assert server.seen == set()
+    assert server.logged_out
+
+
+@pytest.mark.parametrize(("use_ssl", "cls"), [(True, "IMAP4_SSL"), (False, "IMAP4")])
+def test_connect_sets_socket_timeout(
+    monkeypatch: pytest.MonkeyPatch, use_ssl: bool, cls: str
+) -> None:
+    calls: list[dict[str, object]] = []
+    monkeypatch.setattr(imaplib, cls, lambda *args, **kwargs: calls.append(kwargs) or "client")
+    config = ImapConfig(host="h", user="u", password="p", use_ssl=use_ssl)
+
+    assert connect(config) == "client"
+    assert calls[0]["timeout"] == IMAP_TIMEOUT_SECONDS
 
 
 # --- configuration ---
