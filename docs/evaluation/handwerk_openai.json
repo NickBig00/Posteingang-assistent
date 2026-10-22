@@ -1,0 +1,806 @@
+{
+  "profile": "handwerk",
+  "provider": "openai",
+  "model": "gpt-4.1",
+  "created_at": "2026-10-22 20:36 UTC",
+  "accuracy": 1.0,
+  "field_hit_rate": 1.0,
+  "per_type": {
+    "angebotsanfrage": {
+      "total": 5,
+      "correct": 5
+    },
+    "rechnung": {
+      "total": 4,
+      "correct": 4
+    },
+    "reklamation": {
+      "total": 4,
+      "correct": 4
+    },
+    "reparaturauftrag": {
+      "total": 5,
+      "correct": 5
+    },
+    "sonstiges": {
+      "total": 3,
+      "correct": 3
+    }
+  },
+  "items": [
+    {
+      "file": "101_angebot_bad.eml",
+      "expected_type": "angebotsanfrage",
+      "predicted_type": "angebotsanfrage",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Karl Kunde",
+          "actual": "Karl Kunde",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "karl.kunde@example.com",
+          "actual": "karl.kunde@example.com",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "sanitaer",
+          "actual": "sanitaer",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Musterstadt",
+          "actual": "Musterstadt",
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-11-09",
+          "actual": "2026-11-09",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "102_angebot_heizung.eml",
+      "expected_type": "angebotsanfrage",
+      "predicted_type": "angebotsanfrage",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Otto Objekt",
+          "actual": "Otto Objekt",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "otto.objekt@example.org",
+          "actual": "otto.objekt@example.org",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "heizung",
+          "actual": "heizung",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Beispielhausen",
+          "actual": "Beispielhausen",
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "103_angebot_elektro_telefon.eml",
+      "expected_type": "angebotsanfrage",
+      "predicted_type": "angebotsanfrage",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Frieda Fiktiv",
+          "actual": "Frieda Fiktiv",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "030 23125 311",
+          "actual": "030 23125 311",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "elektro",
+          "actual": "elektro",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Musterstadt",
+          "actual": "Musterstadt",
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "104_angebot_kontaktformular.pdf",
+      "expected_type": "angebotsanfrage",
+      "predicted_type": "angebotsanfrage",
+      "confidence": 1.0,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Hugo Hypothese",
+          "actual": "Hugo Hypothese",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "sanitaer",
+          "actual": "sanitaer",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Musterdorf",
+          "actual": "Musterdorf",
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-11-20",
+          "actual": "2026-11-20",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "105_angebot_mit_rueckfrage.eml",
+      "expected_type": "angebotsanfrage",
+      "predicted_type": "angebotsanfrage",
+      "confidence": 0.8,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Ida Irgendwer",
+          "actual": "Ida Irgendwer",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "ida.irgendwer@example.com",
+          "actual": "ida.irgendwer@example.com",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "heizung",
+          "actual": "heizung",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Musterstadt",
+          "actual": "Musterstadt",
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "106_reparatur_heizung_notfall.eml",
+      "expected_type": "reparaturauftrag",
+      "predicted_type": "reparaturauftrag",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Lars Lorem",
+          "actual": "Lars Lorem",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "lars.lorem@example.org",
+          "actual": "lars.lorem@example.org",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "heizung",
+          "actual": "heizung",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Musterstadt",
+          "actual": "Musterstadt",
+          "hit": true
+        },
+        {
+          "name": "dringend",
+          "expected": true,
+          "actual": true,
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "107_reparatur_wasserhahn.eml",
+      "expected_type": "reparaturauftrag",
+      "predicted_type": "reparaturauftrag",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Sven Sample",
+          "actual": "Sven Sample",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "sven.sample@example.com",
+          "actual": "sven.sample@example.com",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "sanitaer",
+          "actual": "sanitaer",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Beispielhausen",
+          "actual": "Beispielhausen",
+          "hit": true
+        },
+        {
+          "name": "dringend",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-10-22",
+          "actual": "2026-10-22",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "108_reparatur_steckdose_relativ.eml",
+      "expected_type": "reparaturauftrag",
+      "predicted_type": "reparaturauftrag",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Tina Test",
+          "actual": "Tina Test",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "tina.test@example.net",
+          "actual": "tina.test@example.net",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "elektro",
+          "actual": "elektro",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Musterstadt",
+          "actual": "Musterstadt",
+          "hit": true
+        },
+        {
+          "name": "dringend",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "109_reparatur_ohne_ort.eml",
+      "expected_type": "reparaturauftrag",
+      "predicted_type": "reparaturauftrag",
+      "confidence": 1.0,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Karl Kunde",
+          "actual": "Karl Kunde",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "karl.kunde@example.com",
+          "actual": "karl.kunde@example.com",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "sanitaer",
+          "actual": "sanitaer",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "dringend",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "110_reparatur_mit_bewertung.eml",
+      "expected_type": "reparaturauftrag",
+      "predicted_type": "reparaturauftrag",
+      "confidence": 0.95,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Otto Objekt",
+          "actual": "Otto Objekt",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "otto.objekt@example.org",
+          "actual": "otto.objekt@example.org",
+          "hit": true
+        },
+        {
+          "name": "leistung",
+          "expected": "elektro",
+          "actual": "elektro",
+          "hit": true
+        },
+        {
+          "name": "einsatzort",
+          "expected": "Beispielhausen",
+          "actual": "Beispielhausen",
+          "hit": true
+        },
+        {
+          "name": "dringend",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        },
+        {
+          "name": "wunschtermin",
+          "expected": "2026-10-28",
+          "actual": "2026-10-28",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "111_reklamation_heizkoerper.eml",
+      "expected_type": "reklamation",
+      "predicted_type": "reklamation",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Frieda Fiktiv",
+          "actual": "Frieda Fiktiv",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "frieda.fiktiv@example.net",
+          "actual": "frieda.fiktiv@example.net",
+          "hit": true
+        },
+        {
+          "name": "auftragsnummer",
+          "expected": "A-2026-104",
+          "actual": "A-2026-104",
+          "hit": true
+        },
+        {
+          "name": "auftragsdatum",
+          "expected": "2026-09-03",
+          "actual": "2026-09-03",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "112_reklamation_brief.pdf",
+      "expected_type": "reklamation",
+      "predicted_type": "reklamation",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Greta Gast",
+          "actual": "Greta Gast",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "030 23125 233",
+          "actual": "030 23125 233",
+          "hit": true
+        },
+        {
+          "name": "auftragsnummer",
+          "expected": "A-2026-118",
+          "actual": "A-2026-118",
+          "hit": true
+        },
+        {
+          "name": "auftragsdatum",
+          "expected": "2026-09-15",
+          "actual": "2026-09-15",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "113_reklamation_ohne_auftragsnummer.eml",
+      "expected_type": "reklamation",
+      "predicted_type": "reklamation",
+      "confidence": 1.0,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Sven Sample",
+          "actual": "Sven Sample",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "sven.sample@example.com",
+          "actual": "sven.sample@example.com",
+          "hit": true
+        },
+        {
+          "name": "auftragsnummer",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "auftragsdatum",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "114_reklamation_als_anhang.eml",
+      "expected_type": "reklamation",
+      "predicted_type": "reklamation",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "name",
+          "expected": "Greta Gast",
+          "actual": "Greta Gast",
+          "hit": true
+        },
+        {
+          "name": "kontakt",
+          "expected": "030 23125 233",
+          "actual": "030 23125 233",
+          "hit": true
+        },
+        {
+          "name": "auftragsnummer",
+          "expected": "A-2026-118",
+          "actual": "A-2026-118",
+          "hit": true
+        },
+        {
+          "name": "auftragsdatum",
+          "expected": "2026-09-15",
+          "actual": "2026-09-15",
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "115_rechnung_material.eml",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Rohrgroßhandel Exempel KG",
+          "actual": "Rohrgroßhandel Exempel KG",
+          "hit": true
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "RG-2026-3310",
+          "actual": "RG-2026-3310",
+          "hit": true
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-09-21",
+          "actual": "2026-09-21",
+          "hit": true
+        },
+        {
+          "name": "betrag",
+          "expected": "476.00",
+          "actual": "476.00",
+          "hit": true
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "116_rechnung_werkzeug.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Werkzeugverleih Demo GmbH",
+          "actual": "Werkzeugverleih Demo GmbH",
+          "hit": true
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "WV-881",
+          "actual": "WV-881",
+          "hit": true
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-09-30",
+          "actual": "2026-09-30",
+          "hit": true
+        },
+        {
+          "name": "betrag",
+          "expected": "214.20",
+          "actual": "214.20",
+          "hit": true
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "117_rechnung_summe_falsch.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 1.0,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Fliesen Fiktiv OHG",
+          "actual": "Fliesen Fiktiv OHG",
+          "hit": true
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": "FF-2026-77",
+          "actual": "FF-2026-77",
+          "hit": true
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-10-02",
+          "actual": "2026-10-02",
+          "hit": true
+        },
+        {
+          "name": "betrag",
+          "expected": "952.00",
+          "actual": "952.00",
+          "hit": true
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "118_rechnung_ohne_nummer.pdf",
+      "expected_type": "rechnung",
+      "predicted_type": "rechnung",
+      "confidence": 1.0,
+      "status": "needs_manual_review",
+      "reason": "Regelprüfung mit Fehler",
+      "difficulty": "hard",
+      "fields": [
+        {
+          "name": "lieferant",
+          "expected": "Elektro Dummy KG",
+          "actual": "Elektro Dummy KG",
+          "hit": true
+        },
+        {
+          "name": "rechnungsnummer",
+          "expected": null,
+          "actual": null,
+          "hit": true
+        },
+        {
+          "name": "rechnungsdatum",
+          "expected": "2026-10-08",
+          "actual": "2026-10-08",
+          "hit": true
+        },
+        {
+          "name": "betrag",
+          "expected": "119.00",
+          "actual": "119.00",
+          "hit": true
+        },
+        {
+          "name": "e_rechnung",
+          "expected": false,
+          "actual": false,
+          "hit": true
+        }
+      ]
+    },
+    {
+      "file": "119_sonstiges_bewerbung_ausbildung.eml",
+      "expected_type": "sonstiges",
+      "predicted_type": "sonstiges",
+      "confidence": 0.99,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": []
+    },
+    {
+      "file": "120_sonstiges_newsletter.eml",
+      "expected_type": "sonstiges",
+      "predicted_type": "sonstiges",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": []
+    },
+    {
+      "file": "121_sonstiges_lob.eml",
+      "expected_type": "sonstiges",
+      "predicted_type": "sonstiges",
+      "confidence": 1.0,
+      "status": "processed",
+      "reason": null,
+      "difficulty": "normal",
+      "fields": []
+    }
+  ]
+}
