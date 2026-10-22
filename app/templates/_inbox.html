@@ -22,7 +22,7 @@
         {% else %}–{% endif %}
       </td>
       <td>{% include "_light.html" %}</td>
-      <td><span class="rounded bg-slate-100 px-2 py-0.5">{{ item.status.value }}</span></td>
+      <td><span class="rounded bg-slate-100 px-2 py-0.5">{{ status_labels[item.status] }}</span></td>
       <td><a class="text-blue-700 hover:underline" href="/items/{{ item.id }}">Öffnen</a></td>
     </tr>
     {% endfor %}

@@ -13,10 +13,11 @@ from pydantic import (
     Field,
     StrictBool,
     StrictInt,
+    StringConstraints,
     create_model,
 )
 
-from app.profiles import DocumentType, FieldSpec
+from app.profiles import ADDITIONAL_REQUESTS_KEY, DocumentType, FieldSpec
 
 
 class ClassificationOutput(BaseModel):
@@ -61,11 +62,26 @@ def _python_type(spec: FieldSpec) -> object:
     }[spec.type]
 
 
+# Short topic of a request the profile fields do not cover, e.g. "Preise".
+_RequestTopic = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)
+]
+MAX_ADDITIONAL_REQUESTS = 10
+
+
 def extraction_model(doc_type: DocumentType) -> type[BaseModel]:
-    """Build a strict schema for the fields of `doc_type`: every key present, value or null."""
+    """Build a strict schema for the fields of `doc_type`: every key present, value or null.
+
+    Additionally `weitere_anliegen`: topics of further requests in the document that the
+    fields do not cover. Optional (default: none), so a missing key is not an error.
+    """
     fields: dict[str, tuple[object, object]] = {
         spec.name: (_python_type(spec) | None, Field(...)) for spec in doc_type.fields
     }
+    fields[ADDITIONAL_REQUESTS_KEY] = (
+        list[_RequestTopic],
+        Field(default_factory=list, max_length=MAX_ADDITIONAL_REQUESTS),
+    )
     return create_model(  # type: ignore[call-overload,no-any-return]
         f"Extraction_{doc_type.key}",
         __config__=ConfigDict(extra="forbid", strict=False),

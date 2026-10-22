@@ -13,6 +13,7 @@ from app.llm.base import VisualInput
 from app.llm.client import LLMCall, LLMClient
 from app.llm.schemas import ClassificationOutput
 from app.models import (
+    AdditionalRequest,
     Classification,
     Extraction,
     InboxItem,
@@ -22,7 +23,7 @@ from app.models import (
     Suggestion,
     ValidationStatus,
 )
-from app.profiles import DocumentType, Profile
+from app.profiles import ADDITIONAL_REQUESTS_KEY, FORBIDDEN_HEALTH_TERMS, DocumentType, Profile
 from app.rules import RuleCheck, RuleContext, run_rules
 from app.rules.engine import FieldValue, find_member, typed_fields
 from app.status import transition_status
@@ -149,19 +150,25 @@ def process_item(
 
     doc_type = profile.document_type(result.document_type)
     extraction = _with_retry(session, item_id, provider, lambda: client.extract(text, doc_type))
-    fields: BaseModel | None = extraction.output if extraction.ok else None
+    output: BaseModel | None = extraction.output if extraction.ok else None
+    fields = output.model_dump(mode="json") if output else {}
+    topics = fields.pop(ADDITIONAL_REQUESTS_KEY, [])
     session.add(
         Extraction(
             item_id=item_id,
-            fields=fields.model_dump(mode="json") if fields else {},
-            validation_status=ValidationStatus.VALID if fields else ValidationStatus.INVALID,
+            fields=fields,
+            validation_status=ValidationStatus.VALID if output else ValidationStatus.INVALID,
         )
     )
+    session.add_all(
+        AdditionalRequest(item_id=item_id, topic=topic)
+        for topic in additional_request_topics(topics)
+    )
     session.commit()
-    if fields is None:
+    if output is None:
         return _manual_review(session, item, item_id, "Extraktion ungültig", result.document_type)
 
-    typed = typed_fields(doc_type, fields.model_dump(mode="json"))
+    typed = typed_fields(doc_type, fields)
     checks = check_rules(session, item, doc_type, typed)
     suggestion_error = suggest(session, item_id, text, profile, doc_type, typed, checks, client)
     if any(check.outcome == RuleOutcome.ERROR for check in checks):
@@ -171,6 +178,24 @@ def process_item(
 
     transition_status(session, item, ItemStatus.PROCESSED)
     return ProcessResult(item_id, item.status, result.document_type)
+
+
+# Shown instead of a topic that touches health data: the reviewer reads the original.
+HEALTH_TOPIC_PLACEHOLDER = "weiteres Anliegen – bitte im Original nachlesen"
+
+
+def additional_request_topics(topics: object) -> list[str]:
+    """Topics to store as reviewer hints; health-related wording is never stored."""
+    if not isinstance(topics, list):
+        return []
+    result: list[str] = []
+    for topic in topics:
+        text = str(topic).strip()
+        if any(term in text.lower() for term in FORBIDDEN_HEALTH_TERMS):
+            text = HEALTH_TOPIC_PLACEHOLDER
+        if text and text not in result:
+            result.append(text)
+    return result
 
 
 def check_rules(

@@ -10,6 +10,8 @@ from app.llm.client import LLMClient
 from app.llm.fake import FakeProvider
 from app.main import app, get_llm_client
 from app.models import (
+    DECISION_LABELS,
+    STATUS_LABELS,
     InboxItem,
     ItemSource,
     ItemStatus,
@@ -152,6 +154,40 @@ def test_detail_view_shows_ai_labels_and_buttons(client: TestClient, engine: Eng
     assert "Guten Tag" in response.text
 
 
+@pytest.mark.parametrize(
+    ("status", "label"),
+    [
+        (ItemStatus.PROCESSED, "Verarbeitet"),
+        (ItemStatus.NEEDS_MANUAL_REVIEW, "Manuelle Prüfung"),
+        (ItemStatus.APPROVED, "Freigegeben"),
+        (ItemStatus.REJECTED, "Verworfen"),
+        (ItemStatus.DONE, "Erledigt"),
+    ],
+)
+def test_status_is_shown_in_german(
+    client: TestClient, engine: Engine, status: ItemStatus, label: str
+) -> None:
+    item_id = _create(engine, status)
+
+    detail = client.get(f"/items/{item_id}").text
+    inbox = client.get("/").text
+
+    assert f'id="status">{label}</span>' in detail
+    assert f">{label}</span>" in inbox
+
+
+def test_every_status_has_a_german_label() -> None:
+    assert set(STATUS_LABELS) == set(ItemStatus)
+    assert set(DECISION_LABELS) == set(ReviewDecision)
+
+
+def test_review_decision_is_shown_in_german(client: TestClient, engine: Engine) -> None:
+    item_id = _create(engine, ItemStatus.PROCESSED)
+    client.post(f"/items/{item_id}/review", data={"decision": "rejected"})
+
+    assert "verworfen durch demo" in client.get(f"/items/{item_id}").text
+
+
 def test_unknown_item_is_404(client: TestClient) -> None:
     assert client.get("/items/999").status_code == 404
     assert client.get("/items/999/audit").status_code == 404
@@ -232,7 +268,7 @@ def test_full_ui_flow_load_review_approve_execute(
     assert AI_LABEL in detail.text
     audit = client.get(f"/items/{item_id}/audit")
     assert audit.status_code == 200
-    assert "classify_v1" in audit.text and "extract_v1" in audit.text and "draft_v1" in audit.text
+    assert "classify_v1" in audit.text and "extract_v2" in audit.text and "draft_v1" in audit.text
     assert re.search(r"Eingabe-Hash: [0-9a-f]{64}", audit.text)
 
     edited = "Guten Tag,\n\nwir bestätigen Ihre Kündigung.\n\nIhr FitDemo-Team"

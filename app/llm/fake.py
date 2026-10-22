@@ -78,7 +78,7 @@ def _classify(user: str) -> str:
 
 def _extract(user: str) -> str:
     document = _section(user, "dokument")
-    result: dict[str, str | None] = {}
+    result: dict[str, str | list[str] | None] = {}
     for field in json.loads(_section(user, "felder") or "[]"):
         value: str | None = None
         if "muster" in field:
@@ -88,6 +88,8 @@ def _extract(user: str) -> str:
             lowered = document.lower()
             value = next((v for v in field["erlaubte_werte"] if v.lower() in lowered), None)
         result[field["name"]] = value
+    # The heuristic does not detect further requests.
+    result["weitere_anliegen"] = []
     return json.dumps(result, ensure_ascii=False)
 
 

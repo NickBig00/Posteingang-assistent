@@ -5,13 +5,14 @@ status machine). In the demo, "execution" means setting the item to `done` and
 exporting the approved reply text.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlmodel import Session, SQLModel, delete, select
 
 from app.audit import write_human_audit_entry
 from app.llm.client import LLMClient
 from app.models import (
+    AdditionalRequest,
     AuditEntry,
     Classification,
     Extraction,
@@ -34,6 +35,7 @@ REVIEWABLE = frozenset({ItemStatus.PROCESSED, ItemStatus.NEEDS_MANUAL_REVIEW})
 _PROCESSING_RESULTS: tuple[type[SQLModel], ...] = (
     Suggestion,
     RuleResult,
+    AdditionalRequest,
     Extraction,
     Classification,
 )
@@ -51,6 +53,8 @@ class ItemDetails:
     rule_results: list[RuleResult]
     suggestion: Suggestion | None
     reviews: list[Review]
+    # Further requests in the document that the draft does not answer (AI hint).
+    additional_requests: list[AdditionalRequest] = field(default_factory=list)
     # True if the item text was produced by AI text recognition (OCR) – a KI result.
     text_from_ocr: bool = False
 
@@ -83,6 +87,11 @@ def load_details(session: Session, item_id: int) -> ItemDetails | None:
     reviews = session.exec(
         select(Review).where(Review.item_id == item_id).order_by(Review.id)  # type: ignore[arg-type]
     ).all()
+    requests = session.exec(
+        select(AdditionalRequest)
+        .where(AdditionalRequest.item_id == item_id)
+        .order_by(AdditionalRequest.id)  # type: ignore[arg-type]
+    ).all()
     return ItemDetails(
         item=item,
         classification=_latest(session, Classification, item_id),
@@ -90,6 +99,7 @@ def load_details(session: Session, item_id: int) -> ItemDetails | None:
         rule_results=list(rules),
         suggestion=_latest(session, Suggestion, item_id),
         reviews=list(reviews),
+        additional_requests=list(requests),
         text_from_ocr=item.text is not None
         and any(e.step == "ocr" and e.error is None for e in audit_trail(session, item_id)),
     )

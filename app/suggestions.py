@@ -83,9 +83,22 @@ def _has_value(value: FieldValue | JsonValue, allowed: Sequence[str | bool | int
 
 def render_template(template: str, values: Mapping[str, FieldValue | JsonValue]) -> str:
     try:
-        return _env.from_string(template).render(**values).strip()
+        rendered = _env.from_string(template).render(**values).strip()
     except TemplateError as error:
         raise TemplateRenderError(f"Vorlage nicht anwendbar: {error}") from error
+    return reflow_paragraphs(rendered)
+
+
+def reflow_paragraphs(text: str) -> str:
+    """Join the wrapped lines of each paragraph into one line.
+
+    Templates are wrapped in the profile YAML for readability; those line breaks must not
+    end up mid-sentence in the reply. The closing paragraph (greeting and signature) keeps
+    its line breaks.
+    """
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text.strip()) if p.strip()]
+    joined = [" ".join(line.strip() for line in p.splitlines()) for p in paragraphs[:-1]]
+    return "\n\n".join([*joined, *paragraphs[-1:]])
 
 
 def missing_facts(template_text: str, draft: str) -> list[str]:

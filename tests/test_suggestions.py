@@ -20,6 +20,7 @@ from app.suggestions import (
     TemplateRenderError,
     label_draft,
     missing_facts,
+    reflow_paragraphs,
     render_template,
     select_action,
     template_values,
@@ -172,6 +173,21 @@ def test_render_template_is_sandboxed() -> None:
         render_template("{{ ''.__class__.__mro__[1].__subclasses__() }}", {})
 
 
+def test_wrapped_template_lines_become_one_paragraph() -> None:
+    template = "Guten Tag,\n\nIhr Vertrag {{ nr }}\nendet zum 31.05.2027.\n\nGrüße\nIhr Team"
+
+    assert render_template(template, {"nr": "M-10004"}) == (
+        "Guten Tag,\n\nIhr Vertrag M-10004 endet zum 31.05.2027.\n\nGrüße\nIhr Team"
+    )
+
+
+def test_reflow_keeps_closing_paragraph_and_single_paragraphs() -> None:
+    assert reflow_paragraphs("Mit freundlichen Grüßen\nIhr Team") == (
+        "Mit freundlichen Grüßen\nIhr Team"
+    )
+    assert reflow_paragraphs("A\n  b\n\n\n\nC\nD\n") == "A b\n\nC\nD"
+
+
 def test_missing_facts_detects_changed_dates_and_numbers() -> None:
     template = "Ihr Vertrag M-10001 endet zum 31.10.2026. Betrag 499,80 EUR."
 
@@ -212,6 +228,8 @@ def test_processed_item_gets_labelled_draft(session: Session, profile: Profile) 
     assert "31.10.2026" in suggestion.draft_text
     draft_prompt = fake.calls[2][2]
     assert "Ihr Vertrag endet zum 31.10.2026." in draft_prompt
+    # The wrapped profile template arrives as one paragraph.
+    assert "Kündigung Ihrer Mitgliedschaft M-10001. Ihr Vertrag endet" in draft_prompt
 
 
 def test_draft_changing_facts_is_retried_then_manual_review(

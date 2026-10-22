@@ -29,6 +29,17 @@ class ItemStatus(StrEnum):
     DONE = "done"
 
 
+# German labels for the user interface; the enum values stay technical identifiers.
+STATUS_LABELS: dict[ItemStatus, str] = {
+    ItemStatus.NEW: "Neu",
+    ItemStatus.PROCESSED: "Verarbeitet",
+    ItemStatus.NEEDS_MANUAL_REVIEW: "Manuelle Prüfung",
+    ItemStatus.APPROVED: "Freigegeben",
+    ItemStatus.REJECTED: "Verworfen",
+    ItemStatus.DONE: "Erledigt",
+}
+
+
 class ItemSource(StrEnum):
     UPLOAD = "upload"
     SAMPLE = "sample"
@@ -49,6 +60,12 @@ class RuleOutcome(StrEnum):
 class ReviewDecision(StrEnum):
     APPROVED = "approved"
     REJECTED = "rejected"
+
+
+DECISION_LABELS: dict[ReviewDecision, str] = {
+    ReviewDecision.APPROVED: "freigegeben",
+    ReviewDecision.REJECTED: "verworfen",
+}
 
 
 class InboxItem(SQLModel, table=True):
@@ -81,6 +98,17 @@ class Extraction(SQLModel, table=True):
     item_id: int = Field(foreign_key="inboxitem.id", index=True)
     fields: dict[str, JsonValue] = Field(default_factory=dict, sa_column=Column(JSON))
     validation_status: ValidationStatus
+
+
+class AdditionalRequest(SQLModel, table=True):
+    """Further request found in the document that the profile fields and reply template do
+    not cover (AI result). Shown to the reviewer as a hint; the draft does not answer it."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    item_id: int = Field(foreign_key="inboxitem.id", index=True)
+    topic: str
+    # Transparency requirement: produced by the extraction model.
+    is_ai_suggestion: bool = True
 
 
 class RuleResult(SQLModel, table=True):

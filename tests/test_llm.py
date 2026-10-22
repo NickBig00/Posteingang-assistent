@@ -37,12 +37,19 @@ def profile() -> Profile:
 # --- prompts ---
 
 
-@pytest.mark.parametrize("task", ["classify", "extract", "draft"])
-def test_prompt_files_exist_with_version(task: LLMTask) -> None:
+@pytest.mark.parametrize(
+    ("task", "version"), [("classify", "v1"), ("extract", "v2"), ("draft", "v1"), ("ocr", "v1")]
+)
+def test_prompt_files_exist_with_version(task: LLMTask, version: str) -> None:
     template = load_prompt(task)
 
-    assert template.prompt_id == f"{task}_v1"
-    assert (PROMPTS_DIR / f"{task}_v1.md").is_file()
+    assert template.prompt_id == f"{task}_{version}"
+    assert (PROMPTS_DIR / f"{task}_{version}.md").is_file()
+
+
+def test_previous_extract_prompt_stays_loadable() -> None:
+    # Older prompt versions stay in the repository: audit entries refer to them.
+    assert load_prompt("extract", "v1").prompt_id == "extract_v1"
 
 
 def test_prompt_render_splits_system_and_user() -> None:

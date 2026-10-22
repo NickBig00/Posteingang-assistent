@@ -12,7 +12,7 @@ PROMPTS_DIR = Path(__file__).resolve().parent.parent.parent / "prompts"
 USER_SEPARATOR = "=== USER ==="
 DEFAULT_VERSIONS: dict[LLMTask, str] = {
     "classify": "v1",
-    "extract": "v1",
+    "extract": "v2",
     "draft": "v1",
     "ocr": "v1",
 }
