@@ -1,7 +1,7 @@
 # Evaluationsbericht – Profil `fitness`
 
 - Anbieter: `fake`, Modell: `fake-heuristic-v1`
-- Erstellt: 2026-10-15 18:16 UTC
+- Erstellt: 2026-10-22 16:51 UTC
 - Eingänge: 27
 - **Klassifizierungsgenauigkeit: 96.3 %** (Ziel ≥ 90.0 %: erreicht)
 - **Feld-Trefferquote: 22.4 %** (24/107 Felder)
