@@ -33,6 +33,11 @@ uv run uvicorn app.main:app --reload     # App starten
 - Startseite: <http://127.0.0.1:8000/>
 - Health-Check: <http://127.0.0.1:8000/health> → `{"status": "ok"}`
 
+Die `.env` im Projektordner wird von App und CLI automatisch geladen; bereits gesetzte
+Umgebungsvariablen haben Vorrang. Sie steht in `.gitignore` und gehört nie ins Repository.
+Für einen echten LLM-Anbieter dort z. B. `LLM_PROVIDER=anthropic` und `ANTHROPIC_API_KEY=…`
+setzen. Die Tests laden die `.env` bewusst nicht.
+
 ## Tests und Linting
 
 ```bash
