@@ -14,6 +14,7 @@ from pathlib import Path
 from sqlmodel import Session, SQLModel, delete, select
 
 from app.models import (
+    AdditionalRequest,
     AuditOutput,
     Classification,
     Extraction,
@@ -35,6 +36,7 @@ _DERIVED: tuple[type[SQLModel], ...] = (
     Suggestion,
     Review,
     RuleResult,
+    AdditionalRequest,
     Extraction,
     Classification,
 )

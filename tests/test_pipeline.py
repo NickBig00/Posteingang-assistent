@@ -78,7 +78,7 @@ def test_every_llm_step_is_audited(session: Session, profile: Profile) -> None:
 
     entries = _audit(session)
     assert [e.step for e in entries] == ["classify", "extract"]
-    assert [e.prompt_version for e in entries] == ["classify_v1", "extract_v1"]
+    assert [e.prompt_version for e in entries] == ["classify_v1", "extract_v2"]
     for entry, (task, system, user) in zip(entries, fake.calls, strict=True):
         assert entry.item_id == item.id
         assert entry.model == "fake-scripted"

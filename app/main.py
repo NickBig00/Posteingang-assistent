@@ -31,7 +31,16 @@ from app.ingest.service import (
 from app.llm.client import LLMClient
 from app.llm.factory import get_provider
 from app.logging_config import setup_logging
-from app.models import Classification, InboxItem, ItemSource, ItemStatus, ReviewDecision, RuleResult
+from app.models import (
+    DECISION_LABELS,
+    STATUS_LABELS,
+    Classification,
+    InboxItem,
+    ItemSource,
+    ItemStatus,
+    ReviewDecision,
+    RuleResult,
+)
 from app.pipeline import process_new_items
 from app.profiles import Profile, active_profile_key, load_active_profile
 from app.retention import delete_item, retention_days
@@ -61,6 +70,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Posteingangs-Assistent", version="0.1.0", lifespan=lifespan)
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates.env.globals["status_labels"] = STATUS_LABELS
+templates.env.globals["decision_labels"] = DECISION_LABELS
 
 
 def get_storage_dir() -> Path:

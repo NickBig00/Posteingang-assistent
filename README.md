@@ -87,8 +87,8 @@ Textebene werden bei der Verarbeitung per Vision-Modell gelesen (OCR, siehe unte
   anfrage, Reparaturauftrag, Reklamation, Rechnung, Sonstiges). Umschalten per Konfiguration,
   z. B. `PROFILE=handwerk uv run uvicorn app.main:app`; Beispieldaten und Evaluation folgen
   dem aktiven Profil.
-- Prompts liegen versioniert in `prompts/` (`classify_v1.md`, `extract_v1.md`, `draft_v1.md`,
-  `ocr_v1.md`).
+- Prompts liegen versioniert in `prompts/` (`classify_v1.md`, `extract_v2.md`, `draft_v1.md`,
+  `ocr_v1.md`). Ältere Versionen bleiben erhalten, weil Audit-Einträge auf sie verweisen.
 - Der LLM-Anbieter wird per `LLM_PROVIDER` gewählt:
   - `fake` (Standard): deterministisch und offline, für Tests und die Demo ohne API-Key. Kann
     keine Bilder lesen (OCR liefert „kein Text erkannt“).
@@ -155,14 +155,26 @@ anpassen. Entwürfe, die Zahlen, Daten oder Beträge der Vorlage verändern, wer
 (ein Retry, danach manuelle Prüfung). Jeder Entwurf beginnt mit
 `[KI-Vorschlag – bitte vor dem Versand prüfen]` und ist als KI-Vorschlag gespeichert. Diese
 interne Kennzeichnung wird beim Freigeben aus dem Antworttext entfernt und nicht versendet.
+Zeilenumbrüche, mit denen eine Vorlage im Profil umbrochen ist, werden beim Füllen zu ganzen
+Absätzen zusammengezogen; nur der Schlussabsatz (Gruß und Absender) behält seine Zeilen.
+
+**Weitere Anliegen:** Die Extraktion meldet zusätzlich Fragen oder Bitten im Dokument, die über
+die Felder des Typs hinausgehen (z. B. eine Preisfrage in einer Probetraining-Anfrage), als
+kurze Stichworte (`weitere_anliegen`). Sie werden als KI-Hinweis gespeichert und in der
+Detailansicht über dem Entwurf angezeigt. Der Entwurf beantwortet sie bewusst nicht – das LLM
+soll keine Fakten oder Zusagen ergänzen; der freigebende Mensch ergänzt die Antwort selbst.
+Stichworte mit Gesundheitsbezug werden nicht gespeichert, sondern durch einen neutralen Hinweis
+ersetzt.
 
 ## Oberfläche und Freigabe
 
 - **Posteingang** (`/`): alle Eingänge mit Typ (KI), Konfidenz, Ampel aus der Regelprüfung und
   Status; Buttons „Beispieldaten laden“, „Eingänge verarbeiten“ und Upload.
-- **Detailansicht** (`/items/<id>`): Original links; Typ, extrahierte Felder, Regelergebnisse und
-  Vorschlag rechts. Der Entwurf ist bearbeitbar; **Freigeben** oder **Verwerfen**.
-- **Ausführung (Demo)**: erst nach Freigabe möglich – setzt den Status auf `done` und gibt die
+- **Detailansicht** (`/items/<id>`): Original links; Typ, extrahierte Felder, Regelergebnisse,
+  weitere Anliegen und Vorschlag rechts. Der Entwurf ist bearbeitbar; **Freigeben** oder **Verwerfen**.
+- **Status** wird deutsch angezeigt: Neu, Verarbeitet, Manuelle Prüfung, Freigegeben, Verworfen,
+  Erledigt (intern `new`, `processed`, `needs_manual_review`, `approved`, `rejected`, `done`).
+- **Ausführung (Demo)**: erst nach Freigabe möglich – setzt den Status auf „Erledigt“ und gibt die
   freigegebene Antwort als Textdatei zum Export frei (`/items/<id>/export`). Es wird nichts
   automatisch versendet.
 - **Audit-Ansicht** (`/items/<id>/audit`): chronologischer Verlauf aller KI-Schritte.

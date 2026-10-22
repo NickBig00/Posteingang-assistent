@@ -28,6 +28,10 @@ FORBIDDEN_HEALTH_TERMS = (
     "medical",
 )
 
+# Key of the extraction output listing requests beyond the profile fields (see
+# app.llm.schemas); a profile field must not use it.
+ADDITIONAL_REQUESTS_KEY = "weitere_anliegen"
+
 FieldType = Literal["string", "date", "decimal", "boolean", "integer"]
 
 
@@ -47,6 +51,8 @@ class FieldSpec(_Strict):
 
     @model_validator(mode="after")
     def _check_constraints(self) -> Self:
+        if self.name == ADDITIONAL_REQUESTS_KEY:
+            raise ValueError(f"field name '{ADDITIONAL_REQUESTS_KEY}' is reserved")
         if (self.pattern or self.allowed_values) and self.type != "string":
             raise ValueError("pattern/allowed_values are only allowed for string fields")
         if self.pattern is not None:
