@@ -1,0 +1,14 @@
+{
+  "synthetic": true,
+  "description": "Frei erfundene Briefings mit Labels für die Social-Media-Evaluation der Branche Handwerk (ROADMAP_social S9).",
+  "briefings": [
+    {"id": "h01", "area": "notdienst", "occasion_type": "notdienst", "notes": "Notdienst über die Feiertage für Heizung und Sanitär", "facts": {"zeitraum_von": "2026-12-24", "zeitraum_bis": "2026-12-26", "telefon": "01234 98765"}, "channels": ["facebook", "instagram_story"], "labels": {"address_form": "sie", "tags": ["telefon", "story"]}},
+    {"id": "h02", "area": "heizung", "occasion_type": "aktion", "notes": "Herbstaktion Heizungs-Check zum Festpreis", "facts": {"zeitraum_von": "2026-11-02", "zeitraum_bis": "2026-11-30", "preis": "129.00"}, "channels": ["facebook", "instagram_post"], "labels": {"address_form": "sie", "tags": ["preis_und_zeitraum", "preisangabe"]}},
+    {"id": "h03", "area": "sanitaer", "occasion_type": "referenzprojekt", "notes": "Badsanierung in einem Altbau abgeschlossen, bodengleiche Dusche", "facts": {}, "channels": ["instagram_post"], "labels": {"address_form": "sie", "tags": ["ohne_fakten"]}},
+    {"id": "h04", "area": "karriere", "occasion_type": "ausbildung", "notes": "Ausbildungsplätze Anlagenmechaniker SHK ab August frei", "facts": {"datum": "2027-08-01"}, "channels": ["instagram_post", "linkedin"], "labels": {"address_form": "du", "tags": ["datum_fern"]}},
+    {"id": "h05", "area": "heizung", "occasion_type": "saisonhinweis", "notes": "Vor dem Winter Heizung entlüften und Wartung planen", "facts": {}, "channels": ["facebook"], "labels": {"address_form": "sie", "tags": ["ohne_fakten"]}},
+    {"id": "h06", "area": "karriere", "occasion_type": "stellenangebot", "notes": "Wir suchen eine Elektrofachkraft in Vollzeit, Infotag in der Werkstatt", "facts": {"datum": "2026-11-21", "uhrzeit": "10:00", "ort": "Werkstatt"}, "channels": ["linkedin"], "labels": {"address_form": "du", "tags": ["linkedin"]}},
+    {"id": "h07", "area": "notdienst", "occasion_type": "notdienst", "notes": "Notdienst zwischen den Jahren", "facts": {"zeitraum_von": "2026-12-27", "zeitraum_bis": "2027-01-02", "telefon": "+49 1234 98765"}, "channels": ["facebook"], "labels": {"address_form": "sie", "tags": ["telefon_international", "jahreswechsel"]}},
+    {"id": "h08", "area": "sanitaer", "occasion_type": "team", "notes": "Unser Sanitär-Team hat Verstärkung bekommen", "facts": {}, "channels": ["facebook"], "labels": {"address_form": "sie", "tags": ["team"]}}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "description": "Gelabelte, frei erfundene Beitragstexte der Branche Handwerk für die Prüfung auf Personenbezug, Anrede und Gesundheitsbezug (ROADMAP_social S9). Alle Namen sind fiktiv.",
+  "cases": [
+    {"id": "hn01", "area": "heizung", "text": "Heizungs-Check vor dem Winter: Vereinbaren Sie jetzt Ihren Termin.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
+    {"id": "hn02", "area": "sanitaer", "text": "Neues Bad in drei Wochen: sauber geplant, termingerecht übergeben.", "labels": {"health_claim": false, "person": false, "address_form": "neutral"}},
+    {"id": "hn03", "area": "notdienst", "text": "Rohrbruch? Unser Notdienst ist rund um die Uhr für Sie da.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
+    {"id": "hn04", "area": "karriere", "text": "Starte deine Ausbildung bei uns und lern das Handwerk von Grund auf.", "labels": {"health_claim": false, "person": false, "address_form": "du"}},
+    {"id": "hp01", "area": "karriere", "text": "Meister Bernd zeigt dir in der Werkstatt, wie eine Heizung funktioniert.", "labels": {"health_claim": false, "person": true, "address_form": "du"}},
+    {"id": "hp02", "area": "sanitaer", "text": "Danke an Familie Beispiel für das Vertrauen bei der Badsanierung, Herr Beispiel war begeistert.", "labels": {"health_claim": false, "person": true, "address_form": "neutral"}},
+    {"id": "hp03", "area": "heizung", "text": "Unsere Azubine Lena hat ihre Gesellenprüfung bestanden!", "labels": {"health_claim": false, "person": true, "address_form": "neutral"}},
+    {"id": "ha01", "area": "heizung", "text": "Melde dich für deinen Heizungs-Check an.", "labels": {"health_claim": false, "person": false, "address_form": "du"}},
+    {"id": "ha02", "area": "karriere", "text": "Bewerben Sie sich jetzt für deine Ausbildung bei uns.", "labels": {"health_claim": false, "person": false, "address_form": "gemischt"}},
+    {"id": "hg01", "area": "sanitaer", "text": "Unser Wasserfilter heilt Allergien und schützt Ihr Immunsystem.", "labels": {"health_claim": true, "person": false, "address_form": "sie"}}
+  ]
+}

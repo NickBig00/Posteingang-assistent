@@ -31,3 +31,4 @@ data/
 # Brand profiles of real customers never belong in the repository (BRAND_PROFILES_DIR).
 profiles/brand/*
 !profiles/brand/demo.yaml
+!profiles/brand/handwerk_demo.yaml

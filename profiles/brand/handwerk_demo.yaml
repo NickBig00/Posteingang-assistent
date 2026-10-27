@@ -1,0 +1,69 @@
+# Fiktives Demo-Markenprofil für die Branche Handwerk (ROADMAP_social S9). Alle Angaben erfunden.
+key: handwerk_demo
+name: Demo-Haustechnik Musterstadt
+description: >-
+  Fiktiver Meisterbetrieb für Heizung, Sanitär und Elektro mit 24-Stunden-Notdienst und
+  eigener Ausbildung.
+industry: handwerk
+hashtags: ["#DemoHaustechnik", "#Musterstadt"]
+max_hashtags: 5
+call_to_action: Jetzt Termin vereinbaren
+contact:
+  address: Werkstattweg 5, 12345 Musterstadt
+  phone: 01234 98765
+  email: info@haustechnik.example
+  website: https://haustechnik.example
+forbidden_terms: [billig, Pfusch, Dumpingpreis, schwarz]
+areas:
+  - key: heizung
+    label: Heizung
+    address_form: sie
+    tone: sachlich, kompetent, beratend
+    channels: [facebook, instagram_post]
+    emojis: {allowed: false}
+    hashtags: ["#Heizung"]
+    examples:
+      - >-
+        Heizungs-Check vor dem Winter: Unsere Fachleute prüfen Ihre Anlage und beraten Sie zu
+        Einstellungen und Wartung.
+      - >-
+        Neue Wärmepumpe im Einfamilienhaus: ein Referenzprojekt aus Musterstadt, sauber geplant
+        und termingerecht übergeben.
+  - key: sanitaer
+    label: Sanitär
+    address_form: sie
+    tone: freundlich, verlässlich, lösungsorientiert
+    channels: [facebook, instagram_post]
+    emojis: {allowed: true, max: 1}
+    hashtags: ["#Badsanierung"]
+    examples:
+      - >-
+        Barrierearmes Bad geplant? Wir beraten Sie gern vor Ort und zeigen Möglichkeiten für
+        Ihren Grundriss.
+      - >-
+        Tropft der Wasserhahn? Kleine Reparaturen erledigen wir schnell – sprechen Sie uns an.
+  - key: notdienst
+    label: Notdienst
+    address_form: sie
+    tone: klar, ruhig, auf das Wesentliche
+    channels: [facebook, instagram_story]
+    emojis: {allowed: false}
+    examples:
+      - >-
+        Heizung ausgefallen? Unser Notdienst ist auch am Wochenende für Sie erreichbar.
+      - >-
+        Rohrbruch am Feiertag? Rufen Sie unseren Notdienst an – wir sind schnell bei Ihnen.
+  - key: karriere
+    label: Karriere und Ausbildung
+    address_form: du
+    tone: locker, ehrlich, auf Augenhöhe
+    channels: [instagram_post, linkedin]
+    emojis: {allowed: true, max: 2}
+    hashtags: ["#Ausbildung"]
+    call_to_action: Jetzt bewerben
+    examples:
+      - >-
+        Du schraubst gern und willst wissen, wie Technik im Haus funktioniert? Starte deine
+        Ausbildung bei uns. 🔧
+      - >-
+        Unser Team sucht Verstärkung: Komm vorbei und lern die Werkstatt kennen.

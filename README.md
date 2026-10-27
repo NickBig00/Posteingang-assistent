@@ -390,6 +390,25 @@ Fakten korrekt, mindestens 90 % erkannte Gesundheitsversprechen. Ergebnis mit de
 (Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 92,9 % (13 von 14, nur
 Code; der implizite Fall wird erst von einem echten Modell erkannt), Personen 100 %.
 
+### Zweite Branche: Handwerk
+
+Umschalten nur per Konfiguration, ohne Code-Änderung:
+
+```bash
+PROFILE=handwerk BRAND_PROFILE=handwerk_demo uv run uvicorn app.main:app
+PROFILE=handwerk BRAND_PROFILE=handwerk_demo uv run python -m app.cli social-evaluate
+```
+
+- `profiles/handwerk.yaml`, Abschnitt `social:`: Anlass-Typen (Referenzprojekt, Saisonhinweis,
+  Notdienst mit Pflichtfakten Telefonnummer und Zeitraum, Aktion, Team, Stellenangebot,
+  Ausbildung), Vorher-nachher-Bilder, Preisangaben inkl. MwSt. (Warnung), eine kurze
+  Begriffsliste für Gesundheitsbezug (z. B. Wasserfilter) und ein Kampagnenplan.
+- `profiles/brand/handwerk_demo.yaml`: fiktive „Demo-Haustechnik Musterstadt“ mit den Bereichen
+  Heizung, Sanitär, Notdienst (Sie) und Karriere und Ausbildung (du, inkl. LinkedIn).
+- Beispieldaten unter `samples/social/handwerk/`; Bericht
+  `docs/evaluation/social_handwerk_fake.md` (Fakten 100 %, Längen 100 %,
+  Gesundheitsbezug 1 von 1, Personen 3 von 3).
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

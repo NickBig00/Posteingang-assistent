@@ -1,0 +1,11 @@
+{
+  "synthetic": true,
+  "description": "Fiktive Demo-Kampagne für die Demo-Haustechnik (ROADMAP_social S9).",
+  "name": "Heizungs-Check vor dem Winter",
+  "area": "heizung",
+  "occasion_type": "saisonhinweis",
+  "notes": "Heizungs-Check vor dem Winter: Anlage prüfen, Einstellungen optimieren, Termine begrenzt.",
+  "channels": ["facebook", "instagram_post"],
+  "facts": {},
+  "event_in_days": 21
+}

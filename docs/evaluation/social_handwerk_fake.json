@@ -1,0 +1,164 @@
+{
+  "industry": "handwerk",
+  "brand": "handwerk_demo",
+  "provider": "fake",
+  "created_at": "2026-10-27 22:39 UTC",
+  "generation": {
+    "drafts": 11,
+    "facts_rate": 1.0,
+    "length_rate": 1.0,
+    "address_rate": 1.0,
+    "needs_manual_review": 0,
+    "details": [
+      {
+        "sample_id": "h01",
+        "area": "notdienst",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h01",
+        "area": "notdienst",
+        "channel": "Instagram-Story",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h02",
+        "area": "heizung",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h02",
+        "area": "heizung",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h03",
+        "area": "sanitaer",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h04",
+        "area": "karriere",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h04",
+        "area": "karriere",
+        "channel": "LinkedIn-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h05",
+        "area": "heizung",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h06",
+        "area": "karriere",
+        "channel": "LinkedIn-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h07",
+        "area": "notdienst",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "h08",
+        "area": "sanitaer",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      }
+    ]
+  },
+  "detection": {
+    "health_claims": {
+      "positives": 1,
+      "negatives": 9,
+      "true_positives": 1,
+      "false_positives": 0,
+      "missed": [],
+      "false_alarms": [],
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    "persons": {
+      "positives": 3,
+      "negatives": 7,
+      "true_positives": 3,
+      "false_positives": 0,
+      "missed": [],
+      "false_alarms": [],
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    "address_form_accuracy": 1.0
+  },
+  "targets": {
+    "facts_rate": 1.0,
+    "health_recall": 0.9,
+    "met": true
+  }
+}

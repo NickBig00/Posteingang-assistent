@@ -76,7 +76,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Bericht wird erzeugt; Ergebnis im PR dokumentiert.
 
-## [ ] S9 – Zweites Branchenprofil für Social Media
+## [x] S9 – Zweites Branchenprofil für Social Media
 
 - Abschnitt `social:` im Profil `profiles/handwerk.yaml` und ein fiktives Handwerker-Markenprofil
 - Einige Beispiel-Briefings mit Labels
