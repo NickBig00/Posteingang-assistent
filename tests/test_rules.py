@@ -6,12 +6,13 @@ import pytest
 from pydantic import JsonValue
 from sqlmodel import Session
 
-from app.models import Member, RuleOutcome
-from app.profiles import PROFILES_DIR, DocumentType, Profile, load_profile
-from app.rules import RULES, RuleContext, run_rules, validate_profile_rules
-from app.rules.builtin import invoice_totals, notice_period, pause_period, required_fields
-from app.rules.engine import FieldValue, UnknownRuleError, find_member, rule, typed_fields
-from app.seed import seed_members
+from app.core.profiles import PROFILES_DIR
+from app.inbox.models import Member, RuleOutcome
+from app.inbox.profiles import DocumentType, Profile, load_profile
+from app.inbox.rules import RULES, RuleContext, run_rules, validate_profile_rules
+from app.inbox.rules.builtin import invoice_totals, notice_period, pause_period, required_fields
+from app.inbox.rules.engine import FieldValue, UnknownRuleError, find_member, rule, typed_fields
+from app.inbox.seed import seed_members
 
 RECEIVED = date(2026, 10, 15)
 

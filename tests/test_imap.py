@@ -4,12 +4,13 @@ from email.message import EmailMessage
 from pathlib import Path
 
 import pytest
+from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from app import cli
-from app.ingest.imap import (
+from app.inbox import cli
+from app.inbox.ingest.imap import (
     IMAP_TIMEOUT_SECONDS,
     ImapConfig,
     ImapFetchError,
@@ -18,9 +19,9 @@ from app.ingest.imap import (
     fetch_new_mail,
     imap_config_from_env,
 )
-from app.ingest.service import MAX_UPLOAD_BYTES
-from app.main import app, get_imap_config
-from app.models import InboxItem, ItemSource
+from app.inbox.ingest.service import MAX_UPLOAD_BYTES
+from app.inbox.models import InboxItem, ItemSource
+from app.inbox.web import get_imap_config
 
 CONFIG = ImapConfig(host="imap.example.com", user="test@example.com", password="nicht-echt")
 
@@ -221,7 +222,7 @@ def test_incomplete_config(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def imap_server(monkeypatch: pytest.MonkeyPatch) -> Iterator[FakeImap]:
     server = FakeImap({"1": _mail("Kündigung M-10001")})
-    monkeypatch.setattr("app.ingest.imap.connect", lambda _config: server)
+    monkeypatch.setattr("app.inbox.ingest.imap.connect", lambda _config: server)
     app.dependency_overrides[get_imap_config] = lambda: CONFIG
     yield server
 
@@ -255,7 +256,7 @@ def test_cli_fetch_mail(
     _clear_env(monkeypatch)
     server = FakeImap({"1": _mail("A"), "2": _mail("B")})
     monkeypatch.setattr(cli, "engine", engine)
-    monkeypatch.setattr("app.ingest.imap.connect", lambda _config: server)
+    monkeypatch.setattr("app.inbox.ingest.imap.connect", lambda _config: server)
     monkeypatch.setenv("STORAGE_DIR", str(raw_dir))
     monkeypatch.setenv("IMAP_HOST", "imap.example.com")
     monkeypatch.setenv("IMAP_USER", "demo@example.com")

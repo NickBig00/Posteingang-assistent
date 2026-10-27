@@ -2,14 +2,14 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app.models import (
+from app.core.approval import ReviewDecision
+from app.inbox.models import (
     Classification,
     Extraction,
     InboxItem,
     ItemSource,
     ItemStatus,
     Review,
-    ReviewDecision,
     RuleOutcome,
     RuleResult,
     Suggestion,

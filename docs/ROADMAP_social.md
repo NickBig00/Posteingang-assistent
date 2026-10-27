@@ -4,7 +4,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 ---
 
-## [ ] S0 – Umbau zum modularen Monolithen
+## [x] S0 – Umbau zum modularen Monolithen
 
 - Bestehenden Code aufteilen in `app/core/` (Login/Demo-Benutzer, Freigabe, Audit, LLM-Interface, Profil-Loader, gemeinsame UI) und `app/inbox/` (Posteingang)
 - Gemeinsame Navigation mit Platzhalter „Social Media“; Module per Konfiguration ein- und ausschaltbar

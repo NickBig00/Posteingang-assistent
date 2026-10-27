@@ -5,19 +5,20 @@ from pathlib import Path
 import pytest
 from pydantic import JsonValue
 
-from app import cli
-from app.evaluation import (
+from app.core.llm.base import LLMTask
+from app.core.llm.fake import FakeProvider
+from app.core.profiles import PROFILES_DIR
+from app.inbox import cli
+from app.inbox.evaluation import (
     compare_fields,
     evaluate,
     normalize_value,
     render_markdown,
     write_report,
 )
-from app.ingest.normalize import normalize
-from app.llm.base import LLMTask
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.profiles import PROFILES_DIR, Profile, load_profile
+from app.inbox.ingest.normalize import normalize
+from app.inbox.llm.client import LLMClient
+from app.inbox.profiles import Profile, load_profile
 from tests.conftest import SAMPLES_DIR
 
 

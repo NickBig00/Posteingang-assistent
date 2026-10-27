@@ -2,12 +2,13 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session
 
-from app.db import get_session, init_db, make_engine
-from app.main import app, get_storage_dir
+from app.core.db import get_session, init_db, make_engine
+from app.inbox.web import get_storage_dir
 
 SAMPLES_DIR = Path(__file__).resolve().parent.parent / "samples" / "fitness"
 

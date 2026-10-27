@@ -2,33 +2,33 @@ import re
 from collections.abc import Iterator
 
 import pytest
+from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.main import app, get_llm_client
-from app.models import (
-    DECISION_LABELS,
+from app.core.approval import DECISION_LABELS, ReviewDecision
+from app.core.llm.fake import FakeProvider
+from app.inbox.llm.client import LLMClient
+from app.inbox.models import (
     STATUS_LABELS,
     InboxItem,
     ItemSource,
     ItemStatus,
     Review,
-    ReviewDecision,
     RuleOutcome,
     RuleResult,
     Suggestion,
 )
-from app.review import (
+from app.inbox.review import (
     ReviewNotAllowedError,
     execute_item,
     final_text,
     review_item,
     traffic_light,
 )
-from app.suggestions import AI_LABEL
+from app.inbox.suggestions import AI_LABEL
+from app.inbox.web import get_llm_client
 
 
 def _item(session: Session, status: ItemStatus, draft: str | None = "Entwurf") -> InboxItem:

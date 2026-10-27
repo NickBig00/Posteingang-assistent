@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from app.rules.dates import (
+from app.inbox.rules.dates import (
     add_months,
     contract_term_ends,
     earliest_contract_end,

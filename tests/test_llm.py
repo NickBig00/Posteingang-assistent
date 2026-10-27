@@ -10,8 +10,8 @@ import anthropic
 import httpx2
 import pytest
 
-from app.llm.anthropic_provider import AnthropicProvider
-from app.llm.base import (
+from app.core.llm.anthropic_provider import AnthropicProvider
+from app.core.llm.base import (
     Completion,
     LLMProvider,
     LLMProviderError,
@@ -19,12 +19,13 @@ from app.llm.base import (
     LLMTask,
     VisualInput,
 )
-from app.llm.client import LLMClient
-from app.llm.factory import get_provider
-from app.llm.fake import FakeProvider
-from app.llm.prompts import PROMPTS_DIR, PromptError, load_prompt
-from app.llm.schemas import extraction_model
-from app.profiles import PROFILES_DIR, Profile, load_profile
+from app.core.llm.factory import get_provider
+from app.core.llm.fake import FakeProvider
+from app.core.llm.prompts import PROMPTS_DIR, PromptError, load_prompt
+from app.core.profiles import PROFILES_DIR
+from app.inbox.llm.client import LLMClient
+from app.inbox.llm.schemas import extraction_model
+from app.inbox.profiles import Profile, load_profile
 
 APP_DIR = Path(__file__).resolve().parent.parent / "app"
 
@@ -370,12 +371,13 @@ def test_custom_provider_can_implement_interface(profile: Profile) -> None:
 # --- architecture rule from CLAUDE.md ---
 
 
-def test_provider_sdks_are_only_imported_in_llm_package() -> None:
+def test_provider_sdks_are_only_imported_in_core_llm_package() -> None:
     pattern = re.compile(r"^\s*(import|from)\s+(anthropic|openai|mistralai|google\.genai)\b", re.M)
     offenders = [
         str(path.relative_to(APP_DIR))
         for path in APP_DIR.rglob("*.py")
-        if path.parent.name != "llm" and pattern.search(path.read_text(encoding="utf-8"))
+        if path.parent != APP_DIR / "core" / "llm"
+        and pattern.search(path.read_text(encoding="utf-8"))
     ]
 
     assert offenders == []

@@ -5,8 +5,8 @@ from sqlalchemy import Engine, delete, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app.audit import AuditEntryImmutableError, audit_outputs, hash_input, write_audit_entry
-from app.models import AuditEntry
+from app.core.audit import AuditEntryImmutableError, audit_outputs, hash_input, write_audit_entry
+from app.core.models import AuditEntry
 
 
 def _write(session: Session, **overrides: object) -> AuditEntry:

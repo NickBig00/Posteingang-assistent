@@ -8,15 +8,16 @@ from pydantic import ValidationError
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.llm.prompts import load_prompt
-from app.llm.schemas import MAX_ADDITIONAL_REQUESTS, extraction_model
-from app.models import AdditionalRequest, Extraction, InboxItem, ItemSource, ItemStatus
-from app.pipeline import HEALTH_TOPIC_PLACEHOLDER, additional_request_topics, process_item
-from app.profiles import ADDITIONAL_REQUESTS_KEY, PROFILES_DIR, Profile, load_profile
-from app.retention import delete_item
-from app.review import load_details, reprocess_item
+from app.core.llm.fake import FakeProvider
+from app.core.llm.prompts import load_prompt
+from app.core.profiles import PROFILES_DIR
+from app.inbox.llm.client import LLMClient
+from app.inbox.llm.schemas import MAX_ADDITIONAL_REQUESTS, extraction_model
+from app.inbox.models import AdditionalRequest, Extraction, InboxItem, ItemSource, ItemStatus
+from app.inbox.pipeline import HEALTH_TOPIC_PLACEHOLDER, additional_request_topics, process_item
+from app.inbox.profiles import ADDITIONAL_REQUESTS_KEY, Profile, load_profile
+from app.inbox.retention import delete_item
+from app.inbox.review import load_details, reprocess_item
 
 CLASSIFY = '{"document_type": "probetraining_anfrage", "confidence": 0.9}'
 LOW = '{"document_type": "probetraining_anfrage", "confidence": 0.3}'

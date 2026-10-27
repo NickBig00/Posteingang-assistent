@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from app.profiles import PROFILES_DIR, Profile, load_profile
+from app.core.profiles import PROFILES_DIR
+from app.inbox.profiles import Profile, load_profile
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = ROOT / "scripts"
