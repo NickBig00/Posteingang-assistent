@@ -2,7 +2,6 @@ import re
 from collections.abc import Iterator
 
 import pytest
-from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
@@ -29,6 +28,7 @@ from app.inbox.review import (
 )
 from app.inbox.suggestions import AI_LABEL
 from app.inbox.web import get_llm_client
+from app.main import app
 
 
 def _item(session: Session, status: ItemStatus, draft: str | None = "Entwurf") -> InboxItem:

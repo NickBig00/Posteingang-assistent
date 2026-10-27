@@ -6,7 +6,6 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from app.main import app
 from fastapi.testclient import TestClient
 from pydantic import JsonValue
 from sqlalchemy import Engine
@@ -23,6 +22,7 @@ from app.inbox.models import Classification, InboxItem
 from app.inbox.profiles import load_active_profile, load_profile
 from app.inbox.rules import validate_profile_rules
 from app.inbox.web import get_llm_client
+from app.main import app
 
 ROOT = Path(__file__).resolve().parent.parent
 PROFILES = ["fitness", "handwerk"]

@@ -3,7 +3,6 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
@@ -27,6 +26,7 @@ from app.inbox.models import (
 from app.inbox.pipeline import process_item, process_new_items
 from app.inbox.profiles import Profile, load_profile
 from app.inbox.web import get_llm_client
+from app.main import app
 from tests.conftest import SAMPLES_DIR
 
 KUENDIGUNG = json.dumps(

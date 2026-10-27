@@ -257,9 +257,8 @@ def _personal_terms() -> set[str]:
 def test_no_personal_data_in_application_logs(
     client: TestClient, engine: Engine, caplog: pytest.LogCaptureFixture
 ) -> None:
-    from app.main import app
-
     from app.inbox.web import get_llm_client
+    from app.main import app
 
     app.dependency_overrides[get_llm_client] = lambda: LLMClient(FakeProvider())
     caplog.set_level(logging.DEBUG)

@@ -4,7 +4,6 @@ from email.message import EmailMessage
 from pathlib import Path
 
 import pytest
-from app.main import app
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
@@ -22,6 +21,7 @@ from app.inbox.ingest.imap import (
 from app.inbox.ingest.service import MAX_UPLOAD_BYTES
 from app.inbox.models import InboxItem, ItemSource
 from app.inbox.web import get_imap_config
+from app.main import app
 
 CONFIG = ImapConfig(host="imap.example.com", user="test@example.com", password="nicht-echt")
 

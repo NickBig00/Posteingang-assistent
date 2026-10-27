@@ -7,7 +7,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from app.main import app
 from fastapi.testclient import TestClient
 from fpdf import FPDF
 from sqlalchemy import Engine
@@ -28,6 +27,7 @@ from app.inbox.pipeline import process_item
 from app.inbox.profiles import Profile, load_profile
 from app.inbox.review import ReviewNotAllowedError, reopen_item, reprocess_item, review_item
 from app.inbox.web import get_llm_client
+from app.main import app
 
 LOW = '{"document_type": "sonstiges", "confidence": 0.3}'
 HIGH = '{"document_type": "sonstiges", "confidence": 0.95}'
