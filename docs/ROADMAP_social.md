@@ -69,7 +69,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Kampagne mit mindestens drei Beiträgen in der Demo; alle Prüfungen greifen je Beitrag.
 
-## [ ] S8 – Evaluation
+## [x] S8 – Evaluation
 
 - Synthetische Briefings mit Labels unter `samples/social/`, verteilt über alle Bereiche (inkl. Anrede-Prüfung du/Sie)
 - Evaluationsskript gemäß SPEC Kapitel 9, Bericht unter `docs/evaluation/`

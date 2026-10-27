@@ -24,10 +24,12 @@ def _post_draft(user: str) -> str:
     # Campaign step "Erinnerung (Anmeldung läuft)": the label is the heading.
     heading = f"{step.split('(')[0].strip()}: {occasion}" if step else occasion
     closing = f"{call_to_action} – {_GREETING.get(address, _GREETING['sie'])}"
+    # The limit covers text and hashtags (separated by a blank line).
+    limit = max_length - (len(" ".join(hashtags)) + 2 if hashtags else 0)
     text = "\n".join([f"{heading}!", notes, "", *facts, "", closing]).strip()
-    if len(text) > max_length:
+    if len(text) > limit:
         # Short channels (story): facts and closing only.
-        text = "\n".join([f"{heading}!", *facts, closing])[:max_length].strip()
+        text = "\n".join([f"{heading}!", *facts, closing])[:limit].strip()
     return json.dumps({"text": text, "hashtags": hashtags}, ensure_ascii=False)
 
 

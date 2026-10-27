@@ -370,6 +370,26 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
 - **Demo:** „Demo-Kampagne anlegen“ erzeugt die fiktive Kampagne aus
   `samples/social/<branche>/demo_campaign.json` (Anlass in 28 Tagen, 3 Schritte × 2 Kanäle).
 
+### Evaluation Social Media
+
+```bash
+uv run python -m app.cli social-evaluate     # Anbieter per LLM_PROVIDER, Branche per PROFILE
+```
+
+Das Skript (`app/social/evaluation.py`) arbeitet in einer temporären Datenbank:
+
+1. **Entwürfe:** synthetische Briefings mit Labels (`samples/social/<branche>/briefings.json`,
+   verteilt über alle Bereiche, du und Sie) → Entwürfe je Kanal → Anteil der Entwürfe mit allen
+   Fakten unverändert, eingehaltener Länge und passender Anrede.
+2. **Erkennung:** gelabelter Testsatz (`samples/social/<branche>/assessment_cases.json`) →
+   Code-Prüfungen plus KI-Einschätzung → Erkennungsrate (Recall) und Präzision für
+   Gesundheitsversprechen und Personen, Trefferquote der Anrede-Prüfung.
+
+Bericht: `docs/evaluation/social_<branche>_<anbieter>.md` (plus `.json`). Ziele laut SPEC: 100 %
+Fakten korrekt, mindestens 90 % erkannte Gesundheitsversprechen. Ergebnis mit dem Fake-Provider
+(Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 92,9 % (13 von 14, nur
+Code; der implizite Fall wird erst von einem echten Modell erkannt), Personen 100 %.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

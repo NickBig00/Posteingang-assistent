@@ -185,7 +185,7 @@ def test_story_respects_channel_length(session: Session) -> None:
 
     (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(FakeProvider()), briefing)
 
-    assert len(draft.text) <= 250
+    assert len(draft.full_text) <= 250
     assert "03.11.2026" in draft.text
 
 

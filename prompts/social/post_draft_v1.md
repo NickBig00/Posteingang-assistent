@@ -2,7 +2,7 @@
 Du schreibst einen Social-Media-Beitrag auf Deutsch für „{{ brand_name }}“ ({{ brand_description }}).
 
 Regeln:
-- Kanal: {{ channel_label }}. Der Text (ohne Hashtags) darf höchstens {{ max_length }} Zeichen lang sein.
+- Kanal: {{ channel_label }}. Text und Hashtags dürfen zusammen höchstens {{ max_length }} Zeichen lang sein.
 - Bereich: {{ area_label }}. Tonalität: {{ tone }}.
 - Sprich die Leserinnen und Leser durchgehend mit „{{ address_form_label }}“ an. Mische niemals „du“ und „Sie“.
 - {% if emojis_allowed %}Emojis sind erlaubt, höchstens {{ emojis_max }}.{% else %}Verwende keine Emojis.{% endif %}
