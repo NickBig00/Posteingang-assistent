@@ -6,8 +6,9 @@ import pytest
 from pydantic import JsonValue
 from sqlmodel import Session
 
+from app.core.members import Member
 from app.core.profiles import PROFILES_DIR
-from app.inbox.models import Member, RuleOutcome
+from app.inbox.models import RuleOutcome
 from app.inbox.profiles import DocumentType, Profile, load_profile
 from app.inbox.rules import RULES, RuleContext, run_rules, validate_profile_rules
 from app.inbox.rules.builtin import invoice_totals, notice_period, pause_period, required_fields

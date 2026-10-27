@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from app.core.llm.fake import FakeProvider
 from app.core.outcomes import Outcome
 from app.social.briefings import create_briefing
+from app.social.checking import run_checks
 from app.social.checks import (
     CheckInput,
     Finding,
@@ -20,7 +21,6 @@ from app.social.checks import (
     check_phrase_rules,
     check_term_rules,
     deterministic_checks,
-    run_checks,
 )
 from app.social.drafts import generate_drafts
 from app.social.facts import BriefingFacts
@@ -29,7 +29,7 @@ from app.social.llm.client import SocialLLMClient
 from app.social.models import Channel, CheckResult, PostDraft
 from app.social.profiles import EmojiPolicy, PhraseRule, TermRule
 from app.social.textscan import find_dates, find_phones, find_prices, find_times
-from tests.social_helpers import course_input, demo_config
+from tests.social_helpers import course_input, demo_config, scripted
 
 CONFIG = demo_config()
 COURSE = BriefingFacts(datum=date(2026, 11, 3), uhrzeit=time(18, 30), ort="Kursraum 2")
@@ -441,7 +441,7 @@ def test_stored_results_replace_old_ones(session: Session) -> None:
     assert first and {r.outcome for r in first} == {Outcome.OK}
 
     draft.text = draft.text.replace("03.11.2026", "04.11.2026")
-    run_checks(session, CONFIG, draft)
+    run_checks(session, CONFIG, SocialLLMClient(FakeProvider()), draft)
 
     results = session.exec(select(CheckResult).where(CheckResult.draft_id == draft.id)).all()
     assert len(results) == len(first)
@@ -492,7 +492,7 @@ def test_highlight_ignores_spans_outside_text() -> None:
 
 def test_draft_needing_manual_text_has_length_error(session: Session) -> None:
     briefing = create_briefing(session, CONFIG, course_input(channels=[Channel.FACEBOOK]), "demo")
-    generate_drafts(session, CONFIG, SocialLLMClient(FakeProvider(["x", "y"])), briefing)
+    generate_drafts(session, CONFIG, SocialLLMClient(scripted(post_draft=["x", "y"])), briefing)
 
     draft = session.exec(select(PostDraft)).one()
     results = session.exec(select(CheckResult).where(CheckResult.check_key == "laenge")).all()

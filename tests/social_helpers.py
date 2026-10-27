@@ -1,8 +1,11 @@
 """Shared fixtures data for the social media tests (fictitious values only)."""
 
+from collections import deque
 from datetime import date, time
 from decimal import Decimal
 
+from app.core.llm.base import LLMProviderError, LLMTask
+from app.core.llm.fake import FakeProvider
 from app.core.profiles import PROFILES_DIR
 from app.social.briefings import BriefingInput
 from app.social.facts import BriefingFacts
@@ -31,3 +34,21 @@ def offer_facts() -> BriefingFacts:
     return BriefingFacts(
         zeitraum_von=date(2026, 11, 1), zeitraum_bis=date(2026, 11, 14), preis=Decimal("19.00")
     )
+
+
+def scripted(**answers: list[str]) -> FakeProvider:
+    """Fake provider with scripted answers per task; other tasks use the offline heuristic.
+
+    Raises (like a provider error) once the answers of a task are used up.
+    """
+    queues = {task: deque(values) for task, values in answers.items()}
+    heuristic = FakeProvider()
+
+    def respond(task: LLMTask, system: str, user: str) -> str:
+        if task not in queues:
+            return heuristic.complete(task=task, system=system, user=user).text
+        if not queues[task]:
+            raise LLMProviderError(f"no scripted answer left for {task}")
+        return queues[task].popleft()
+
+    return FakeProvider(respond)

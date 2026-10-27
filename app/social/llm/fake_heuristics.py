@@ -2,6 +2,7 @@
 
 Deterministic and simple: the draft is assembled from the prompt sections – occasion,
 facts in the given spelling, key points, call to action – in the requested address form.
+The assessment reports no findings (no hidden detection logic in the fake).
 """
 
 import json
@@ -29,4 +30,11 @@ def _post_draft(user: str) -> str:
     return json.dumps({"text": text, "hashtags": hashtags}, ensure_ascii=False)
 
 
+def _post_assess(user: str) -> str:
+    # The offline fake makes no assessment of its own: it reports no findings. Detection
+    # in the demo and the evaluation with the fake provider is therefore code only.
+    return json.dumps({"health_claims": [], "persons": [], "address_form": "neutral"})
+
+
 register_heuristic("post_draft", _post_draft)
+register_heuristic("post_assess", _post_assess)

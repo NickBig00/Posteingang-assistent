@@ -8,8 +8,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
 
-from sqlmodel import Session, delete
-
 from app.core.outcomes import Outcome
 from app.social.channels import CHANNEL_SPECS
 from app.social.facts import (
@@ -19,7 +17,7 @@ from app.social.facts import (
     format_price,
     format_time,
 )
-from app.social.models import CHANNEL_LABELS, Briefing, Channel, CheckResult, PostDraft
+from app.social.models import CHANNEL_LABELS, Briefing, Channel, PostDraft
 from app.social.profiles import EmojiPolicy, PhraseRule, SocialConfig, TermRule
 from app.social.textscan import (
     FREE_WORDS,
@@ -342,37 +340,3 @@ def check_input(config: SocialConfig, briefing: Briefing, draft: PostDraft) -> C
         channel=draft.channel,
         facts=BriefingFacts.from_json(briefing.facts),
     )
-
-
-def store_findings(session: Session, draft: PostDraft, findings: Sequence[Finding]) -> None:
-    """Replace the stored check results of a draft (results always belong to its current text)."""
-    if draft.id is None:
-        raise ValueError("draft must be persisted before it is checked")
-    session.exec(delete(CheckResult).where(CheckResult.draft_id == draft.id))  # type: ignore[call-overload]
-    text = draft.full_text
-    for finding in findings:
-        start, end = finding.span if finding.span else (None, None)
-        session.add(
-            CheckResult(
-                draft_id=draft.id,
-                check_key=finding.check_key,
-                outcome=finding.outcome,
-                reason=finding.reason,
-                span_start=start,
-                span_end=end,
-                excerpt=text[start:end] if start is not None else None,
-                is_ai_assessment=finding.is_ai_assessment,
-                requires_confirmation=finding.requires_confirmation,
-            )
-        )
-    session.commit()
-
-
-def run_checks(session: Session, config: SocialConfig, draft: PostDraft) -> list[Finding]:
-    """Run all checks on the current text of the draft and store the results."""
-    briefing = session.get(Briefing, draft.briefing_id)
-    if briefing is None:
-        raise ValueError(f"briefing {draft.briefing_id} not found")
-    findings = deterministic_checks(draft.full_text, check_input(config, briefing, draft))
-    store_findings(session, draft, findings)
-    return findings

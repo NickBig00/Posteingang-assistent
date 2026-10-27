@@ -14,12 +14,13 @@ from app.core.llm.prompts import load_prompt
 from app.core.models import AuditEntry
 from app.main import app
 from app.social.briefings import BriefingFormError, create_briefing, parse_briefing_form
+from app.social.checking import ASSESS_STEP
 from app.social.drafts import DRAFT_STEP, generate_drafts
 from app.social.facts import format_price, formatted_facts, parse_price_input
 from app.social.llm.client import SOCIAL_PROMPTS_DIR, SocialLLMClient
 from app.social.models import Briefing, Channel, PostDraft, PostStatus
 from app.social.web import get_social_client, get_social_config
-from tests.social_helpers import course_input, demo_config, offer_facts
+from tests.social_helpers import course_input, demo_config, offer_facts, scripted
 
 CONFIG = demo_config()
 VALID_DRAFT = json.dumps({"text": "Neuer Kurs am 03.11.2026 um 18:30 Uhr.", "hashtags": ["#Kurse"]})
@@ -194,8 +195,12 @@ def test_every_call_is_audited(session: Session) -> None:
     drafts = generate_drafts(session, CONFIG, SocialLLMClient(FakeProvider()), briefing)
 
     entries = session.exec(select(AuditEntry).order_by(AuditEntry.id)).all()  # type: ignore[arg-type]
-    assert [e.step for e in entries] == [DRAFT_STEP, DRAFT_STEP]
-    for entry, draft in zip(entries, drafts, strict=True):
+    # Per draft: the draft call, then the assessment of its checks.
+    assert [e.step for e in entries] == [DRAFT_STEP, ASSESS_STEP] * 2
+    for entry, draft in zip(entries[1::2], drafts, strict=True):
+        assert entry.prompt_version == "post_assess_v1"
+        assert entry.model_params["draft_id"] == draft.id
+    for entry, draft in zip(entries[::2], drafts, strict=True):
         assert entry.prompt_version == "post_draft_v1"
         assert entry.item_id is None
         assert entry.model == "fake-heuristic-v1"
@@ -227,13 +232,15 @@ def test_prompt_contains_briefing_data(session: Session) -> None:
 
 def test_invalid_output_is_retried_once(session: Session) -> None:
     briefing = _briefing(session, channels=[Channel.FACEBOOK])
-    provider = FakeProvider(['{"text": ""}', VALID_DRAFT])
+    provider = scripted(post_draft=['{"text": ""}', VALID_DRAFT])
 
     (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
 
     assert draft.status is PostStatus.IN_REVIEW
     assert draft.hashtags == ["#Kurse"]
-    entries = session.exec(select(AuditEntry).order_by(AuditEntry.id)).all()  # type: ignore[arg-type]
+    entries = session.exec(
+        select(AuditEntry).where(AuditEntry.step == DRAFT_STEP).order_by(AuditEntry.id)  # type: ignore[arg-type]
+    ).all()
     assert [e.model_params["attempt"] for e in entries] == [1, 2]
     assert entries[0].error is not None and entries[0].error.startswith("invalid output")
 
@@ -249,20 +256,23 @@ def test_invalid_output_is_retried_once(session: Session) -> None:
 def test_needs_manual_review_after_second_failure(session: Session, answers: list[str]) -> None:
     briefing = _briefing(session, channels=[Channel.FACEBOOK])
 
-    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(FakeProvider(answers)), briefing)
+    (draft,) = generate_drafts(
+        session, CONFIG, SocialLLMClient(scripted(post_draft=answers)), briefing
+    )
 
     assert draft.status is PostStatus.NEEDS_MANUAL_REVIEW
     assert draft.text == ""
-    assert len(session.exec(select(AuditEntry)).all()) == 2
+    assert len(session.exec(select(AuditEntry).where(AuditEntry.step == DRAFT_STEP)).all()) == 2
 
 
 def test_provider_error_is_audited(session: Session) -> None:
     briefing = _briefing(session, channels=[Channel.FACEBOOK])
 
-    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(FakeProvider([])), briefing)
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(scripted(post_draft=[])), briefing)
 
     assert draft.status is PostStatus.NEEDS_MANUAL_REVIEW
     entries = session.exec(select(AuditEntry)).all()
+    # Two failed draft calls; an empty draft is not assessed.
     assert len(entries) == 2
     assert all(e.error and e.error.startswith("LLMProviderError") for e in entries)
     assert all(e.model == "fake" for e in entries)

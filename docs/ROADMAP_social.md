@@ -38,7 +38,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Umfangreiche Unit-Tests inkl. Grenzfälle (Datumsformate „3.11.“ vs. „3. November“, Preise „19 €“ vs. „19,00 EUR“).
 
-## [ ] S4 – Prüfung auf Gesundheitsversprechen und Personenbezug
+## [x] S4 – Prüfung auf Gesundheitsversprechen und Personenbezug
 
 - Begriffsliste plus LLM-Einschätzung für Gesundheitsversprechen
 - Erkennung namentlich genannter Personen

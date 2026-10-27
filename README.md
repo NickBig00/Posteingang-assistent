@@ -304,6 +304,27 @@ Der Fakten-Abgleich akzeptiert gleichwertige Schreibweisen: „3.11.“, „03.1
 Telefonnummern mit Leerzeichen, Bindestrich oder +49. Ein falscher Wochentag zum Datum ist ein
 Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im Entwurf markiert.
 
+### Gesundheitsversprechen, Personenbezug und Anrede
+
+- **Gesundheitsversprechen:** Begriffsliste aus dem Branchenprofil (Code) plus KI-Einschätzung
+  (`prompts/social/post_assess_v1.md`). Treffer sind Warnungen mit markierter Textstelle, die
+  vor der Freigabe ausdrücklich bestätigt werden müssen. Eindeutige Heilversprechen
+  (`certain_terms`, z. B. „heilt“) sind in sensiblen Bereichen (Physio, Reha) Fehler.
+- **Personenbezug:** Namensmuster (Anrede/Titel, Rolle + Name, Vornamen-Lexikon) und die
+  fiktive Mitgliederliste. Namen sind Warnungen mit Bestätigungspflicht; Mitglieder aus der
+  Mitgliederliste sind Fehler (keine Mitgliedernamen in Beiträgen).
+- **Anrede:** Code erkennt du- und Sie-Formen und warnt bei Mischung oder bei falscher Anrede
+  für den Bereich; die KI-Einschätzung ergänzt, was Code nicht sieht (z. B. Imperative).
+- Die KI-Einschätzung bekommt nur den Beitragstext. Ihre Funde sind als „KI-Einschätzung“
+  gekennzeichnet; was Code schon gefunden hat, wird nicht doppelt gemeldet. Bei ungültiger
+  Antwort nach einem erneuten Versuch geht der Entwurf in „Manuelle Bearbeitung“.
+- **Bestätigung:** „Geprüft – bestätigen“ speichert Person und Zeitpunkt und schreibt einen
+  Audit-Eintrag (`social.confirm_warning`, ohne die Textstelle selbst). Freigeben geht erst ohne
+  Fehler und mit allen Bestätigungen; jede neue Prüfung (z. B. nach Bearbeitung) setzt die
+  Bestätigungen zurück.
+- Der Fake-Provider liefert keine eigene Einschätzung; offline erkennt also nur der Code. Der
+  gelabelte Testsatz liegt unter `samples/social/fitness/assessment_cases.json`.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

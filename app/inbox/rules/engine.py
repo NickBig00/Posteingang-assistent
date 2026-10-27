@@ -9,7 +9,8 @@ from decimal import Decimal
 from pydantic import JsonValue
 from sqlmodel import Session, select
 
-from app.inbox.models import Member, RuleOutcome
+from app.core.members import Member
+from app.inbox.models import RuleOutcome
 from app.inbox.profiles import DocumentType, Profile
 
 logger = logging.getLogger(__name__)

@@ -27,6 +27,13 @@ from app.social.models import (
     PostDraft,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
+from app.social.review import (
+    ReviewNotAllowedError,
+    approval_blockers,
+    approve_draft,
+    confirm_warning,
+)
+from app.social.sensitive import SENSITIVE_CHECK_LABELS
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 NAV_ENTRY = NavEntry(module="social", label="Social Media", path="/social")
@@ -54,7 +61,7 @@ def _labels(config: SocialConfig) -> dict[str, dict[str, str]]:
     return {
         "area_labels": {a.key: a.label for a in config.brand.areas},
         "occasion_labels": {o.key: o.label for o in config.industry.occasion_types},
-        "check_labels": CHECK_LABELS | {r.key: r.label for r in rules},
+        "check_labels": CHECK_LABELS | SENSITIVE_CHECK_LABELS | {r.key: r.label for r in rules},
     }
 
 
@@ -185,11 +192,14 @@ async def briefing_create(
     return RedirectResponse(f"/social/briefings/{briefing.id}", status_code=303)
 
 
-@router.get("/social/briefings/{briefing_id}", response_class=HTMLResponse)
-def briefing_detail(
-    request: Request, session: SessionDep, config: ConfigDep, briefing_id: int
+def _render_briefing(
+    request: Request,
+    session: Session,
+    config: SocialConfig,
+    briefing_id: int,
+    error: str | None = None,
+    status_code: int = 200,
 ) -> HTMLResponse:
-    """Briefing left, drafts per channel right."""
     briefing = session.get(Briefing, briefing_id)
     if briefing is None:
         raise HTTPException(status_code=404, detail="Briefing nicht gefunden")
@@ -206,8 +216,61 @@ def briefing_detail(
             "drafts": drafts,
             "results": results,
             "lights": {draft_id: _light(r) for draft_id, r in results.items()},
+            "blockers": {d.id: approval_blockers(session, d) for d in drafts},
             "facts": facts,
             "config": config,
+            "error": error,
             **_labels(config),
         },
+        status_code=status_code,
     )
+
+
+@router.get("/social/briefings/{briefing_id}", response_class=HTMLResponse)
+def briefing_detail(
+    request: Request, session: SessionDep, config: ConfigDep, briefing_id: int
+) -> HTMLResponse:
+    """Briefing left, drafts per channel with check results right."""
+    return _render_briefing(request, session, config, briefing_id)
+
+
+def _draft_or_404(session: Session, draft_id: int) -> PostDraft:
+    draft = session.get(PostDraft, draft_id)
+    if draft is None:
+        raise HTTPException(status_code=404, detail="Entwurf nicht gefunden")
+    return draft
+
+
+def _back(draft: PostDraft) -> RedirectResponse:
+    return RedirectResponse(
+        f"/social/briefings/{draft.briefing_id}#draft-{draft.id}", status_code=303
+    )
+
+
+@router.post("/social/checks/{result_id}/confirm", response_model=None)
+def check_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, result_id: int
+) -> HTMLResponse | RedirectResponse:
+    """A person confirms a warning (health claim, person) – recorded in the audit trail."""
+    result = session.get(CheckResult, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Prüfergebnis nicht gefunden")
+    draft = _draft_or_404(session, result.draft_id)
+    try:
+        confirm_warning(session, result, user)
+    except ReviewNotAllowedError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/approve", response_model=None)
+def draft_approve(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    """Approve a draft – only without errors and with all warnings confirmed."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        approve_draft(session, draft, user)
+    except ReviewNotAllowedError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _back(draft)

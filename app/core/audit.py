@@ -73,7 +73,7 @@ def audit_outputs(session: Session, entry_ids: list[int]) -> dict[int, str]:
 def write_human_audit_entry(
     session: Session,
     *,
-    item_id: int,
+    item_id: int | None,
     step: str,
     actor: str,
     details: Mapping[str, JsonValue] | None = None,

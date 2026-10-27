@@ -1,7 +1,6 @@
 """Data model of the inbox module (SPEC section 6)."""
 
-from datetime import date, datetime
-from decimal import Decimal
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import JsonValue
@@ -113,17 +112,3 @@ class Review(SQLModel, table=True):
     edited_text: str | None = None
     reviewed_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
     reviewer: str
-
-
-class Member(SQLModel, table=True):
-    """Fictitious member with contract data (demo table the rules check against)."""
-
-    id: int | None = Field(default=None, primary_key=True)
-    member_number: str = Field(unique=True, index=True)
-    name: str
-    email: str
-    contract_start: date
-    minimum_term_months: int = Field(ge=1)
-    notice_period_months: int = Field(ge=0)
-    renewal_period_months: int = Field(ge=1)
-    monthly_fee_eur: Decimal = Field(max_digits=8, decimal_places=2)

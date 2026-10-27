@@ -8,12 +8,12 @@ from app.core.llm.prompts import PROMPTS_DIR, PromptTemplate, load_prompt
 from app.social.channels import CHANNEL_SPECS
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
 from app.social.llm import fake_heuristics as _fake_heuristics  # noqa: F401 - offline demo
-from app.social.llm.schemas import DraftOutput
+from app.social.llm.schemas import AssessmentOutput, DraftOutput
 from app.social.models import CHANNEL_LABELS, Channel
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig
 
 SOCIAL_PROMPTS_DIR = PROMPTS_DIR / "social"
-PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v1"}
+PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v1", "post_assess": "v1"}
 
 
 class SocialLLMClient:
@@ -69,6 +69,22 @@ class SocialLLMClient:
         if completion is not None:
             try:
                 call.output = DraftOutput.model_validate(parse_json_object(completion.text))
+            except (ValueError, ValidationError) as exc:
+                call.error = f"invalid output: {short_error(exc)}"
+        return call
+
+    def assess_post(self, config: SocialConfig, text: str) -> LLMCall[AssessmentOutput]:
+        """Assessment of health claims, named persons and address form. Only the post text
+        is sent (data minimisation)."""
+        template = self.prompts["post_assess"]
+        prompt = template.render(industry=config.industry_key, text=text)
+        completion, error, duration = timed_complete(self.provider, "post_assess", prompt)
+        call: LLMCall[AssessmentOutput] = LLMCall(
+            "post_assess", template.prompt_id, prompt, duration, completion, error=error
+        )
+        if completion is not None:
+            try:
+                call.output = AssessmentOutput.model_validate(parse_json_object(completion.text))
             except (ValueError, ValidationError) as exc:
                 call.error = f"invalid output: {short_error(exc)}"
         return call
