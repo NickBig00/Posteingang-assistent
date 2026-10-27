@@ -8,9 +8,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from app.core.audit import write_audit_entry
 from app.core.llm.base import VisualInput
-from app.core.llm.calls import LLMCall
+from app.core.llm.calls import LLMCall, audit_llm_call, call_with_retry
 from app.inbox.llm.client import LLMClient
 from app.inbox.llm.schemas import ClassificationOutput
 from app.inbox.models import (
@@ -44,9 +43,6 @@ from app.inbox.suggestions import (
 
 logger = logging.getLogger(__name__)
 
-# One retry after an invalid or failed LLM answer, then manual review (CLAUDE.md).
-MAX_ATTEMPTS = 2
-
 
 @dataclass
 class ProcessResult:
@@ -56,35 +52,13 @@ class ProcessResult:
     reason: str | None = None
 
 
-def _audit(session: Session, item_id: int, call: LLMCall, attempt: int, provider: str) -> None:
-    completion = call.completion
-    params = dict(completion.params) if completion else {"provider": provider}
-    params["attempt"] = attempt
-    write_audit_entry(
-        session,
-        item_id=item_id,
-        step=call.task,
-        model=completion.model if completion else provider,
-        model_params=params,
-        prompt_version=call.prompt_id,
-        input_text=call.prompt_text,
-        output=completion.text if completion else None,
-        duration_ms=call.duration_ms,
-        error=call.error,
-    )
-
-
 def _with_retry[T](
     session: Session, item_id: int, provider: str, attempt_call: Callable[[], LLMCall[T]]
 ) -> LLMCall[T]:
-    call = attempt_call()
-    _audit(session, item_id, call, 1, provider)
-    for attempt in range(2, MAX_ATTEMPTS + 1):
-        if call.ok:
-            break
-        call = attempt_call()
-        _audit(session, item_id, call, attempt, provider)
-    return call
+    def record(call: LLMCall[T], attempt: int) -> None:
+        audit_llm_call(session, call, attempt=attempt, provider=provider, item_id=item_id)
+
+    return call_with_retry(attempt_call, record)
 
 
 _VISUAL_MEDIA_TYPES = {

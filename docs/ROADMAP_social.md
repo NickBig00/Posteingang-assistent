@@ -23,7 +23,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Ungültige Profile werden mit klarer Fehlermeldung abgelehnt. Tests für Modelle, Loader und die Zuordnung Bereich → Anrede/Kanäle.
 
-## [ ] S2 – Briefing und Entwürfe
+## [x] S2 – Briefing und Entwürfe
 
 - Formular „Neues Briefing“ gemäß SPEC Kapitel 5 und 8
 - Entwurfserzeugung je Kanal über das LLM-Interface in `core`, versionierte Prompts in `prompts/social/`

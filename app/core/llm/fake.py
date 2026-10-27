@@ -17,7 +17,7 @@ from app.core.llm.prompts import NO_TEXT_MARKER
 Responder = Callable[[LLMTask, str, str], str]
 
 
-def _section(text: str, tag: str) -> str:
+def prompt_section(text: str, tag: str) -> str:
     match = re.search(rf"<{tag}>\n?(.*?)\n?</{tag}>", text, re.DOTALL)
     return match.group(1) if match else ""
 
@@ -60,15 +60,18 @@ class FakeProvider(LLMProvider):
                 raise LLMProviderError("fake provider has no scripted response left")
             text = self._queue.popleft()
         else:
-            text = _HEURISTICS[task](user)
+            heuristic = _HEURISTICS.get(task)
+            if heuristic is None:
+                raise LLMProviderError(f"fake provider has no heuristic for task {task!r}")
+            text = heuristic(user)
         return Completion(text=text, model=self.model, params={"provider": self.name})
 
 
 def _classify(user: str) -> str:
-    document = _section(user, "dokument").lower()
-    fallback = _section(user, "rueckfall").strip()
+    document = prompt_section(user, "dokument").lower()
+    fallback = prompt_section(user, "rueckfall").strip()
     best_type, best_score = fallback, 0
-    for doc_type in json.loads(_section(user, "dokumenttypen") or "[]"):
+    for doc_type in json.loads(prompt_section(user, "dokumenttypen") or "[]"):
         score = sum(document.count(keyword.lower()) for keyword in doc_type["hinweise"])
         if score > best_score:
             best_type, best_score = doc_type["typ"], score
@@ -77,9 +80,9 @@ def _classify(user: str) -> str:
 
 
 def _extract(user: str) -> str:
-    document = _section(user, "dokument")
+    document = prompt_section(user, "dokument")
     result: dict[str, str | list[str] | None] = {}
-    for field in json.loads(_section(user, "felder") or "[]"):
+    for field in json.loads(prompt_section(user, "felder") or "[]"):
         value: str | None = None
         if "muster" in field:
             match = re.search(field["muster"], document)
@@ -94,7 +97,7 @@ def _extract(user: str) -> str:
 
 
 def _draft(user: str) -> str:
-    return _section(user, "vorlage")
+    return prompt_section(user, "vorlage")
 
 
 def _ocr(user: str) -> str:
@@ -108,3 +111,8 @@ _HEURISTICS: dict[LLMTask, Callable[[str], str]] = {
     "draft": _draft,
     "ocr": _ocr,
 }
+
+
+def register_heuristic(task: LLMTask, heuristic: Callable[[str], str]) -> None:
+    """Let a module add the offline answer for its own task (reads the rendered user prompt)."""
+    _HEURISTICS[task] = heuristic

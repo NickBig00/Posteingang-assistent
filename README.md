@@ -270,6 +270,20 @@ Spezifikation: [`docs/SPEC_social.md`](docs/SPEC_social.md).
   ignoriert git alles außer den fiktiven Demo-Profilen.
 - Ungültige Profile werden beim Laden mit genauer Fehlermeldung (Feldpfad und Grund) abgelehnt.
 
+### Briefing und Entwürfe
+
+- **Neues Briefing** (`/social/briefings/new`): Bereich, Anlass, Stichpunkte, Fakten (Datum,
+  Uhrzeit, Preis, Ort, Zeitraum, Telefonnummer), Kanäle (vorbelegt aus dem Bereich) und
+  Wunschtermin. Pflichtfakten des Anlass-Typs sind markiert und werden deterministisch geprüft.
+- Je gewähltem Kanal (Instagram-Beitrag, Instagram-Story, Facebook, LinkedIn) entsteht ein
+  KI-Entwurf über das LLM-Interface in `core` (Prompt `prompts/social/post_draft_v1.md`).
+  Anrede, Ton, Emojis, Hashtags und Handlungsaufforderung kommen aus dem gewählten Bereich.
+- Die Ausgabe (`{"text", "hashtags"}`) wird strikt gegen ein Pydantic-Schema geprüft, bei
+  ungültiger Ausgabe einmal wiederholt, danach steht der Entwurf auf „Manuelle Bearbeitung“.
+  Jeder Aufruf erzeugt einen Audit-Eintrag (`social.post_draft`, mit Briefing, Entwurf, Kanal).
+- Entwürfe sind in Oberfläche und Speicherung als KI-Vorschlag gekennzeichnet
+  (`is_ai_suggestion`). Die Kennzeichnung steht nie im Beitragstext selbst.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

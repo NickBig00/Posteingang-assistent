@@ -1,0 +1,32 @@
+"""Offline answers of the fake provider for the social media tasks (demo without API key).
+
+Deterministic and simple: the draft is assembled from the prompt sections – occasion,
+facts in the given spelling, key points, call to action – in the requested address form.
+"""
+
+import json
+
+from app.core.llm.fake import prompt_section, register_heuristic
+
+_GREETING = {"du": "Wir freuen uns auf dich!", "sie": "Wir freuen uns auf Sie!"}
+
+
+def _post_draft(user: str) -> str:
+    address = prompt_section(user, "anrede").strip()
+    max_length = int(prompt_section(user, "max_zeichen") or "2200")
+    occasion = prompt_section(user, "anlass").strip()
+    step = prompt_section(user, "kampagnenschritt").strip()
+    facts = [line for line in prompt_section(user, "fakten").splitlines() if line.strip()]
+    notes = " ".join(prompt_section(user, "stichpunkte").split())
+    call_to_action = prompt_section(user, "handlungsaufforderung").strip()
+    hashtags = prompt_section(user, "hashtags").split()
+    heading = f"{step}: {occasion}" if step else occasion
+    closing = f"{call_to_action} – {_GREETING.get(address, _GREETING['sie'])}"
+    text = "\n".join([f"{heading}!", notes, "", *facts, "", closing]).strip()
+    if len(text) > max_length:
+        # Short channels (story): facts and closing only.
+        text = "\n".join([f"{heading}!", *facts, closing])[:max_length].strip()
+    return json.dumps({"text": text, "hashtags": hashtags}, ensure_ascii=False)
+
+
+register_heuristic("post_draft", _post_draft)

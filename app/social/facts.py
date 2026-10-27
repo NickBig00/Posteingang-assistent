@@ -58,3 +58,56 @@ class BriefingFacts(BaseModel):
     @classmethod
     def from_json(cls, data: dict[str, JsonValue]) -> "BriefingFacts":
         return cls.model_validate(data)
+
+
+# --- display format (prompt and UI); the checks accept further spellings ---
+
+
+def format_date(value: date) -> str:
+    return value.strftime("%d.%m.%Y")
+
+
+def format_time(value: time) -> str:
+    return f"{value:%H:%M} Uhr"
+
+
+def format_price(value: Decimal) -> str:
+    whole, _, cents = f"{value:.2f}".partition(".")
+    grouped = f"{int(whole):,}".replace(",", ".")
+    return f"{grouped},{cents} €"
+
+
+def formatted_facts(facts: BriefingFacts) -> dict[FactKey, str]:
+    """German spelling of every given fact, e.g. {"preis": "19,00 €"}."""
+    result: dict[FactKey, str] = {}
+    if facts.datum:
+        result["datum"] = format_date(facts.datum)
+    if facts.uhrzeit:
+        result["uhrzeit"] = format_time(facts.uhrzeit)
+    if facts.preis is not None:
+        result["preis"] = format_price(facts.preis)
+    if facts.ort:
+        result["ort"] = facts.ort
+    if facts.zeitraum_von and facts.zeitraum_bis:
+        result["zeitraum"] = (
+            f"{format_date(facts.zeitraum_von)} bis {format_date(facts.zeitraum_bis)}"
+        )
+    if facts.telefon:
+        result["telefon"] = facts.telefon
+    return result
+
+
+def parse_price_input(text: str) -> Decimal:
+    """Parse a price typed in the form: "19", "19,5", "19.50", "1.200,00" (euros)."""
+    cleaned = text.strip().removesuffix("€").removesuffix("EUR").strip().replace(" ", "")
+    if "," in cleaned:
+        cleaned = cleaned.replace(".", "").replace(",", ".")
+    elif cleaned.count(".") == 1 and len(cleaned.rpartition(".")[2]) == 3:
+        cleaned = cleaned.replace(".", "")  # "1.200" is a thousands separator
+    try:
+        value = Decimal(cleaned)
+    except ArithmeticError as error:
+        raise ValueError(f"kein gültiger Preis: {text!r}") from error
+    if not value.is_finite():
+        raise ValueError(f"kein gültiger Preis: {text!r}")
+    return value.quantize(Decimal("0.01"))
