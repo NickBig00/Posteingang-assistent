@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from app.profiles import PROFILES_DIR, ProfileError, load_active_profile, load_profile
+from app.core.profiles import PROFILES_DIR, ProfileError
+from app.inbox.profiles import load_active_profile, load_profile
 
 FITNESS = PROFILES_DIR / "fitness.yaml"
 

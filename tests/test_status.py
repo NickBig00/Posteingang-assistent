@@ -1,8 +1,9 @@
 import pytest
 from sqlmodel import Session
 
-from app.models import InboxItem, ItemSource, ItemStatus, Review, ReviewDecision
-from app.status import (
+from app.core.approval import ReviewDecision
+from app.inbox.models import InboxItem, ItemSource, ItemStatus, Review
+from app.inbox.status import (
     ALLOWED_TRANSITIONS,
     InvalidStatusTransitionError,
     MissingReviewError,

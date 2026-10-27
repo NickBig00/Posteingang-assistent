@@ -7,8 +7,8 @@ import pytest
 from pydantic import ValidationError
 from sqlmodel import Session, select
 
-from app.models import Member
-from app.seed import load_member_seeds, seed_members
+from app.inbox.models import Member
+from app.inbox.seed import load_member_seeds, seed_members
 
 
 def test_load_member_seeds_reads_sample_file() -> None:

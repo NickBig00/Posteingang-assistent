@@ -12,25 +12,22 @@ from fpdf import FPDF
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from app.audit import HUMAN_ACTOR_MODEL, hash_input
-from app.ingest.service import ingest_file
-from app.llm.anthropic_provider import AnthropicProvider
-from app.llm.base import VisualInput
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.llm.prompts import NO_TEXT_MARKER
-from app.main import app, get_llm_client
-from app.models import (
-    AuditEntry,
-    Classification,
-    InboxItem,
-    ItemSource,
-    ItemStatus,
-    ReviewDecision,
-)
-from app.pipeline import process_item
-from app.profiles import PROFILES_DIR, Profile, load_profile
-from app.review import ReviewNotAllowedError, reopen_item, reprocess_item, review_item
+from app.core.approval import ReviewDecision
+from app.core.audit import HUMAN_ACTOR_MODEL, hash_input
+from app.core.llm.anthropic_provider import AnthropicProvider
+from app.core.llm.base import VisualInput
+from app.core.llm.fake import FakeProvider
+from app.core.llm.prompts import NO_TEXT_MARKER
+from app.core.models import AuditEntry
+from app.core.profiles import PROFILES_DIR
+from app.inbox.ingest.service import ingest_file
+from app.inbox.llm.client import LLMClient
+from app.inbox.models import Classification, InboxItem, ItemSource, ItemStatus
+from app.inbox.pipeline import process_item
+from app.inbox.profiles import Profile, load_profile
+from app.inbox.review import ReviewNotAllowedError, reopen_item, reprocess_item, review_item
+from app.inbox.web import get_llm_client
+from app.main import app
 
 LOW = '{"document_type": "sonstiges", "confidence": 0.3}'
 HIGH = '{"document_type": "sonstiges", "confidence": 0.95}'

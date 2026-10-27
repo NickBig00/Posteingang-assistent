@@ -12,13 +12,15 @@ import openai
 import pytest
 from sqlmodel import Session, select
 
-from app.llm.base import LLMProviderError, LLMRefusalError, VisualInput
-from app.llm.client import LLMClient
-from app.llm.factory import get_provider
-from app.llm.openai_provider import OpenAIConfigError, OpenAIProvider
-from app.models import AuditEntry, InboxItem, ItemSource, ItemStatus
-from app.pipeline import process_item
-from app.profiles import PROFILES_DIR, Profile, load_profile
+from app.core.llm.base import LLMProviderError, LLMRefusalError, VisualInput
+from app.core.llm.factory import get_provider
+from app.core.llm.openai_provider import OpenAIConfigError, OpenAIProvider
+from app.core.models import AuditEntry
+from app.core.profiles import PROFILES_DIR
+from app.inbox.llm.client import LLMClient
+from app.inbox.models import InboxItem, ItemSource, ItemStatus
+from app.inbox.pipeline import process_item
+from app.inbox.profiles import Profile, load_profile
 
 MODEL = "gpt-fiktiv"
 SNAPSHOT = "gpt-fiktiv-2026-01-01"  # what the API reports as the model that answered

@@ -8,29 +8,29 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, select
 
-from app import cli
-from app.audit import audit_outputs
-from app.ingest.service import import_samples, ingest_file
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.logging_config import RedactingFilter, redact, setup_logging
-from app.models import (
-    AuditEntry,
-    AuditOutput,
+from app.core.approval import ReviewDecision
+from app.core.audit import audit_outputs
+from app.core.llm.fake import FakeProvider
+from app.core.logging_config import RedactingFilter, redact, setup_logging
+from app.core.models import AuditEntry, AuditOutput
+from app.core.profiles import PROFILES_DIR
+from app.inbox import cli
+from app.inbox.ingest.service import import_samples, ingest_file
+from app.inbox.llm.client import LLMClient
+from app.inbox.models import (
     Classification,
     Extraction,
     InboxItem,
     ItemSource,
     ItemStatus,
     Review,
-    ReviewDecision,
     RuleResult,
     Suggestion,
 )
-from app.pipeline import process_new_items
-from app.profiles import PROFILES_DIR, load_profile
-from app.retention import delete_item, purge_expired, retention_days
-from app.review import review_item
+from app.inbox.pipeline import process_new_items
+from app.inbox.profiles import load_profile
+from app.inbox.retention import delete_item, purge_expired, retention_days
+from app.inbox.review import review_item
 from tests.conftest import SAMPLES_DIR
 
 CONTENT_TABLES: tuple[type[SQLModel], ...] = (
@@ -140,7 +140,7 @@ def test_audit_view_after_deletion_of_outputs(client: TestClient, engine: Engine
         session.add(item)
         session.commit()
         session.refresh(item)
-        from app.audit import write_audit_entry
+        from app.core.audit import write_audit_entry
 
         write_audit_entry(
             session, item_id=item.id, step="classify", model="fake", input_text="t",
@@ -257,7 +257,8 @@ def _personal_terms() -> set[str]:
 def test_no_personal_data_in_application_logs(
     client: TestClient, engine: Engine, caplog: pytest.LogCaptureFixture
 ) -> None:
-    from app.main import app, get_llm_client
+    from app.inbox.web import get_llm_client
+    from app.main import app
 
     app.dependency_overrides[get_llm_client] = lambda: LLMClient(FakeProvider())
     caplog.set_level(logging.DEBUG)

@@ -5,20 +5,46 @@ Daten extrahiert, regelbasiert prüft und Antwortentwürfe vorschlägt. **Jede A
 einem Menschen freigegeben.** Das System ist auf EU-AI-Act- und DSGVO-konforme Gestaltung
 ausgelegt und arbeitet ausschließlich mit synthetischen Daten.
 
-Details: [`docs/SPEC.md`](docs/SPEC.md) · Fahrplan: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+Die Anwendung ist ein **modularer Monolith**: ein gemeinsamer Kern und fachliche Module mit
+gemeinsamer Navigation. Neben dem Posteingang entsteht ein Social-Media-Modul (bisher nur ein
+Platzhalter).
+
+Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
+[`docs/SPEC_social.md`](docs/SPEC_social.md) (Social Media) · Fahrpläne:
+[`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/ROADMAP_social.md`](docs/ROADMAP_social.md)
 
 ## Projektstruktur
 
 | Pfad | Inhalt |
 |---|---|
-| `app/` | FastAPI-Anwendung (Jinja2 + HTMX, Tailwind per CDN) |
-| `app/llm/` | Anbieterunabhängiges LLM-Interface (einziger Ort für LLM-Aufrufe) |
-| `app/rules/` | Deterministische Regel-Engine (Fristen, Pflichtfelder, Plausibilität) |
+| `app/main.py` | FastAPI-Einstieg: setzt Kern und aktivierte Module zusammen |
+| `app/cli.py` | Kommandozeile (`python -m app.cli …`) |
+| `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Navigation |
+| `app/core/llm/` | Anbieterunabhängiges LLM-Interface (einziger Ort für Anbieter-SDKs) |
+| `app/inbox/` | Modul Posteingang: Eingang, Pipeline, Vorschläge, Freigabe, Löschkonzept, Evaluation |
+| `app/inbox/llm/` | LLM-Client des Posteingangs (Klassifizierung, Extraktion, Entwurf, OCR) und Ausgabe-Schemas |
+| `app/inbox/rules/` | Deterministische Regel-Engine (Fristen, Pflichtfelder, Plausibilität) |
+| `app/social/` | Modul Social Media (Platzhalter, siehe `docs/ROADMAP_social.md`) |
 | `profiles/` | Branchenprofile als YAML |
 | `prompts/` | Versionierte Prompt-Dateien |
 | `samples/` | Synthetische Beispieldaten mit Labels |
 | `tests/` | pytest-Tests |
 | `docs/` | Spezifikation und Roadmap |
+
+Regeln: Module nutzen `core`, aber nicht die Interna anderer Module; `core` importiert kein
+Modul. Tests prüfen diese Grenzen.
+
+### Module ein- und ausschalten
+
+Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:
+
+```bash
+MODULES=inbox uv run uvicorn app.main:app   # nur Posteingang, ohne Navigationsleiste
+```
+
+Unbekannte Modulnamen oder eine leere Liste brechen den Start mit einer Fehlermeldung ab. Ist
+der Posteingang abgeschaltet, leitet `/` auf das erste aktive Modul weiter. Die Befehle der
+Kommandozeile betreffen den Posteingang und stehen unabhängig davon zur Verfügung.
 
 ## Lokaler Start
 
@@ -131,7 +157,7 @@ in `needs_manual_review`. Es wird dabei nichts ausgeführt oder versendet.
 
 ## Regelprüfung
 
-Nach der Extraktion prüft deterministischer Python-Code (`app/rules/`) die Regeln, die das
+Nach der Extraktion prüft deterministischer Python-Code (`app/inbox/rules/`) die Regeln, die das
 Profil je Dokumenttyp konfiguriert – nie das LLM:
 
 | Regel | Prüft |

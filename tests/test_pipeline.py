@@ -7,15 +7,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
-from app import cli
-from app.audit import hash_input
-from app.ingest.service import import_samples
-from app.llm.base import LLMTask
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.main import app, get_llm_client
-from app.models import (
-    AuditEntry,
+from app.core.audit import hash_input
+from app.core.llm.base import LLMTask
+from app.core.llm.fake import FakeProvider
+from app.core.models import AuditEntry
+from app.core.profiles import PROFILES_DIR
+from app.inbox import cli
+from app.inbox.ingest.service import import_samples
+from app.inbox.llm.client import LLMClient
+from app.inbox.models import (
     Classification,
     Extraction,
     InboxItem,
@@ -23,8 +23,10 @@ from app.models import (
     ItemStatus,
     ValidationStatus,
 )
-from app.pipeline import process_item, process_new_items
-from app.profiles import PROFILES_DIR, Profile, load_profile
+from app.inbox.pipeline import process_item, process_new_items
+from app.inbox.profiles import Profile, load_profile
+from app.inbox.web import get_llm_client
+from app.main import app
 from tests.conftest import SAMPLES_DIR
 
 KUENDIGUNG = json.dumps(
@@ -295,8 +297,8 @@ def test_cli_process(
 
 
 def test_rule_results_are_stored(session: Session, profile: Profile) -> None:
-    from app.models import RuleResult
-    from app.seed import seed_members
+    from app.inbox.models import RuleResult
+    from app.inbox.seed import seed_members
 
     seed_members(session)
     item = _item(session)

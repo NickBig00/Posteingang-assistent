@@ -13,6 +13,11 @@ Lies vor jeder Aufgabe `docs/SPEC.md` und `docs/ROADMAP.md`.
 - Wenn eine Anforderung unklar ist oder der SPEC widerspricht: nicht raten. Treffe die konservativste Annahme, dokumentiere sie im PR und markiere sie als offene Frage.
 - Ändere `docs/SPEC.md` nie eigenmächtig. Schlage Änderungen im PR vor.
 
+## Architektur und Module
+
+- **Architektur:** Die Anwendung ist ein modularer Monolith mit `app/core/`, `app/inbox/` und `app/social/`. Module nutzen `core`, aber nicht die Interna anderer Module. Gemeinsame Funktionen gehören nach `core`. Spezifikationen: `docs/SPEC.md` (Kern und Posteingang), `docs/SPEC_social.md` (Social Media). Fahrpläne: `docs/ROADMAP.md`, `docs/ROADMAP_social.md`.
+- **Social-Media-Regeln:** Kein automatisches Veröffentlichen. Keine Namen oder Daten von Mitgliedern oder Patienten in Beiträgen. Fakten aus dem Briefing (Datum, Uhrzeit, Preis, Ort) dürfen vom LLM nicht verändert werden. Warnungen zu Gesundheitsversprechen müssen vor der Freigabe bestätigt werden.
+
 ## Tech-Stack
 
 - Python 3.12, FastAPI, Jinja2 + HTMX für die Oberfläche, Tailwind per CDN
@@ -26,7 +31,7 @@ Lies vor jeder Aufgabe `docs/SPEC.md` und `docs/ROADMAP.md`.
 - Code, Bezeichner und Kommentare auf Englisch; Oberfläche und Antwortvorlagen auf Deutsch.
 - Typ-Hints überall. Keine `Any`-Typen ohne Begründung.
 - Jede neue Funktion mit Logik bekommt Tests. Kein PR ohne Tests.
-- LLM-Aufrufe laufen ausschließlich über das Interface in `app/llm/`. Kein direkter Aufruf eines Anbieter-SDKs außerhalb davon.
+- LLM-Aufrufe laufen ausschließlich über das Interface in `app/core/llm/`. Kein direkter Aufruf eines Anbieter-SDKs außerhalb davon; modulspezifische LLM-Clients (z. B. `app/inbox/llm/`) nutzen nur dieses Interface.
 - Tests dürfen nie echte LLM-APIs aufrufen. Nutze den Fake-Provider.
 - Fristen, Datumsberechnungen, Beträge und Pflichtfeld-Prüfungen sind **immer deterministischer Code**, nie LLM-Ausgabe.
 - Ungültige LLM-Ausgaben werden nicht „repariert“: einmal erneut versuchen, danach als `needs_manual_review` markieren.

@@ -6,16 +6,18 @@ from pathlib import Path
 import pytest
 from sqlmodel import Session, select
 
-from app.ingest.service import import_samples
-from app.llm.base import LLMTask
-from app.llm.client import LLMClient
-from app.llm.fake import FakeProvider
-from app.models import AuditEntry, InboxItem, ItemSource, ItemStatus, RuleOutcome, Suggestion
-from app.pipeline import process_item, process_new_items
-from app.profiles import PROFILES_DIR, DocumentType, Profile, load_profile
-from app.rules import RuleCheck
-from app.seed import seed_members
-from app.suggestions import (
+from app.core.llm.base import LLMTask
+from app.core.llm.fake import FakeProvider
+from app.core.models import AuditEntry
+from app.core.profiles import PROFILES_DIR
+from app.inbox.ingest.service import import_samples
+from app.inbox.llm.client import LLMClient
+from app.inbox.models import InboxItem, ItemSource, ItemStatus, RuleOutcome, Suggestion
+from app.inbox.pipeline import process_item, process_new_items
+from app.inbox.profiles import DocumentType, Profile, load_profile
+from app.inbox.rules import RuleCheck
+from app.inbox.seed import seed_members
+from app.inbox.suggestions import (
     AI_LABEL,
     TemplateRenderError,
     label_draft,

@@ -4,7 +4,7 @@ from email.message import EmailMessage
 import pytest
 from fpdf import FPDF
 
-from app.ingest.normalize import UnsupportedFileTypeError, html_to_text, normalize, pdf_text
+from app.inbox.ingest.normalize import UnsupportedFileTypeError, html_to_text, normalize, pdf_text
 from tests.conftest import SAMPLES_DIR
 
 
@@ -137,7 +137,7 @@ def test_unexpected_pdf_parser_errors_do_not_fail_the_intake(
     def broken_reader(_stream: object) -> None:
         raise error
 
-    monkeypatch.setattr("app.ingest.normalize.PdfReader", broken_reader)
+    monkeypatch.setattr("app.inbox.ingest.normalize.PdfReader", broken_reader)
 
     assert normalize("rechnung.pdf", b"%PDF-1.4").text == ""
 

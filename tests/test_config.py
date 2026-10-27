@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from app.config import DISABLE_VARIABLE, ENV_FILE, load_env_file
+from app.core.config import DISABLE_VARIABLE, ENV_FILE, load_env_file
 
 
 def test_test_suite_never_loads_local_env_file() -> None:
