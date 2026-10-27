@@ -284,6 +284,26 @@ Spezifikation: [`docs/SPEC_social.md`](docs/SPEC_social.md).
 - Entwürfe sind in Oberfläche und Speicherung als KI-Vorschlag gekennzeichnet
   (`is_ai_suggestion`). Die Kennzeichnung steht nie im Beitragstext selbst.
 
+### Prüfungen (deterministisch)
+
+Nach jeder Entwurfserzeugung und jeder Textänderung prüft Code (`app/social/checks.py`), nie
+das LLM:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Länge je Kanal (Instagram 2.200, Story 250, LinkedIn 3.000, Facebook 63.206 Zeichen) | Fehler über Limit |
+| Anzahl Hashtags | Warnung über Markenprofil-Grenze, Fehler über Plattform-Grenze (Instagram 30, Story 10) |
+| Fakten aus dem Briefing | Fehler, wenn Datum, Uhrzeit, Preis, Ort, Zeitraum oder Telefonnummer fehlen oder abweichen |
+| Verbotene Begriffe (Markenprofil) | Fehler |
+| Begriffs- und Pflichtangaben-Regeln (Branchenprofil, z. B. Vorher-nachher) | laut Profil |
+| Emojis je Bereich | Warnung |
+
+Der Fakten-Abgleich akzeptiert gleichwertige Schreibweisen: „3.11.“, „03.11.2026“,
+„3. November“, „Di., 3. Nov.“, Zeiträume wie „1.–14.11.“ oder „1. bis 14. November“, Uhrzeiten
+„18:30“, „18.30 Uhr“, „18 Uhr“, Preise „19 €“, „19,00 EUR“, „€ 19,-“, „1.200,50 €“ und
+Telefonnummern mit Leerzeichen, Bindestrich oder +49. Ein falscher Wochentag zum Datum ist ein
+Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im Entwurf markiert.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

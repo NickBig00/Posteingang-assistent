@@ -1,0 +1,11 @@
+<div class="mt-3 border-t border-slate-100 pt-2" id="checks-{{ d.id }}">
+  <h4 class="flex items-center gap-2 text-sm font-medium">Prüfungen {% set light = lights.get(d.id) %}{% include "_light.html" %}</h4>
+  <ul class="mt-1 space-y-1 text-sm">
+    {% for r in results[d.id] %}{% set light = r.outcome.value %}
+    <li class="{{ 'text-slate-500' if light == 'ok' else '' }}">{% include "_light.html" %}
+      <span class="text-slate-500">{{ check_labels.get(r.check_key, r.check_key) }}:</span> {{ r.reason }}
+      {% if r.is_ai_assessment %}<span class="text-xs text-violet-700">KI-Einschätzung</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>

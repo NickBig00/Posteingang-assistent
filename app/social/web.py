@@ -9,17 +9,21 @@ from sqlmodel import Session, select
 
 from app.core.db import get_session
 from app.core.llm.factory import get_provider
+from app.core.outcomes import worst_outcome
 from app.core.users import current_user
 from app.core.web import NavEntry, module_templates
 from app.social.briefings import BriefingFormError, create_briefing, parse_briefing_form
+from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
+from app.social.highlight import highlight
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
     CHANNEL_LABELS,
     POST_STATUS_LABELS,
     Briefing,
     Channel,
+    CheckResult,
     PostDraft,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
@@ -33,6 +37,8 @@ templates.env.globals["channel_labels"] = CHANNEL_LABELS
 templates.env.globals["post_status_labels"] = POST_STATUS_LABELS
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
+templates.env.globals["light_ok_label"] = "Prüfungen ok"
+templates.env.filters["highlight"] = highlight
 
 
 def get_social_config() -> SocialConfig:
@@ -44,10 +50,29 @@ def get_social_client() -> SocialLLMClient:
 
 
 def _labels(config: SocialConfig) -> dict[str, dict[str, str]]:
+    rules = [*config.industry.term_rules, *config.industry.phrase_rules]
     return {
         "area_labels": {a.key: a.label for a in config.brand.areas},
         "occasion_labels": {o.key: o.label for o in config.industry.occasion_types},
+        "check_labels": CHECK_LABELS | {r.key: r.label for r in rules},
     }
+
+
+def _results_by_draft(session: Session, draft_ids: list[int]) -> dict[int, list[CheckResult]]:
+    results: dict[int, list[CheckResult]] = {draft_id: [] for draft_id in draft_ids}
+    statement = (
+        select(CheckResult)
+        .where(CheckResult.draft_id.in_(draft_ids))  # type: ignore[union-attr]
+        .order_by(CheckResult.id)  # type: ignore[arg-type]
+    )
+    for result in session.exec(statement).all():
+        results[result.draft_id].append(result)
+    return results
+
+
+def _light(results: list[CheckResult]) -> str | None:
+    outcome = worst_outcome(r.outcome for r in results)
+    return outcome.value if outcome else None
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -67,12 +92,15 @@ def _drafts_by_briefing(session: Session) -> dict[int, list[PostDraft]]:
 def social_index(request: Request, session: SessionDep, config: ConfigDep) -> HTMLResponse:
     """Overview: briefings with their drafts and status."""
     briefings = session.exec(select(Briefing).order_by(Briefing.id.desc())).all()  # type: ignore[union-attr]
+    drafts = _drafts_by_briefing(session)
+    results = _results_by_draft(session, [d.id for ds in drafts.values() for d in ds if d.id])
     return templates.TemplateResponse(
         request,
         "social_index.html",
         {
             "briefings": briefings,
-            "drafts": _drafts_by_briefing(session),
+            "drafts": drafts,
+            "lights": {draft_id: _light(r) for draft_id, r in results.items()},
             "config": config,
             **_labels(config),
         },
@@ -169,12 +197,15 @@ def briefing_detail(
         select(PostDraft).where(PostDraft.briefing_id == briefing_id).order_by(PostDraft.id)  # type: ignore[arg-type]
     ).all()
     facts = formatted_facts(BriefingFacts.from_json(briefing.facts))
+    results = _results_by_draft(session, [d.id for d in drafts if d.id])
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
         {
             "briefing": briefing,
             "drafts": drafts,
+            "results": results,
+            "lights": {draft_id: _light(r) for draft_id, r in results.items()},
             "facts": facts,
             "config": config,
             **_labels(config),

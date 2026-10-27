@@ -31,7 +31,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Aus einem Briefing entstehen Entwürfe für alle gewählten Kanäle. Tests nur mit Fake-Provider.
 
-## [ ] S3 – Deterministische Prüfungen
+## [x] S3 – Deterministische Prüfungen
 
 - Länge je Kanal, Anzahl Hashtags, verbotene Begriffe, Fakten aus dem Briefing unverändert enthalten
 - Ergebnisse mit Begründung und markierter Textstelle

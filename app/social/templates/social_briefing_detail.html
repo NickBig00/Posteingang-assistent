@@ -28,9 +28,9 @@
       {% if d.status.value == "needs_manual_review" and not d.text %}
       <p class="text-sm text-red-700">Die KI hat keinen gültigen Entwurf geliefert. Bitte den Text selbst schreiben.</p>
       {% else %}
-      <p class="whitespace-pre-wrap text-sm">{{ d.text }}</p>
-      {% if d.hashtags %}<p class="mt-2 text-sm text-blue-800">{{ d.hashtags | join(" ") }}</p>{% endif %}
+      <p class="whitespace-pre-wrap text-sm" id="text-{{ d.id }}">{{ d.full_text | highlight(results[d.id]) }}</p>
       {% endif %}
+      {% include "_social_checks.html" %}
     </section>
     {% endfor %}
   </div>

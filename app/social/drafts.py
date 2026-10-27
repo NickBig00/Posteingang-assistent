@@ -10,6 +10,7 @@ from pydantic import JsonValue
 from sqlmodel import Session
 
 from app.core.llm.calls import LLMCall, audit_llm_call, call_with_retry
+from app.social.checks import run_checks
 from app.social.facts import BriefingFacts
 from app.social.llm.client import SocialLLMClient
 from app.social.llm.schemas import DraftOutput
@@ -73,6 +74,7 @@ def generate_draft(
     session.add(draft)
     session.commit()
     session.refresh(draft)
+    run_checks(session, config, draft)
     logger.info("draft %s created (channel=%s, status=%s)", draft.id, channel, draft.status)
     return draft
 

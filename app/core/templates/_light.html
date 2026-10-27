@@ -1,5 +1,5 @@
 {% set colors = {"ok": "bg-green-500", "warning": "bg-amber-400", "error": "bg-red-600"} %}
-{% set labels = {"ok": "Regeln ok", "warning": "Hinweis", "error": "Fehler"} %}
+{% set labels = {"ok": light_ok_label | default("Regeln ok"), "warning": "Hinweis", "error": "Fehler"} %}
 {% if light %}
 <span class="inline-flex items-center gap-1" title="{{ labels[light] }}">
   <span class="inline-block h-3 w-3 rounded-full {{ colors[light] }}"></span>{{ labels[light] }}
