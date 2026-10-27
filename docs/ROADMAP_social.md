@@ -13,7 +13,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Alle bestehenden Tests grün, Evaluation des Posteingangs liefert dasselbe Ergebnis wie vorher, Demo-Durchlauf funktioniert unverändert.
 
-## [ ] S1 – Datenmodell, Branchen- und Markenprofil
+## [x] S1 – Datenmodell, Branchen- und Markenprofil
 
 - Modelle gemäß SPEC Kapitel 7
 - Abschnitt `social:` im Branchenprofil `profiles/fitness.yaml` gemäß SPEC Kapitel 4.1 (Anlass-Typen, Pflichtfakten, Prüfregeln, sensible Bereiche)

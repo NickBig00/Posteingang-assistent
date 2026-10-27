@@ -248,6 +248,28 @@ Ist IMAP konfiguriert, erscheint auf der Startseite zusätzlich der Button „Po
 Abgerufen werden nur ungelesene Nachrichten; sie werden erst nach erfolgreichem Import als
 gelesen markiert. Nur ein Test-Postfach mit fiktiven Nachrichten verwenden.
 
+## Social Media
+
+Das Modul `app/social/` erstellt aus kurzen Stichpunkten KI-Entwürfe für Social-Media-Beiträge,
+prüft sie und plant sie im Redaktionskalender. Veröffentlicht wird in V1 immer von Hand.
+Spezifikation: [`docs/SPEC_social.md`](docs/SPEC_social.md).
+
+### Branchen- und Markenprofil
+
+- **Branchenprofil:** Abschnitt `social:` in `profiles/<PROFILE>.yaml` – Anlass-Typen mit
+  Pflichtfakten, Begriffsliste für Gesundheitsversprechen, weitere Begriffs- und Pflichtangaben-
+  Regeln, sensible Bereiche. Der Posteingang ignoriert diesen Abschnitt.
+- **Markenprofil:** `profiles/brand/<BRAND_PROFILE>.yaml` (Standard `demo`, ein fiktives
+  Gesundheitszentrum mit den Bereichen Fitness, Kurse, Physiotherapie, Rehasport und
+  Firmenfitness). Je Bereich: Anrede (du/Sie), Tonalität, Kanäle, Emojis, Hashtags,
+  Handlungsaufforderung und 2–3 Beispielbeiträge. Das Markenprofil muss zur aktiven Branche
+  passen.
+- **Markenprofile echter Kunden** gehören nie ins Repository: Verzeichnis per
+  `BRAND_PROFILES_DIR` außerhalb des Repositorys angeben, z. B.
+  `BRAND_PROFILES_DIR=/srv/kunden/profile BRAND_PROFILE=studio_x`. Unter `profiles/brand/`
+  ignoriert git alles außer den fiktiven Demo-Profilen.
+- Ungültige Profile werden beim Laden mit genauer Fehlermeldung (Feldpfad und Grund) abgelehnt.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

@@ -10,6 +10,7 @@ from sqlmodel import Field, SQLModel
 
 from app.core.approval import ReviewDecision
 from app.core.models import timestamp_column, utcnow
+from app.core.outcomes import Outcome as RuleOutcome
 
 
 class ItemStatus(StrEnum):
@@ -41,12 +42,6 @@ class ItemSource(StrEnum):
 class ValidationStatus(StrEnum):
     VALID = "valid"
     INVALID = "invalid"
-
-
-class RuleOutcome(StrEnum):
-    OK = "ok"
-    WARNING = "warning"
-    ERROR = "error"
 
 
 class InboxItem(SQLModel, table=True):

@@ -210,3 +210,65 @@ document_types:
     actions:
       - key: zur_kenntnis
         label: Zur Kenntnis nehmen
+
+# Social-Media-Modul (docs/SPEC_social.md, Abschnitt 4.1): was für alle Betriebe der Branche gilt.
+social:
+  occasion_types:
+    - {key: kurs, label: Kurs, required_facts: [datum, uhrzeit, ort]}
+    - {key: aktion, label: Aktion, required_facts: [zeitraum, preis]}
+    - {key: probetraining, label: Probetraining}
+    - {key: veranstaltung, label: Veranstaltung, required_facts: [datum, uhrzeit, ort]}
+    - {key: gesundheitstipp, label: Gesundheitstipp}
+    - {key: team, label: Team}
+    - {key: oeffnungszeiten, label: Öffnungszeiten, required_facts: [zeitraum]}
+    - {key: stellenangebot, label: Stellenangebot}
+  # Werbung mit Gesundheitsbezug: Warnung, die vor der Freigabe bestätigt werden muss.
+  # certain_terms sind eindeutige Heilversprechen: in sensiblen Bereichen ein Fehler.
+  health_claims:
+    terms:
+      - heilt
+      - heilen
+      - Heilung
+      - schmerzfrei
+      - lindert
+      - Linderung
+      - beseitigt
+      - kuriert
+      - therapiert
+      - garantiert
+      - Garantie
+      - Wundermittel
+      - entgiftet
+      - Entgiftung
+      - Immunsystem
+      - beugt
+      - vorbeugen
+      - verhindert
+      - Rückenschmerzen
+      - Arthrose
+      - Bandscheibenvorfall
+      - Bluthochdruck
+      - Diabetes
+      - Depression
+      - Fettverbrennung
+      - ohne Nebenwirkungen
+      - klinisch bewiesen
+      - wissenschaftlich bewiesen
+      - ärztlich empfohlen
+    certain_terms:
+      - heilt
+      - Heilung garantiert
+      - garantiert schmerzfrei
+      - für immer schmerzfrei
+      - beseitigt
+      - kuriert
+      - 100 % wirksam
+  term_rules:
+    - key: vorher_nachher
+      label: Vorher-nachher-Darstellung
+      terms: [vorher-nachher, vorher/nachher, vorher und nachher, Vorher-Nachher-Bild]
+      outcome: warning
+      reason: >-
+        Vorher-nachher-Darstellungen sind in der Gesundheitswerbung nur eingeschränkt zulässig
+        und brauchen die Einwilligung der gezeigten Personen.
+  sensitive_areas: [physio, reha]
