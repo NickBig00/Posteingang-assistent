@@ -78,6 +78,16 @@ class PhraseRule(_Strict):
     reason: str = Field(min_length=1)
 
 
+class CampaignStep(_Strict):
+    """Step of a campaign plan, dated relative to the occasion (e.g. 7 days before)."""
+
+    key: str = Field(pattern=KEY_PATTERN)
+    label: str = Field(min_length=1)
+    offset_days: int = Field(ge=-120, le=0)
+    # Hint for the draft, e.g. "Erinnerung, die Anmeldung läuft noch".
+    instruction: str = Field(min_length=1)
+
+
 class IndustrySocial(_Strict):
     occasion_types: list[OccasionType] = Field(min_length=1)
     health_claims: HealthClaimRules | None = None
@@ -85,11 +95,14 @@ class IndustrySocial(_Strict):
     phrase_rules: list[PhraseRule] = Field(default_factory=list)
     # Area categories with stricter checks for healing promises (e.g. physio, reha).
     sensitive_areas: list[str] = Field(default_factory=list)
+    # Plan of a campaign (S7); empty: no campaigns for this industry.
+    campaign_steps: list[CampaignStep] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_keys(self) -> Self:
         for kind, keys in (
             ("occasion type", [o.key for o in self.occasion_types]),
+            ("campaign step", [s.key for s in self.campaign_steps]),
             ("rule", [r.key for r in self.term_rules] + [r.key for r in self.phrase_rules]),
         ):
             duplicates = _duplicates(keys)

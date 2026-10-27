@@ -21,7 +21,8 @@ def _post_draft(user: str) -> str:
     notes = " ".join(prompt_section(user, "stichpunkte").split())
     call_to_action = prompt_section(user, "handlungsaufforderung").strip()
     hashtags = prompt_section(user, "hashtags").split()
-    heading = f"{step}: {occasion}" if step else occasion
+    # Campaign step "Erinnerung (Anmeldung läuft)": the label is the heading.
+    heading = f"{step.split('(')[0].strip()}: {occasion}" if step else occasion
     closing = f"{call_to_action} – {_GREETING.get(address, _GREETING['sie'])}"
     text = "\n".join([f"{heading}!", notes, "", *facts, "", closing]).strip()
     if len(text) > max_length:

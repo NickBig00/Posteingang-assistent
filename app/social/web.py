@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.core.db import get_session
 from app.core.llm.factory import get_provider
@@ -40,6 +40,13 @@ from app.social.calendar import (
     week_start,
     week_view,
 )
+from app.social.campaigns import (
+    campaign_plan,
+    create_campaign,
+    load_demo_campaign,
+    parse_campaign_form,
+    validate_campaign,
+)
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
@@ -50,6 +57,7 @@ from app.social.models import (
     POST_STATUS_LABELS,
     Asset,
     Briefing,
+    Campaign,
     Channel,
     CheckResult,
     PostDraft,
@@ -195,11 +203,10 @@ def briefing_form_fields(request: Request, config: ConfigDep) -> HTMLResponse:
     Changing the area preselects its channels; required facts follow the occasion type.
     """
     params = request.query_params
-    values = {k: v for k, v in params.items() if k not in ("channels", "changed")}
+    values = {k: v for k, v in params.items() if k not in ("channels", "changed", "campaign")}
     channels = None if params.get("changed") == "area" else params.getlist("channels")
-    return templates.TemplateResponse(
-        request, "_social_briefing_fields.html", _form_context(config, values, channels)
-    )
+    context = _form_context(config, values, channels) | {"campaign": bool(params.get("campaign"))}
+    return templates.TemplateResponse(request, "_social_briefing_fields.html", context)
 
 
 @router.post("/social/briefings", response_model=None)
@@ -598,6 +605,128 @@ def calendar_page(
             "previous": previous,
             "following": following,
             "unplanned": unplanned,
+            "config": config,
+            **_labels(config),
+        },
+    )
+
+
+# --- campaigns ---
+
+
+def _campaign_or_404(session: Session, campaign_id: int) -> Campaign:
+    campaign = session.get(Campaign, campaign_id)
+    if campaign is None:
+        raise HTTPException(status_code=404, detail="Kampagne nicht gefunden")
+    return campaign
+
+
+@router.get("/social/campaigns", response_class=HTMLResponse)
+def campaign_list(request: Request, session: SessionDep, config: ConfigDep) -> HTMLResponse:
+    campaigns = session.exec(select(Campaign).order_by(col(Campaign.id).desc())).all()
+    return templates.TemplateResponse(
+        request,
+        "social_campaigns.html",
+        {"campaigns": campaigns, "config": config, "error": None, **_labels(config)},
+    )
+
+
+def _campaign_form(
+    request: Request,
+    config: SocialConfig,
+    values: dict[str, str],
+    channels: list[str] | None,
+    errors: dict[str, str] | None = None,
+    status_code: int = 200,
+) -> HTMLResponse:
+    context = _form_context(config, values, channels, errors) | {
+        "campaign": True,
+        "steps": config.industry.campaign_steps,
+    }
+    return templates.TemplateResponse(
+        request, "social_campaign_form.html", context, status_code=status_code
+    )
+
+
+@router.get("/social/campaigns/new", response_class=HTMLResponse)
+def campaign_new(request: Request, config: ConfigDep) -> HTMLResponse:
+    return _campaign_form(request, config, {}, None)
+
+
+@router.post("/social/campaigns", response_model=None)
+async def campaign_create(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+) -> HTMLResponse | RedirectResponse:
+    """Create the plan: one briefing per step with drafts for all chosen channels."""
+    form = await request.form()
+    values = {k: v for k, v in form.items() if isinstance(v, str) and k not in ("channels",)}
+    channels = [v for v in form.getlist("channels") if isinstance(v, str)]
+    errors: dict[str, str] = {}
+    name, event_date = parse_campaign_form(values, errors)
+    briefing_values = dict(values)
+    if event_date and not briefing_values.get("datum"):
+        briefing_values["datum"] = event_date.isoformat()
+    try:
+        briefing = parse_briefing_form(briefing_values, channels, config)
+    except BriefingFormError as error:
+        errors = error.errors | errors
+        briefing = None
+    if errors or briefing is None or event_date is None:
+        return _campaign_form(request, config, values, channels, errors, 422)
+    try:
+        data = validate_campaign(config, name, event_date, briefing, to_local(utcnow()).date())
+    except BriefingFormError as error:
+        return _campaign_form(request, config, values, channels, error.errors, 422)
+    campaign = create_campaign(session, config, client, data, user)
+    return RedirectResponse(f"/social/campaigns/{campaign.id}", status_code=303)
+
+
+@router.post("/social/campaigns/demo", response_model=None)
+def campaign_demo(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+) -> HTMLResponse | RedirectResponse:
+    """Create the fictitious demo campaign of the active industry."""
+    try:
+        data = load_demo_campaign(config, to_local(utcnow()).date())
+    except (FileNotFoundError, BriefingFormError) as error:
+        message = "Für dieses Branchenprofil gibt es keine Demo-Kampagne."
+        if isinstance(error, BriefingFormError):
+            message = " ".join(error.errors.values())
+        campaigns = session.exec(select(Campaign).order_by(col(Campaign.id).desc())).all()
+        return templates.TemplateResponse(
+            request,
+            "social_campaigns.html",
+            {"campaigns": campaigns, "config": config, "error": message, **_labels(config)},
+            status_code=409,
+        )
+    campaign = create_campaign(session, config, client, data, user)
+    return RedirectResponse(f"/social/campaigns/{campaign.id}", status_code=303)
+
+
+@router.get("/social/campaigns/{campaign_id}", response_class=HTMLResponse)
+def campaign_detail(
+    request: Request, session: SessionDep, config: ConfigDep, campaign_id: int
+) -> HTMLResponse:
+    """The plan of a campaign: steps with date, drafts, status and checks."""
+    campaign = _campaign_or_404(session, campaign_id)
+    plan = campaign_plan(session, config, campaign)
+    draft_ids = [d.id for step in plan for d in step.drafts if d.id]
+    results = _results_by_draft(session, draft_ids)
+    return templates.TemplateResponse(
+        request,
+        "social_campaign_detail.html",
+        {
+            "campaign": campaign,
+            "plan": plan,
+            "lights": {draft_id: _light(r) for draft_id, r in results.items()},
             "config": config,
             **_labels(config),
         },

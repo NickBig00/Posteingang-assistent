@@ -58,7 +58,9 @@
   {{ err("channels") }}
 </fieldset>
 
+{% if not campaign %}
 <label class="mt-4 block text-sm md:w-1/3">Wunschtermin
   <input type="date" name="desired_date" value="{{ values.get('desired_date', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">
   {{ err("desired_date") }}
 </label>
+{% endif %}

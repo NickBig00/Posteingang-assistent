@@ -272,3 +272,17 @@ social:
         Vorher-nachher-Darstellungen sind in der Gesundheitswerbung nur eingeschränkt zulässig
         und brauchen die Einwilligung der gezeigten Personen.
   sensitive_areas: [physio, reha]
+  # Kampagnenplan: Beiträge relativ zum Datum des Anlasses (Tage davor).
+  campaign_steps:
+    - key: ankuendigung
+      label: Ankündigung
+      offset_days: -21
+      instruction: erste Ankündigung, neugierig machen
+    - key: erinnerung
+      label: Erinnerung
+      offset_days: -7
+      instruction: Erinnerung, die Anmeldung läuft noch
+    - key: letzter_aufruf
+      label: Letzter Aufruf
+      offset_days: -1
+      instruction: letzte Gelegenheit, es geht bald los

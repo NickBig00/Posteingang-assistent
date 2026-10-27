@@ -9,6 +9,7 @@
     </div>
     <div class="flex flex-wrap gap-2">
       <a href="/social/calendar" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Kalender</a>
+      <a href="/social/campaigns" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Kampagnen</a>
       <a href="/social/briefings/new"
          class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">Neues Briefing</a>
     </div>
@@ -16,7 +17,7 @@
   {% if briefings %}
   <table class="w-full text-left text-sm">
     <thead class="border-b border-slate-200 text-slate-500">
-      <tr><th class="py-2">Nr.</th><th>Bereich</th><th>Anlass</th><th>Entwürfe</th><th></th></tr>
+      <tr><th class="py-2">Nr.</th><th>Bereich</th><th>Anlass</th><th>Kampagne</th><th>Entwürfe</th><th></th></tr>
     </thead>
     <tbody>
       {% for b in briefings %}
@@ -24,6 +25,7 @@
         <td class="py-2">{{ b.id }}</td>
         <td>{{ area_labels.get(b.area, b.area) }}</td>
         <td>{{ occasion_labels.get(b.occasion_type, b.occasion_type) }}</td>
+        <td>{% if b.campaign_id %}<a class="text-blue-700 hover:underline" href="/social/campaigns/{{ b.campaign_id }}">Nr. {{ b.campaign_id }}</a>{% else %}–{% endif %}</td>
         <td>
           <ul class="space-y-0.5">
             {% for d in drafts.get(b.id, []) %}

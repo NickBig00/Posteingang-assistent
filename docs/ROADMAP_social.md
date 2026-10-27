@@ -62,7 +62,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Geplante Beiträge erscheinen korrekt im Kalender; `.ics` lässt sich in einen Kalender importieren.
 
-## [ ] S7 – Kampagnen
+## [x] S7 – Kampagnen
 
 - Aus einem Anlass einen Plan über mehrere Wochen erzeugen (z. B. Ankündigung, Erinnerung, letzter Aufruf)
 - Jeder Beitrag einzeln prüf- und freigebbar

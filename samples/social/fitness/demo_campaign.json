@@ -1,0 +1,11 @@
+{
+  "synthetic": true,
+  "description": "Fiktive Demo-Kampagne für das Demo-Gesundheitszentrum (ROADMAP_social S7).",
+  "name": "Rücken-Fit Herbstkurs",
+  "area": "kurse",
+  "occasion_type": "kurs",
+  "notes": "Neuer Kurs Rücken-Fit für Einsteigerinnen und Einsteiger: kräftigen, dehnen, bewegen in kleiner Gruppe. Anmeldung an der Theke oder in der App.",
+  "channels": ["instagram_post", "facebook"],
+  "facts": {"uhrzeit": "18:30", "ort": "Kursraum 2"},
+  "event_in_days": 28
+}

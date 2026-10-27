@@ -357,6 +357,19 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
   Zeilen gefaltet, Text maskiert; mit der Bibliothek `icalendar` gegengeprüft).
 - Planen, Verschieben, Zurücknehmen und Veröffentlichen stehen im Audit-Verlauf.
 
+### Kampagnen
+
+- **Kampagne** (`/social/campaigns`): aus einem Anlass entsteht ein Plan über mehrere Wochen.
+  Die Schritte stehen im Branchenprofil (`campaign_steps`, Fitness: Ankündigung 21 Tage vorher,
+  Erinnerung 7 Tage, letzter Aufruf 1 Tag vorher).
+- Jeder Schritt wird ein eigenes Briefing (Wunschtermin = Datum des Schritts) mit Entwürfen für
+  alle gewählten Kanäle; der Schritt wird dem Prompt mitgegeben. Ist kein Datum als Fakt
+  angegeben, gilt das Datum des Anlasses als Fakt jedes Beitrags.
+- Alle Prüfungen laufen je Beitrag; jeder Beitrag wird einzeln geprüft, freigegeben und geplant.
+- Kampagnen, deren erster Beitrag in der Vergangenheit läge, werden abgelehnt.
+- **Demo:** „Demo-Kampagne anlegen“ erzeugt die fiktive Kampagne aus
+  `samples/social/<branche>/demo_campaign.json` (Anlass in 28 Tagen, 3 Schritte × 2 Kanäle).
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.
