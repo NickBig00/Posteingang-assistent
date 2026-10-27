@@ -343,6 +343,20 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
 - **Audit-Verlauf** je Briefing (`/social/briefings/<id>/audit`): alle KI-Aufrufe und
   menschlichen Schritte (bearbeiten, bestätigen, freigeben, verwerfen, wieder öffnen, Bilder).
 
+### Redaktionskalender und Export
+
+- **Kalender** (`/social/calendar`): Wochen- und Monatsansicht der geplanten und
+  veröffentlichten Beiträge, dazu die Liste „Freigegeben, noch nicht geplant“.
+- **Planen/Verschieben:** freigegebene Beiträge bekommen einen Termin (Ortszeit
+  Europe/Berlin, gespeichert in UTC; keine Termine in der Vergangenheit). „Aus Kalender nehmen“
+  setzt den Beitrag zurück auf „Freigegeben“.
+- **Veröffentlicht per Klick:** veröffentlicht wird von Hand auf der Plattform; „Als
+  veröffentlicht markieren“ hält nur Zeitpunkt und Person fest. Das System postet nichts.
+- **Export:** Text kopieren, Beitrag als Textdatei (`/social/drafts/<id>/export`, erst nach der
+  Freigabe) und der ganze Kalender als iCalendar-Datei (`/social/calendar.ics`, RFC 5545: UTC,
+  Zeilen gefaltet, Text maskiert; mit der Bibliothek `icalendar` gegengeprüft).
+- Planen, Verschieben, Zurücknehmen und Veröffentlichen stehen im Audit-Verlauf.
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

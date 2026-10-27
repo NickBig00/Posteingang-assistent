@@ -21,12 +21,23 @@
     <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Wieder öffnen</button>
   </form>
   {% endif %}
+  {% if d.status.value == "scheduled" %}
+  <form method="post" action="/social/drafts/{{ d.id }}/publish">
+    <button type="submit" class="rounded bg-blue-700 px-3 py-1.5 text-sm text-white hover:bg-blue-800">Als veröffentlicht markieren</button>
+  </form>
+  <form method="post" action="/social/drafts/{{ d.id }}/unschedule">
+    <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Aus Kalender nehmen</button>
+  </form>
+  {% endif %}
   {% if d.status.value in ("approved", "scheduled", "published") %}
+  <a href="/social/drafts/{{ d.id }}/export" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Als Textdatei</a>
   <button type="button" data-copy="{{ d.full_text }}"
           onclick="navigator.clipboard.writeText(this.dataset.copy).then(() => { this.textContent = 'Kopiert ✓'; })"
           class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Text kopieren</button>
   {% endif %}
 </div>
+{% if d.scheduled_at %}<p class="mt-2 text-sm">Geplant: <strong>{{ (d.scheduled_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr</strong>{% if d.published_at %} · veröffentlicht am {{ (d.published_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr{% endif %}</p>{% endif %}
+<div class="mt-2">{% set back = "" %}{% include "_social_schedule.html" %}</div>
 {% if d.status.value == "in_review" and blockers[d.id] %}
 <ul class="mt-2 list-disc pl-5 text-xs text-slate-600" aria-label="Freigabe noch nicht möglich">
   {% for b in blockers[d.id] %}<li>{{ b }}</li>{% endfor %}

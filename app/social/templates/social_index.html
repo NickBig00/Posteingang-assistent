@@ -7,8 +7,11 @@
       <h2 class="text-lg font-semibold">Social Media</h2>
       <p class="text-sm text-slate-500">{{ config.brand.name }} · Branche {{ config.industry_key }}</p>
     </div>
-    <a href="/social/briefings/new"
-       class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">Neues Briefing</a>
+    <div class="flex flex-wrap gap-2">
+      <a href="/social/calendar" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Kalender</a>
+      <a href="/social/briefings/new"
+         class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">Neues Briefing</a>
+    </div>
   </div>
   {% if briefings %}
   <table class="w-full text-left text-sm">

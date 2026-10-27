@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Redaktionskalender – Social Media{% endblock %}
+{% set weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] %}
+{% block content %}
+<a href="/social" class="text-sm text-blue-700 hover:underline">← Social Media</a>
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <h2 class="text-lg font-semibold">Redaktionskalender ·
+    {% if view == "month" %}{{ current.strftime("%m/%Y") }}{% else %}Woche ab {{ weeks[0][0].day.strftime("%d.%m.%Y") }}{% endif %}</h2>
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar?view={{ view }}&date={{ previous.isoformat() }}">← zurück</a>
+    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar?view={{ view }}">heute</a>
+    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar?view={{ view }}&date={{ following.isoformat() }}">weiter →</a>
+    <a class="rounded px-2 py-1 {{ 'bg-slate-800 text-white' if view == 'week' else 'border border-slate-300' }}" href="/social/calendar?view=week&date={{ current.isoformat() }}">Woche</a>
+    <a class="rounded px-2 py-1 {{ 'bg-slate-800 text-white' if view == 'month' else 'border border-slate-300' }}" href="/social/calendar?view=month&date={{ current.isoformat() }}">Monat</a>
+    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar.ics">Kalender als .ics</a>
+  </div>
+</div>
+
+<div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+  <table class="w-full table-fixed text-left text-xs" id="calendar" data-view="{{ view }}">
+    <thead class="border-b border-slate-200 text-slate-500">
+      <tr>{% for name in weekdays %}<th class="p-2">{{ name }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for week in weeks %}
+      <tr class="align-top">
+        {% for cell in week %}
+        <td class="border-r border-t border-slate-100 p-2 {{ '' if cell.in_month else 'bg-slate-50 text-slate-400' }} {{ 'h-40' if view == 'week' else 'h-24' }}" data-day="{{ cell.day.isoformat() }}">
+          <div class="mb-1 font-medium">{{ cell.day.strftime("%d.%m.") }}</div>
+          {% for e in cell.entries %}
+          <div class="mb-1 rounded px-1 py-0.5 {{ 'bg-green-100' if e.draft.status.value == 'published' else 'bg-blue-50' }}" data-draft="{{ e.draft.id }}">
+            <a class="hover:underline" href="/social/briefings/{{ e.briefing.id }}#draft-{{ e.draft.id }}">
+              {{ e.local_time.strftime("%H:%M") }} {{ channel_labels[e.draft.channel] }}</a>
+            <div class="text-slate-500">{{ occasion_labels.get(e.briefing.occasion_type, e.briefing.occasion_type) }} · {{ post_status_labels[e.draft.status] }}</div>
+            {% if view == "week" and e.draft.status.value == "scheduled" %}
+            {% set d = e.draft %}{% set back = request.url.path ~ "?" ~ request.url.query %}{% include "_social_schedule.html" %}
+            {% endif %}
+          </div>
+          {% endfor %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<section class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
+  <h3 class="mb-2 font-semibold">Freigegeben, noch nicht geplant</h3>
+  {% if unplanned %}
+  <ul class="space-y-2 text-sm">
+    {% for d in unplanned %}
+    <li class="flex flex-wrap items-center gap-3">
+      <a class="text-blue-700 hover:underline" href="/social/briefings/{{ d.briefing_id }}#draft-{{ d.id }}">Entwurf {{ d.id }} · {{ channel_labels[d.channel] }}</a>
+      {% set back = "/social/calendar?view=" ~ view ~ "&date=" ~ current.isoformat() %}{% include "_social_schedule.html" %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="text-sm text-slate-500">Keine.</p>{% endif %}
+  <p class="mt-3 text-xs text-slate-500">Zeiten in Ortszeit (Europe/Berlin). Veröffentlicht wird von Hand auf der Plattform; „Als veröffentlicht markieren“ hält das nur fest.</p>
+</section>
+{% endblock %}

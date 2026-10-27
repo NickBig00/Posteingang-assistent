@@ -54,7 +54,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Kompletter Durchlauf Briefing → Entwurf → Prüfung → Freigabe in der UI. Test, dass Fehler die Freigabe blockieren.
 
-## [ ] S6 – Redaktionskalender und Export
+## [x] S6 – Redaktionskalender und Export
 
 - Wochen- und Monatsansicht, geplante Termine setzen und verschieben
 - Status „veröffentlicht“ per Klick

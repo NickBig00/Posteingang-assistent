@@ -1,15 +1,17 @@
 """Web routes of the social media module (SPEC_social section 8)."""
 
 from collections.abc import Callable
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from sqlmodel import Session, select
 
 from app.core.db import get_session
 from app.core.llm.factory import get_provider
+from app.core.models import utcnow
 from app.core.outcomes import worst_outcome
 from app.core.storage import get_storage_dir
 from app.core.users import current_user
@@ -24,6 +26,20 @@ from app.social.assets import (
 )
 from app.social.audit import briefing_audit_trail
 from app.social.briefings import BriefingFormError, create_briefing, parse_briefing_form
+from app.social.calendar import (
+    CalendarError,
+    build_ics,
+    calendar_entries,
+    export_text,
+    month_view,
+    publish_draft,
+    schedule_draft,
+    summary_line,
+    to_local,
+    unschedule_draft,
+    week_start,
+    week_view,
+)
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
@@ -37,6 +53,7 @@ from app.social.models import (
     Channel,
     CheckResult,
     PostDraft,
+    PostStatus,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
 from app.social.review import (
@@ -63,6 +80,7 @@ templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
 templates.env.filters["highlight"] = highlight
+templates.env.filters["local"] = to_local
 
 
 def get_social_config() -> SocialConfig:
@@ -305,7 +323,7 @@ def _respond(
 ) -> HTMLResponse | RedirectResponse:
     try:
         action()
-    except (ReviewNotAllowedError, AssetError) as error:
+    except (ReviewNotAllowedError, AssetError, CalendarError) as error:
         return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
     return _back(draft)
 
@@ -469,4 +487,118 @@ def briefing_audit(
         request,
         "social_audit.html",
         {"briefing": briefing, "entries": entries, "config": config, **_labels(config)},
+    )
+
+
+# --- calendar and export ---
+
+
+@router.post("/social/drafts/{draft_id}/schedule", response_model=None)
+def draft_schedule(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    user: UserDep,
+    draft_id: int,
+    when: Annotated[str, Form()] = "",
+    back: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """Set or move the planned date (local time) of an approved post."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        when_local = datetime.fromisoformat(when)
+    except ValueError:
+        return _render_briefing(
+            request, session, config, draft.briefing_id, "Bitte Datum und Uhrzeit angeben.", 422
+        )
+    response = _respond(
+        request, session, config, draft, lambda: schedule_draft(session, draft, when_local, user)
+    )
+    if back.startswith("/social/calendar") and isinstance(response, RedirectResponse):
+        return RedirectResponse(back, status_code=303)
+    return response
+
+
+@router.post("/social/drafts/{draft_id}/unschedule", response_model=None)
+def draft_unschedule(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    draft = _draft_or_404(session, draft_id)
+    return _respond(request, session, config, draft, lambda: unschedule_draft(session, draft, user))
+
+
+@router.post("/social/drafts/{draft_id}/publish", response_model=None)
+def draft_publish(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    """Record that the post was published by hand (the system posts nothing)."""
+    draft = _draft_or_404(session, draft_id)
+    return _respond(request, session, config, draft, lambda: publish_draft(session, draft, user))
+
+
+@router.get("/social/drafts/{draft_id}/export", response_class=PlainTextResponse)
+def draft_export(session: SessionDep, draft_id: int) -> PlainTextResponse:
+    """The approved post as a text file."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        text = export_text(draft)
+    except CalendarError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return PlainTextResponse(
+        text, headers={"Content-Disposition": f'attachment; filename="beitrag-{draft_id}.txt"'}
+    )
+
+
+@router.get("/social/calendar.ics")
+def calendar_ics(session: SessionDep, config: ConfigDep) -> Response:
+    """All planned and published posts as iCalendar file."""
+    labels = _labels(config)
+    entries = calendar_entries(session, date(1970, 1, 1), date(9999, 1, 1))
+    body = build_ics([(e.draft, summary_line(e.draft, e.briefing, labels)) for e in entries])
+    return Response(
+        body,
+        media_type="text/calendar; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="redaktionskalender.ics"'},
+    )
+
+
+@router.get("/social/calendar", response_class=HTMLResponse)
+def calendar_page(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    view: str = "week",
+    day: Annotated[str | None, Query(alias="date")] = None,
+) -> HTMLResponse:
+    """Week or month view of the planned posts."""
+    try:
+        current = date.fromisoformat(day) if day else to_local(utcnow()).date()
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Ungültiges Datum") from error
+    if view == "month":
+        weeks = month_view(session, current)
+        first = current.replace(day=1)
+        previous = (first - timedelta(days=1)).replace(day=1)
+        following = (first + timedelta(days=32)).replace(day=1)
+    else:
+        view = "week"
+        weeks = [week_view(session, current)]
+        previous = week_start(current) - timedelta(days=7)
+        following = week_start(current) + timedelta(days=7)
+    unplanned = session.exec(
+        select(PostDraft).where(PostDraft.status == PostStatus.APPROVED).order_by(PostDraft.id)  # type: ignore[arg-type]
+    ).all()
+    return templates.TemplateResponse(
+        request,
+        "social_calendar.html",
+        {
+            "view": view,
+            "current": current,
+            "weeks": weeks,
+            "previous": previous,
+            "following": following,
+            "unplanned": unplanned,
+            "config": config,
+            **_labels(config),
+        },
     )
