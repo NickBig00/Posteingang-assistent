@@ -12,6 +12,7 @@ from app.core.audit import audit_outputs
 from app.core.db import get_session
 from app.core.llm.factory import get_provider
 from app.core.profiles import active_profile_key
+from app.core.storage import get_storage_dir
 from app.core.web import NavEntry, module_templates
 from app.inbox.ingest.imap import (
     ImapConfig,
@@ -26,7 +27,6 @@ from app.inbox.ingest.service import (
     import_samples,
     ingest_file,
     samples_dir_for,
-    storage_dir,
 )
 from app.inbox.llm.client import LLMClient
 from app.inbox.models import (
@@ -63,10 +63,6 @@ router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)
 templates.env.globals["status_labels"] = STATUS_LABELS
 templates.env.globals["decision_labels"] = DECISION_LABELS
-
-
-def get_storage_dir() -> Path:
-    return storage_dir()
 
 
 def get_samples_dir() -> Path:

@@ -1,0 +1,33 @@
+<section class="rounded-lg border border-slate-200 bg-white p-4" id="bilder">
+  <h3 class="mb-2 font-semibold">Bilder</h3>
+  {% for a in assets %}
+  <div class="mb-3 flex gap-3 border-b border-slate-100 pb-3 text-sm">
+    <img src="/social/assets/{{ a.id }}" alt="Hochgeladenes Bild {{ a.filename }}" class="h-20 w-20 rounded object-cover">
+    <div class="space-y-1">
+      <p>{{ a.filename }}</p>
+      {% if a.shows_persons %}
+        {% if a.consent_confirmed %}
+        <p class="text-xs text-green-800">✓ Personen abgebildet – Einwilligung bestätigt von {{ a.consent_by }} am {{ a.consent_at.strftime("%d.%m.%Y %H:%M") }}</p>
+        {% else %}
+        <p class="text-xs text-red-700">Personen abgebildet – Einwilligung fehlt. Freigabe erst nach Bestätigung.</p>
+        <form method="post" action="/social/assets/{{ a.id }}/consent">
+          <button type="submit" class="rounded border border-amber-400 px-2 py-0.5 text-xs hover:bg-amber-50">Einwilligung aller abgebildeten Personen liegt vor</button>
+        </form>
+        {% endif %}
+      {% else %}
+      <p class="text-xs text-slate-500">Keine Personen abgebildet (laut Angabe).</p>
+      {% endif %}
+      <form method="post" action="/social/assets/{{ a.id }}/delete">
+        <button type="submit" class="text-xs text-red-700 hover:underline">Bild entfernen</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  <form method="post" action="/social/briefings/{{ briefing.id }}/assets" enctype="multipart/form-data" class="space-y-2 text-sm">
+    <input type="file" name="file" accept=".png,.jpg,.jpeg" required aria-label="Bild hochladen">
+    <label class="block"><input type="checkbox" name="shows_persons" value="true"> Auf dem Bild sind Personen zu sehen</label>
+    <label class="block"><input type="checkbox" name="consent_confirmed" value="true"> Die Einwilligung aller abgebildeten Personen liegt vor</label>
+    <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-100">Bild hochladen</button>
+  </form>
+  <p class="mt-2 text-xs text-slate-500">PNG oder JPG, höchstens 10 MB. Keine KI-Bilderzeugung; Bilder werden nur lokal gespeichert.</p>
+</section>

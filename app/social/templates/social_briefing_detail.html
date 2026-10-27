@@ -2,35 +2,62 @@
 {% block title %}Briefing {{ briefing.id }} – Social Media{% endblock %}
 {% block content %}
 <a href="/social" class="text-sm text-blue-700 hover:underline">← Social Media</a>
-<h2 class="mb-4 text-lg font-semibold">Briefing {{ briefing.id }}:
-  {{ occasion_labels.get(briefing.occasion_type, briefing.occasion_type) }} · {{ area_labels.get(briefing.area, briefing.area) }}</h2>
+<div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+  <h2 class="text-lg font-semibold">Briefing {{ briefing.id }}:
+    {{ occasion_labels.get(briefing.occasion_type, briefing.occasion_type) }} · {{ area_labels.get(briefing.area, briefing.area) }}</h2>
+  <a class="text-sm text-blue-700 hover:underline" href="/social/briefings/{{ briefing.id }}/audit">Audit-Verlauf</a>
+</div>
 {% if error %}<p class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ error }}</p>{% endif %}
 <div class="grid gap-6 md:grid-cols-5">
-  <section class="rounded-lg border border-slate-200 bg-white p-4 md:col-span-2" id="briefing">
-    <h3 class="mb-2 font-semibold">Briefing</h3>
-    <dl class="grid grid-cols-3 gap-x-3 gap-y-1 text-sm">
-      <dt class="text-slate-500">Erstellt</dt><dd class="col-span-2">{{ briefing.created_at.strftime("%d.%m.%Y %H:%M") }} von {{ briefing.created_by }}</dd>
-      {% for key, value in facts.items() %}
-      <dt class="text-slate-500">{{ fact_labels[key] }}</dt><dd class="col-span-2">{{ value }}</dd>
-      {% endfor %}
-      {% if briefing.desired_date %}<dt class="text-slate-500">Wunschtermin</dt><dd class="col-span-2">{{ briefing.desired_date.strftime("%d.%m.%Y") }}</dd>{% endif %}
-    </dl>
-    <h4 class="mt-3 text-sm font-medium">Stichpunkte</h4>
-    <p class="whitespace-pre-wrap text-sm text-slate-700">{{ briefing.notes }}</p>
-  </section>
+  <div class="space-y-4 md:col-span-2">
+    <section class="rounded-lg border border-slate-200 bg-white p-4" id="briefing">
+      <h3 class="mb-2 font-semibold">Briefing</h3>
+      <dl class="grid grid-cols-3 gap-x-3 gap-y-1 text-sm">
+        <dt class="text-slate-500">Erstellt</dt><dd class="col-span-2">{{ briefing.created_at.strftime("%d.%m.%Y %H:%M") }} von {{ briefing.created_by }}</dd>
+        {% for key, value in facts.items() %}
+        <dt class="text-slate-500">{{ fact_labels[key] }}</dt><dd class="col-span-2">{{ value }}</dd>
+        {% endfor %}
+        {% if briefing.desired_date %}<dt class="text-slate-500">Wunschtermin</dt><dd class="col-span-2">{{ briefing.desired_date.strftime("%d.%m.%Y") }}</dd>{% endif %}
+      </dl>
+      <h4 class="mt-3 text-sm font-medium">Stichpunkte</h4>
+      <p class="whitespace-pre-wrap text-sm text-slate-700">{{ briefing.notes }}</p>
+    </section>
+    {% include "_social_assets.html" %}
+  </div>
 
   <div class="space-y-4 md:col-span-3">
-    {% for d in drafts %}
-    <section class="rounded-lg border border-violet-200 bg-white p-4" id="draft-{{ d.id }}">
+    {% for d in drafts %}{% set review = reviews.get(d.id) %}
+    <section class="rounded-lg border {{ 'border-green-300' if d.status.value in ('approved', 'scheduled', 'published') else 'border-violet-200' }} bg-white p-4" id="draft-{{ d.id }}">
       <h3 class="mb-2 flex flex-wrap items-center gap-2 font-semibold">{{ channel_labels[d.channel] }}
-        {% if d.is_ai_suggestion %}<span class="rounded bg-violet-100 px-2 py-0.5 text-xs font-normal text-violet-800">KI-Vorschlag</span>{% endif %}
-        <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-normal">{{ post_status_labels[d.status] }}</span></h3>
-      {% if d.status.value == "needs_manual_review" and not d.text %}
-      <p class="text-sm text-red-700">Die KI hat keinen gültigen Entwurf geliefert. Bitte den Text selbst schreiben.</p>
-      {% else %}
+        <span class="rounded bg-slate-100 px-2 py-0.5 text-xs font-normal" data-status="{{ d.status.value }}">{{ post_status_labels[d.status] }}</span>
+        {% if d.status.value in ("approved", "scheduled", "published") and review %}
+        <span class="rounded bg-green-100 px-2 py-0.5 text-xs font-normal text-green-800">Freigegeben von {{ review.reviewer }} am {{ review.reviewed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+        {% elif d.is_ai_suggestion %}
+        <span class="rounded bg-violet-100 px-2 py-0.5 text-xs font-normal text-violet-800">KI-Vorschlag</span>
+        {% endif %}
+        {% if d.edited_by_human %}<span class="text-xs font-normal text-slate-500">von Mensch bearbeitet</span>{% endif %}
+      </h3>
+      {% if not d.text %}
+      <p class="text-sm text-red-700">Kein Text: Die KI hat keinen gültigen Entwurf geliefert. Bitte den Text selbst schreiben.</p>
+      {% endif %}
+      {% if d.full_text %}
       <p class="whitespace-pre-wrap text-sm" id="text-{{ d.id }}">{{ d.full_text | highlight(results[d.id]) }}</p>
       {% endif %}
+
+      {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
+      <details class="mt-3" {% if not d.text %}open{% endif %}>
+        <summary class="cursor-pointer text-sm text-blue-700">Bearbeiten</summary>
+        <form method="post" action="/social/drafts/{{ d.id }}/edit" class="mt-2 space-y-2">
+          <textarea name="text" rows="8" class="w-full rounded border border-slate-300 px-2 py-1 text-sm" aria-label="Text">{{ d.text }}</textarea>
+          <input type="text" name="hashtags" value="{{ d.hashtags | join(' ') }}" class="w-full rounded border border-slate-300 px-2 py-1 text-sm" aria-label="Hashtags" placeholder="#Hashtag #Hashtag">
+          <button type="submit" class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">Speichern und neu prüfen</button>
+          <p class="text-xs text-slate-500">Nach dem Speichern laufen alle Prüfungen erneut; bestätigte Warnungen müssen neu bestätigt werden.</p>
+        </form>
+      </details>
+      {% endif %}
+
       {% include "_social_checks.html" %}
+      {% include "_social_actions.html" %}
     </section>
     {% endfor %}
   </div>

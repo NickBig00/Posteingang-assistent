@@ -46,7 +46,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Gelabelter Testsatz mit Positiv- und Negativbeispielen; Tests, dass Freigabe ohne Bestätigung nicht möglich ist.
 
-## [ ] S5 – Freigabe, Bilder und Einwilligung
+## [x] S5 – Freigabe, Bilder und Einwilligung
 
 - Status-Workflow gemäß SPEC Kapitel 5
 - Bild-Upload mit Einwilligungs-Checkbox; Freigabe mit Personenbild nur bei bestätigter Einwilligung

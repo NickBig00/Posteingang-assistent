@@ -325,6 +325,24 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
 - Der Fake-Provider liefert keine eigene Einschätzung; offline erkennt also nur der Code. Der
   gelabelte Testsatz liegt unter `samples/social/fitness/assessment_cases.json`.
 
+### Freigabe, Bilder und Einwilligung
+
+- **Status:** `draft` → `in_review` → `approved` → `scheduled` → `published`, oder `rejected`;
+  `needs_manual_review` für Entwürfe ohne gültigen KI-Text oder ohne KI-Einschätzung
+  (deutsch: Entwurf, In Prüfung, Freigegeben, Geplant, Veröffentlicht, Verworfen, Manuelle
+  Bearbeitung). Erlaubte Übergänge stehen in `app/social/status.py`.
+- **Entwurf-Detail** (`/social/briefings/<id>`): Briefing und Bilder links, Entwürfe je Kanal
+  rechts mit markierten Prüfergebnissen. **Bearbeiten** (Text und Hashtags; danach laufen alle
+  Prüfungen erneut), **Erneut prüfen**, **Freigeben**, **Verwerfen** (auch Zurückziehen vor dem
+  Veröffentlichen), **Wieder öffnen** und **Text kopieren** (erst nach der Freigabe).
+- **Freigeben** geht nur ohne Fehler, mit allen bestätigten Warnungen und mit bestätigter
+  Einwilligung für Bilder mit Personen. Freigabe und Verwerfen werden mit Person gespeichert.
+- **Bilder:** PNG/JPG bis 10 MB (Typ wird am Dateiinhalt erkannt), lokal unter
+  `<STORAGE_DIR>/social/`. Beim Hochladen wird angegeben, ob Personen zu sehen sind und ob deren
+  Einwilligung vorliegt; die Einwilligung lässt sich später bestätigen (mit Person und Zeit).
+- **Audit-Verlauf** je Briefing (`/social/briefings/<id>/audit`): alle KI-Aufrufe und
+  menschlichen Schritte (bearbeiten, bestätigen, freigeben, verwerfen, wieder öffnen, Bilder).
+
 ## Hinweise
 
 - Nur synthetische Daten – keine echten Namen, Adressen oder Dokumente.

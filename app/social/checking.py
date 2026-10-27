@@ -24,6 +24,7 @@ from app.social.sensitive import (
     merge_assessment,
     ok_findings,
 )
+from app.social.status import transition
 
 ASSESS_STEP = "social.post_assess"
 # Statuses in which the checks decide between `in_review` and manual review.
@@ -116,8 +117,7 @@ def run_checks(
     store_findings(session, draft, findings)
     if draft.status in OPEN_STATUSES:
         ready = bool(text.strip()) and assessment_ok
-        draft.status = PostStatus.IN_REVIEW if ready else PostStatus.NEEDS_MANUAL_REVIEW
-        session.add(draft)
-        session.commit()
-        session.refresh(draft)
+        transition(
+            session, draft, PostStatus.IN_REVIEW if ready else PostStatus.NEEDS_MANUAL_REVIEW
+        )
     return findings

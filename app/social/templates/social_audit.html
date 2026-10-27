@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Audit Briefing {{ briefing.id }} – Social Media{% endblock %}
+{% block content %}
+<a href="/social/briefings/{{ briefing.id }}" class="text-sm text-blue-700 hover:underline">← Briefing {{ briefing.id }}</a>
+<h2 class="mb-4 text-lg font-semibold">Audit-Verlauf Briefing {{ briefing.id }}</h2>
+{% if entries %}
+<table class="w-full text-left text-sm">
+  <thead class="border-b border-slate-200 text-slate-500">
+    <tr><th class="py-2">Zeit (UTC)</th><th>Schritt</th><th>Entwurf</th><th>Modell / Person</th><th>Prompt</th><th>Versuch</th><th>Fehler</th></tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr class="border-b border-slate-100 align-top">
+      <td class="py-1">{{ e.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</td>
+      <td>{{ e.step }}</td>
+      <td>{{ e.model_params.get("draft_id", "–") }}</td>
+      <td>{{ e.model_params.get("actor") or e.model }}</td>
+      <td>{{ e.prompt_version or "–" }}</td>
+      <td>{{ e.model_params.get("attempt", "–") }}</td>
+      <td class="text-red-700">{{ e.error or "" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="text-slate-600">Noch keine Einträge.</p>{% endif %}
+{% endblock %}
