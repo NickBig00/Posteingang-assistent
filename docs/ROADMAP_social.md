@@ -13,12 +13,15 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Alle bestehenden Tests grün, Evaluation des Posteingangs liefert dasselbe Ergebnis wie vorher, Demo-Durchlauf funktioniert unverändert.
 
-## [ ] S1 – Datenmodell und Markenprofil
+## [ ] S1 – Datenmodell, Branchen- und Markenprofil
 
 - Modelle gemäß SPEC Kapitel 7
-- YAML-Schema für Markenprofile, Loader mit Validierung, Profil `profiles/brand/demo.yaml` für ein fiktives Studio
+- Abschnitt `social:` im Branchenprofil `profiles/fitness.yaml` gemäß SPEC Kapitel 4.1 (Anlass-Typen, Pflichtfakten, Prüfregeln, sensible Bereiche)
+- YAML-Schema für Markenprofile mit Bereichen gemäß SPEC Kapitel 4.2, Loader mit Validierung
+- Fiktives Demo-Markenprofil `profiles/brand/demo.yaml`: Gesundheitszentrum mit Bereichen Fitness, Kurse, Physio, Reha, Firmenfitness; du/Sie je Bereich; Kanäle je Bereich inkl. LinkedIn
+- Pfad für Markenprofile echter Kunden per Umgebungsvariable, außerhalb des Repositorys
 
-**Akzeptanz:** Ungültige Markenprofile werden mit klarer Fehlermeldung abgelehnt. Tests für Modelle und Loader.
+**Akzeptanz:** Ungültige Profile werden mit klarer Fehlermeldung abgelehnt. Tests für Modelle, Loader und die Zuordnung Bereich → Anrede/Kanäle.
 
 ## [ ] S2 – Briefing und Entwürfe
 
@@ -68,7 +71,14 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 ## [ ] S8 – Evaluation
 
-- Synthetische Briefings mit Labels unter `samples/social/`
+- Synthetische Briefings mit Labels unter `samples/social/`, verteilt über alle Bereiche (inkl. Anrede-Prüfung du/Sie)
 - Evaluationsskript gemäß SPEC Kapitel 9, Bericht unter `docs/evaluation/`
 
 **Akzeptanz:** Bericht wird erzeugt; Ergebnis im PR dokumentiert.
+
+## [ ] S9 – Zweites Branchenprofil für Social Media
+
+- Abschnitt `social:` im Profil `profiles/handwerk.yaml` und ein fiktives Handwerker-Markenprofil
+- Einige Beispiel-Briefings mit Labels
+
+**Akzeptanz:** Umschalten per Konfiguration ohne Änderung am Kern-Code; Evaluation läuft für beide Branchen.

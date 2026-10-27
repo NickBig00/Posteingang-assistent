@@ -32,21 +32,40 @@ Regeln:
 - Gemeinsame Funktionen wandern nach `core`, statt kopiert zu werden.
 - Eine gemeinsame Navigation; Module lassen sich per Konfiguration ein- und ausschalten.
 
-## 4. Markenprofil
+## 4. Branchenprofil und Markenprofil
 
-Ton und Regeln des Betriebs stehen in Konfiguration, nicht im Code: `profiles/brand/<name>.yaml`, validiert beim Laden.
+Branchenwissen und Markenstil stehen in Konfiguration, nicht im Code. Zwei Ebenen:
 
-| Feld | Beispiel |
+### 4.1 Branchenprofil (Abschnitt `social:` in `profiles/<branche>.yaml`)
+
+Was für alle Betriebe einer Branche gilt:
+
+| Feld | Beispiel Fitness/Gesundheit | Beispiel Handwerk |
+|---|---|---|
+| Anlass-Typen | Kurs, Aktion, Probetraining, Veranstaltung, Gesundheitstipp, Team, Öffnungszeiten, Stellenangebot | Referenzprojekt, Saisonhinweis, Notdienst, Team, Stellenangebot, Ausbildung |
+| Pflichtfakten je Anlass-Typ | Kurs: Datum, Uhrzeit, Ort; Aktion: Zeitraum, Preis | Notdienst: Telefonnummer, Zeitraum |
+| Branchenspezifische Prüfregeln | Gesundheitsversprechen (Begriffsliste), Vorher-nachher-Darstellungen | Preisangaben, Vorher-nachher-Bilder nur mit Einwilligung |
+| Sensible Bereiche | Physiotherapie, Rehasport: strengere Prüfung auf Heilversprechen | – |
+
+### 4.2 Markenprofil (`profiles/brand/<name>.yaml`)
+
+Was für einen einzelnen Betrieb gilt. Ein Betrieb kann **mehrere Bereiche mit eigenem Ton** haben:
+
+| Feld | Beispiel (fiktives Demo-Gesundheitszentrum) |
 |---|---|
-| Name und Kurzbeschreibung | „Demo-Studio, Fitness und Physiotherapie“ |
-| Anrede | du oder Sie |
-| Tonalität | freundlich, motivierend, nicht marktschreierisch |
-| Emojis | ja/nein, maximal Anzahl |
-| Feste Hashtags | z. B. Ortsname, Studioname (fiktiv) |
-| Standard-Handlungsaufforderung | „Jetzt Probetraining vereinbaren“ |
+| Name und Kurzbeschreibung | „Demo-Gesundheitszentrum: Fitness, Rehasport, Physiotherapie, familiengeführt“ |
+| Bereiche | `fitness`, `kurse`, `physio`, `reha`, `firmenfitness` |
+| Anrede je Bereich | Fitness und Kurse: du; Physio und Reha: Sie; Firmenfitness: Sie |
+| Tonalität je Bereich | Fitness: locker, motivierend; Physio/Reha: ruhig, fachlich, vertrauensvoll; Firmenfitness: sachlich, Nutzen für Arbeitgeber |
+| Kanäle je Bereich | Fitness: Instagram, Facebook; Firmenfitness und Stellen: LinkedIn |
+| Emojis je Bereich | Fitness: ja, sparsam; Physio/Reha: nein |
+| Feste Hashtags | Ort und Name (fiktiv) |
+| Standard-Handlungsaufforderung | z. B. „14 Tage kostenlos probetrainieren“ (fiktiv) |
 | Kontakt- und Ortsangaben | fiktiv |
-| Verbotene Begriffe und Formulierungen | Liste |
-| Beispielbeiträge | 2–3 kurze Musterposts als Stilvorlage |
+| Verbotene Begriffe | Liste |
+| Beispielbeiträge | 2–3 Musterposts je Bereich als Stilvorlage |
+
+Das Demo-Markenprofil im Repository ist **fiktiv**, bildet aber die Struktur eines echten Gesundheitszentrums ab. Markenprofile echter Kunden werden nicht im Repository gespeichert, sondern beim Betrieb separat bereitgestellt (z. B. per Pfad aus einer Umgebungsvariable).
 
 ## 5. Ablauf
 
@@ -54,8 +73,8 @@ Ton und Regeln des Betriebs stehen in Konfiguration, nicht im Code: `profiles/br
 Briefing → Entwürfe je Kanal → Prüfungen → Freigabe → Planung im Kalender → manuell veröffentlicht
 ```
 
-1. **Briefing:** Anlass-Typ (Kurs, Aktion, Veranstaltung, Tipp, Team, Öffnungszeiten, Sonstiges), Stichpunkte, harte Fakten (Datum, Uhrzeit, Preis, Ort), gewünschte Kanäle, Wunschtermin, optional Bild-Upload.
-2. **Entwürfe (LLM):** je Kanal ein Entwurf: Instagram-Beitrag, Instagram-Story-Text, Facebook-Beitrag. Mit Hashtags nach Markenprofil.
+1. **Briefing:** Bereich (aus dem Markenprofil), Anlass-Typ (aus dem Branchenprofil), Stichpunkte, harte Fakten (Datum, Uhrzeit, Preis, Ort), gewünschte Kanäle (vorbelegt aus dem Bereich), Wunschtermin, optional Bild-Upload. Pflichtfakten des Anlass-Typs werden im Formular abgefragt.
+2. **Entwürfe (LLM):** je Kanal ein Entwurf: Instagram-Beitrag, Instagram-Story-Text, Facebook-Beitrag, LinkedIn-Beitrag. Anrede, Ton, Emojis und Hashtags nach dem gewählten Bereich des Markenprofils.
 3. **Prüfungen:** siehe Abschnitt 6.
 4. **Freigabe:** Mensch bearbeitet, gibt frei oder verwirft.
 5. **Planung:** freigegebener Beitrag bekommt einen geplanten Termin im Kalender.
@@ -75,7 +94,8 @@ Deterministischer Code, wo möglich; LLM nur für Einschätzungen, die Code nich
 | Anzahl Hashtags | Code | Warnung über Profil-Grenze, Fehler über Plattform-Grenze (Instagram 30) |
 | Fakten aus Briefing unverändert | Code | Fehler, wenn Datum, Uhrzeit, Preis oder Ort fehlen oder verändert wurden |
 | Verbotene Begriffe laut Markenprofil | Code | Fehler |
-| Gesundheitsversprechen | Begriffsliste (Code) + LLM-Einschätzung | Warnung mit Begründung und markierter Textstelle |
+| Anrede passend zum Bereich | Code + LLM | Warnung, wenn „du“ und „Sie“ gemischt werden oder nicht zum Bereich passen |
+| Gesundheitsversprechen | Begriffsliste aus dem Branchenprofil (Code) + LLM-Einschätzung | Warnung mit Begründung und markierter Textstelle; in sensiblen Bereichen (Physio, Reha) Fehler statt Warnung bei eindeutigen Heilversprechen |
 | Personenbezug | Code (Namensmuster, Mitgliederliste) + LLM | Warnung, wenn Personen namentlich genannt werden |
 | Bild mit Personen | Checkbox | Freigabe nur mit bestätigter Einwilligung der abgebildeten Personen |
 
