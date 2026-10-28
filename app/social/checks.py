@@ -13,6 +13,7 @@ from app.social.channels import CHANNEL_SPECS
 from app.social.facts import (
     FACT_LABELS,
     BriefingFacts,
+    FactKey,
     format_date,
     format_price,
     format_time,
@@ -307,6 +308,17 @@ def check_facts(text: str, facts: BriefingFacts) -> list[Finding]:
                 Finding("fakten", Outcome.ERROR, f"Telefonnummer {facts.telefon} fehlt im Text.")
             )
     return findings
+
+
+def missing_facts(text: str, facts: BriefingFacts) -> list[FactKey]:
+    """Facts of the briefing that are missing in `text` or appear changed."""
+    missing: list[FactKey] = []
+    for key in facts.present_keys():
+        fields = ("zeitraum_von", "zeitraum_bis") if key == "zeitraum" else (key,)
+        single = BriefingFacts.model_validate({f: getattr(facts, f) for f in fields})
+        if any(f.outcome is Outcome.ERROR for f in check_facts(text, single)):
+            missing.append(key)
+    return missing
 
 
 # --- all deterministic checks of a draft ---

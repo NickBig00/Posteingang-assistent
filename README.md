@@ -289,10 +289,14 @@ Spezifikation: [`docs/SPEC_social.md`](docs/SPEC_social.md).
   Uhrzeit, Preis, Ort, Zeitraum, Telefonnummer), Kanäle (vorbelegt aus dem Bereich) und
   Wunschtermin. Pflichtfakten des Anlass-Typs sind markiert und werden deterministisch geprüft.
 - Je gewähltem Kanal (Instagram-Beitrag, Instagram-Story, Facebook, LinkedIn) entsteht ein
-  KI-Entwurf über das LLM-Interface in `core` (Prompt `prompts/social/post_draft_v1.md`).
+  KI-Entwurf über das LLM-Interface in `core` (Prompt `prompts/social/post_draft_v2.md`).
   Anrede, Ton, Emojis, Hashtags und Handlungsaufforderung kommen aus dem gewählten Bereich.
 - Die Ausgabe (`{"text", "hashtags"}`) wird strikt gegen ein Pydantic-Schema geprüft, bei
   ungültiger Ausgabe einmal wiederholt, danach steht der Entwurf auf „Manuelle Bearbeitung“.
+  Fehlen im Entwurf Fakten des Briefings oder weichen sie ab (deterministische Prüfung), wird
+  er ebenfalls genau einmal neu erzeugt; der Prompt nennt dann die fehlenden Fakten
+  ausdrücklich. Fehlen sie danach noch, bleibt der Text erhalten und der Entwurf steht auf
+  „Manuelle Bearbeitung“. Im Audit stehen Grund und Schlüssel der fehlenden Fakten, keine Werte.
   Jeder Aufruf erzeugt einen Audit-Eintrag (`social.post_draft`, mit Briefing, Entwurf, Kanal).
 - Entwürfe sind in Oberfläche und Speicherung als KI-Vorschlag gekennzeichnet
   (`is_ai_suggestion`). Die Kennzeichnung steht nie im Beitragstext selbst.

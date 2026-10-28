@@ -15,6 +15,7 @@ from app.core.models import AuditEntry
 from app.main import app
 from app.social.briefings import BriefingFormError, create_briefing, parse_briefing_form
 from app.social.checking import ASSESS_STEP
+from app.social.checks import missing_facts
 from app.social.drafts import DRAFT_STEP, generate_drafts
 from app.social.facts import format_price, formatted_facts, parse_price_input
 from app.social.llm.client import SOCIAL_PROMPTS_DIR, SocialLLMClient
@@ -150,9 +151,9 @@ def _briefing(session: Session, **overrides: object) -> Briefing:
 
 
 def test_prompt_file_is_versioned() -> None:
-    template = load_prompt("post_draft", "v1", SOCIAL_PROMPTS_DIR)
-
-    assert template.prompt_id == "post_draft_v1"
+    # v1 stays for audit entries that refer to it; v2 is in use.
+    assert load_prompt("post_draft", "v1", SOCIAL_PROMPTS_DIR).prompt_id == "post_draft_v1"
+    assert load_prompt("post_draft", "v2", SOCIAL_PROMPTS_DIR).prompt_id == "post_draft_v2"
 
 
 def test_one_draft_per_channel_with_heuristic(session: Session) -> None:
@@ -201,7 +202,7 @@ def test_every_call_is_audited(session: Session) -> None:
         assert entry.prompt_version == "post_assess_v1"
         assert entry.model_params["draft_id"] == draft.id
     for entry, draft in zip(entries[::2], drafts, strict=True):
-        assert entry.prompt_version == "post_draft_v1"
+        assert entry.prompt_version == "post_draft_v2"
         assert entry.item_id is None
         assert entry.model == "fake-heuristic-v1"
         assert entry.model_params["briefing_id"] == briefing.id
@@ -357,3 +358,101 @@ def test_tasks_have_fake_heuristics() -> None:
     provider = FakeProvider()
     for task in tasks:
         assert provider.complete(task=task, system="", user="").text
+
+
+# --- second attempt for missing or changed facts ---
+
+
+def _draft_json(text: str) -> str:
+    return json.dumps({"text": text, "hashtags": ["#Kurse"]})
+
+
+COMPLETE = "Rücken-Fit am 03.11.2026 um 18:30 Uhr im Kursraum 2."
+
+
+def _entries(session: Session) -> list[AuditEntry]:
+    statement = select(AuditEntry).where(AuditEntry.step == DRAFT_STEP).order_by(AuditEntry.id)  # type: ignore[arg-type]
+    return list(session.exec(statement).all())
+
+
+def test_missing_fact_triggers_one_retry_naming_it(session: Session) -> None:
+    provider = scripted(
+        post_draft=[_draft_json("Rücken-Fit am 03.11.2026 im Kursraum 2."), _draft_json(COMPLETE)]
+    )
+    briefing = _briefing(session, channels=[Channel.FACEBOOK])
+
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
+
+    assert draft.text == COMPLETE
+    assert draft.status is PostStatus.IN_REVIEW
+    first, second = [user for task, _s, user in provider.calls if task == "post_draft"]
+    assert "<fehlende_fakten>" not in first
+    assert "<fehlende_fakten>\nUhrzeit: 18:30 Uhr\n</fehlende_fakten>" in second
+    entries = _entries(session)
+    assert [e.model_params["attempt"] for e in entries] == [1, 2]
+    assert entries[1].model_params["retry_reason"] == "missing_facts"
+    assert entries[1].model_params["missing_facts"] == ["uhrzeit"]
+    assert "18:30" not in json.dumps(entries[1].model_params)
+
+
+def test_changed_fact_counts_as_missing(session: Session) -> None:
+    wrong = _draft_json("Rücken-Fit am 04.11.2026 um 18:30 Uhr im Kursraum 2.")
+    provider = scripted(post_draft=[wrong, _draft_json(COMPLETE)])
+    briefing = _briefing(session, channels=[Channel.FACEBOOK])
+
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
+
+    assert draft.text == COMPLETE
+    assert _entries(session)[1].model_params["missing_facts"] == ["datum"]
+
+
+def test_facts_still_missing_after_retry(session: Session) -> None:
+    incomplete = _draft_json("Rücken-Fit im Kursraum 2.")
+    provider = scripted(post_draft=[incomplete, incomplete])
+    briefing = _briefing(session, channels=[Channel.FACEBOOK])
+
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
+
+    assert draft.status is PostStatus.NEEDS_MANUAL_REVIEW
+    assert draft.text == "Rücken-Fit im Kursraum 2."  # kept for the person to complete
+    assert len(_entries(session)) == 2
+    assert _entries(session)[1].model_params["missing_facts"] == ["datum", "uhrzeit"]
+
+
+def test_invalid_retry_keeps_first_text(session: Session) -> None:
+    incomplete = _draft_json("Rücken-Fit im Kursraum 2.")
+    provider = scripted(post_draft=[incomplete, "kein json"])
+    briefing = _briefing(session, channels=[Channel.FACEBOOK])
+
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
+
+    assert draft.status is PostStatus.NEEDS_MANUAL_REVIEW
+    assert draft.text == "Rücken-Fit im Kursraum 2."
+
+
+def test_complete_draft_needs_no_retry(session: Session) -> None:
+    provider = scripted(post_draft=[_draft_json(COMPLETE)])
+    briefing = _briefing(session, channels=[Channel.FACEBOOK])
+
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
+
+    assert draft.status is PostStatus.IN_REVIEW
+    assert len(_entries(session)) == 1
+
+
+def test_invalid_output_retry_has_no_fact_hint(session: Session) -> None:
+    provider = scripted(post_draft=["kein json", _draft_json(COMPLETE)])
+    briefing = _briefing(session, channels=[Channel.FACEBOOK])
+
+    generate_drafts(session, CONFIG, SocialLLMClient(provider), briefing)
+
+    assert _entries(session)[1].model_params["retry_reason"] == "invalid_output"
+    assert "missing_facts" not in _entries(session)[1].model_params
+
+
+def test_missing_facts_helper() -> None:
+    assert missing_facts(COMPLETE, course_input().facts) == []
+    assert missing_facts("Kursraum 2 am 3.11.", course_input().facts) == ["uhrzeit"]
+    assert missing_facts("Aktion vom 1.–14.11. für 19 €", offer_facts()) == []
+    assert missing_facts("Aktion vom 1.–14.11. für 29 €", offer_facts()) == ["preis"]
+    assert missing_facts("Aktion ab 1.11. für 19 €", offer_facts()) == ["zeitraum"]
