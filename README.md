@@ -34,6 +34,11 @@ Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 Regeln: Module nutzen `core`, aber nicht die Interna anderer Module; `core` importiert kein
 Modul. Tests prüfen diese Grenzen.
 
+### Anwendungstitel
+
+Der Titel in Kopfzeile und Browser-Tab kommt aus der Konfiguration: `APP_TITLE` (Standard
+„Posteingangs-Assistent“), z. B. `APP_TITLE="Demo-Assistent Musterstadt"` in der `.env`.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.config import ModuleConfigError, enabled_modules
+from app.core.config import ModuleConfigError, app_title, enabled_modules
 from app.main import MODULES, create_app
 
 APP_DIR = Path(__file__).resolve().parent.parent / "app"
@@ -137,3 +137,32 @@ def test_modules_do_not_import_each_other(module: str, other: str) -> None:
     offenders = {f: i for f, i in _imports(module).items() if other in i}
 
     assert offenders == {}
+
+
+# --- application title from configuration ---
+
+
+def test_default_title(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("APP_TITLE", raising=False)
+
+    assert app_title() == "Posteingangs-Assistent"
+    monkeypatch.setenv("APP_TITLE", "   ")
+    assert app_title() == "Posteingangs-Assistent"
+
+
+def test_configured_title_on_every_page(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("APP_TITLE", "Demo-Assistent Musterstadt")
+
+    for path in ("/", "/social", "/social/campaigns"):
+        html = client.get(path).text
+        assert '<h1 class="text-xl font-semibold">Demo-Assistent Musterstadt</h1>' in html, path
+        assert "Posteingangs-Assistent" not in html, path
+    assert "<title>Social Media – Demo-Assistent Musterstadt</title>" in client.get("/social").text
+
+
+def test_title_of_the_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_TITLE", "Demo-Assistent")
+
+    assert create_app().title == "Demo-Assistent"

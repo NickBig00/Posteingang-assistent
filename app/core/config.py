@@ -1,4 +1,4 @@
-"""Configuration: the `.env` file in the project root and the enabled modules."""
+"""Configuration: the `.env` file in the project root, the enabled modules, the title."""
 
 import os
 from collections.abc import Sequence
@@ -47,3 +47,13 @@ def enabled_modules(available: Sequence[str]) -> list[str]:
     if not requested:
         raise ModuleConfigError(f"{MODULES_VARIABLE} muss mindestens ein Modul enthalten")
     return [name for name in available if name in requested]
+
+
+# Name of the application in the page header and titles (e.g. the operator's product name).
+APP_TITLE_VARIABLE = "APP_TITLE"
+DEFAULT_APP_TITLE = "Posteingangs-Assistent"
+
+
+def app_title() -> str:
+    """Application title from env `APP_TITLE` (default: Posteingangs-Assistent)."""
+    return (os.environ.get(APP_TITLE_VARIABLE) or "").strip() or DEFAULT_APP_TITLE
