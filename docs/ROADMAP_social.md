@@ -90,7 +90,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 - [x] **Löschkonzept Social Media:** Löschen je Briefing/Kampagne und Aufbewahrungsfrist
   (`social-purge`, `RETENTION_DAYS`), analog zum Posteingang.
 - [x] **Mitgliedernamen:** Fehler, der sich nur mit bestätigter Einwilligung der genannten
-  Person aufheben lässt.
+  Person aufheben lässt; in `docs/SPEC_social.md` (Abschnitte 2, 6, 11) übernommen.
 - [ ] **Begriffsliste Gesundheitsbezug für Handwerk:** In S9 vorläufig als kurze Liste in
   `profiles/handwerk.yaml` angelegt (SPEC Kapitel 4.1 sieht für Handwerk keine vor).
   Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert.

@@ -14,7 +14,7 @@ Demo-Fall: ein fiktives Fitness- und Gesundheitsstudio. Nur synthetische Daten.
 - Keine Auswertung von Reichweite oder Interaktionen
 - Keine KI-Bilderzeugung
 - Keine Werbeanzeigen (Ads)
-- Keine personenbezogenen Daten von Mitgliedern oder Patienten in Beiträgen
+- Keine personenbezogenen Daten von Mitgliedern oder Patienten in Beiträgen (einzige Ausnahme: die namentliche Nennung eines Mitglieds mit bestätigter Einwilligung, siehe Abschnitt 6)
 
 ## 3. Architektur: modularer Monolith
 
@@ -96,12 +96,13 @@ Deterministischer Code, wo möglich; LLM nur für Einschätzungen, die Code nich
 | Verbotene Begriffe laut Markenprofil | Code | Fehler |
 | Anrede passend zum Bereich | Code + LLM | Warnung, wenn „du“ und „Sie“ gemischt werden oder nicht zum Bereich passen |
 | Gesundheitsversprechen | Begriffsliste aus dem Branchenprofil (Code) + LLM-Einschätzung | Warnung mit Begründung und markierter Textstelle; in sensiblen Bereichen (Physio, Reha) Fehler statt Warnung bei eindeutigen Heilversprechen |
-| Personenbezug | Code (Namensmuster, Mitgliederliste) + LLM | Warnung, wenn Personen namentlich genannt werden |
+| Personenbezug | Code (Namensmuster, Mitgliederliste) + LLM | Warnung, wenn Personen namentlich genannt werden; Fehler, wenn ein Mitglied aus der Mitgliederliste genannt wird – aufhebbar nur durch die bestätigte Einwilligung der genannten Person |
 | Bild mit Personen | Checkbox | Freigabe nur mit bestätigter Einwilligung der abgebildeten Personen |
 
 Regeln:
 - Bei Fehlern ist keine Freigabe möglich.
 - Warnungen zu Gesundheitsversprechen müssen vor der Freigabe ausdrücklich bestätigt werden; die Bestätigung wird im Audit-Log gespeichert.
+- Ein im Beitrag genanntes Mitglied ist ein Fehler. Ihn hebt nur die ausdrücklich bestätigte Einwilligung der genannten Person auf (wer, wann, Audit-Eintrag ohne den Namen); eine gewöhnliche Bestätigung reicht nicht, andere Fehler bleiben bestehen. Jede neue Prüfung des Textes setzt die Einwilligung zurück.
 - Hinweistext in der UI: Werbung mit Gesundheitsbezug unterliegt besonderen rechtlichen Regeln. Das System markiert Auffälligkeiten, ersetzt aber keine rechtliche Prüfung.
 - Ungültige LLM-Ausgaben: ein Retry, danach Entwurf als `needs_manual_review`.
 
@@ -143,4 +144,4 @@ Folgender Abschnitt soll in `CLAUDE.md` aufgenommen werden:
 
 > **Architektur:** Die Anwendung ist ein modularer Monolith mit `app/core/`, `app/inbox/` und `app/social/`. Module nutzen `core`, aber nicht die Interna anderer Module. Gemeinsame Funktionen gehören nach `core`. Spezifikationen: `docs/SPEC.md` (Kern und Posteingang), `docs/SPEC_social.md` (Social Media). Fahrpläne: `docs/ROADMAP.md`, `docs/ROADMAP_social.md`.
 >
-> **Social-Media-Regeln:** Kein automatisches Veröffentlichen. Keine Namen oder Daten von Mitgliedern oder Patienten in Beiträgen. Fakten aus dem Briefing (Datum, Uhrzeit, Preis, Ort) dürfen vom LLM nicht verändert werden. Warnungen zu Gesundheitsversprechen müssen vor der Freigabe bestätigt werden.
+> **Social-Media-Regeln:** Kein automatisches Veröffentlichen. Keine Namen oder Daten von Mitgliedern oder Patienten in Beiträgen; ein Mitgliedername ist ein Fehler, den nur die bestätigte Einwilligung der Person aufhebt (Audit-Eintrag). Fakten aus dem Briefing (Datum, Uhrzeit, Preis, Ort) dürfen vom LLM nicht verändert werden. Warnungen zu Gesundheitsversprechen müssen vor der Freigabe bestätigt werden.
