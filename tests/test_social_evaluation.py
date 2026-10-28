@@ -79,7 +79,7 @@ def test_invalid_drafts_lower_the_rates() -> None:
 def test_report_files(tmp_path: Path) -> None:
     report = evaluate_social(CONFIG, SocialLLMClient(FakeProvider()), SAMPLES)
 
-    markdown, data = write_report(report, tmp_path)
+    markdown, data, drafts = write_report(report, tmp_path)
 
     assert markdown.name == "social_fitness_fake.md"
     text = markdown.read_text(encoding="utf-8")
@@ -88,6 +88,9 @@ def test_report_files(tmp_path: Path) -> None:
     payload = json.loads(data.read_text(encoding="utf-8"))
     assert payload["generation"]["facts_rate"] == 1.0
     assert payload["detection"]["health_claims"]["missed"] == ["g14"]
+    # The JSON summary carries no post texts; they are in the drafts report.
+    assert "text" not in payload["generation"]["details"][0]
+    assert drafts.name == "social_fitness_fake_entwuerfe.md"
 
 
 def test_cli_social_evaluate(
@@ -123,3 +126,34 @@ def test_committed_report_matches_samples() -> None:
     committed.pop("created_at")
     report.pop("created_at")
     assert committed == json.loads(json.dumps(report))
+
+
+def test_drafts_report(tmp_path: Path) -> None:
+    report = evaluate_social(CONFIG, SocialLLMClient(FakeProvider()), SAMPLES)
+
+    _, _, path = write_report(report, tmp_path)
+    text = path.read_text(encoding="utf-8")
+
+    assert text.startswith("# Entwürfe der Evaluation – Branche `fitness`, Anbieter `fake`")
+    assert "## b01 – Kurs · Kurse" in text
+    assert "**Stichpunkte:** Neuer Kurs Rücken-Fit für Einsteiger, kleine Gruppe" in text
+    assert "**Fakten:** Datum: 03.11.2026 · Uhrzeit: 18:30 Uhr · Ort: Kursraum 2" in text
+    assert "### Instagram-Beitrag · Status `in_review`" in text
+    assert "### Facebook-Beitrag · Status `in_review`" in text
+    assert "**Hashtags:** #DemoGesundheitszentrum #Musterstadt #Kurse" in text
+    assert "- ok – Fakten: Datum 03.11.2026 ist enthalten." in text
+    assert "- ok – Länge:" in text
+    # Every briefing and every draft appears.
+    assert text.count("\n## ") == len(_briefings())
+    assert text.count("\n### ") == len(report.drafts)
+
+
+def test_drafts_report_shows_missing_text(tmp_path: Path) -> None:
+    report = evaluate_social(
+        CONFIG, SocialLLMClient(scripted(post_draft=["kein json"] * 200)), SAMPLES
+    )
+
+    _, _, path = write_report(report, tmp_path)
+
+    assert "_Kein gültiger Text erzeugt._" in path.read_text(encoding="utf-8")
+    assert "- Fehler – Länge: Der Beitrag hat keinen Text." in path.read_text(encoding="utf-8")

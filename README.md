@@ -407,7 +407,10 @@ Das Skript (`app/social/evaluation.py`) arbeitet in einer temporären Datenbank:
    Code-Prüfungen plus KI-Einschätzung → Erkennungsrate (Recall) und Präzision für
    Gesundheitsversprechen und Personen, Trefferquote der Anrede-Prüfung.
 
-Bericht: `docs/evaluation/social_<branche>_<anbieter>.md` (plus `.json`). Ziele laut SPEC: 100 %
+Bericht: `docs/evaluation/social_<branche>_<anbieter>.md` (plus `.json`), dazu
+`social_<branche>_<anbieter>_entwuerfe.md` zum Lesen der erzeugten Texte: je Briefing die
+Stichpunkte und Fakten, darunter die Entwürfe je Kanal mit Hashtags und allen
+Prüfergebnissen. Ziele laut SPEC: 100 %
 Fakten korrekt, mindestens 90 % erkannte Gesundheitsversprechen. Ergebnis mit dem Fake-Provider
 (Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 93,3 % (14 von 15, nur
 Code; der implizite Fall g14 wird erst von einem echten Modell erkannt), Personen 100 %, keine
