@@ -228,6 +228,12 @@ Klassifizierung.
 - **Aufbewahrungsdauer**: `RETENTION_DAYS` (Standard 90). `uv run python -m app.cli purge`
   löscht ältere **abgeschlossene** Eingänge (`done`, `rejected`), z. B. täglich per Cron.
   Eingänge, die noch auf Verarbeitung, Prüfung oder Ausführung warten, bleiben erhalten.
+- **Social Media**: „Briefing löschen“ bzw. „Kampagne löschen“ entfernt Stichpunkte, Fakten,
+  Entwürfe, Prüfergebnisse, Entscheidungen, Bilder (Eintrag und Datei) und die gespeicherten
+  KI-Ausgaben. `uv run python -m app.cli social-purge` löscht **abgeschlossene** Briefings
+  (alle Beiträge veröffentlicht oder verworfen), deren letzte Aktivität länger als
+  `RETENTION_DAYS` zurückliegt; Briefings mit offenen oder geplanten Beiträgen bleiben erhalten.
+  Jede Löschung steht mit Person (bzw. `system`) und Grund im Audit-Verlauf.
 - **Audit nach Löschung**: Audit-Einträge bleiben unverändert bestehen, enthalten aber nur
   Hashes (Eingabe, Ausgabe) und Metadaten; die Rohausgaben liegen in einer separaten,
   mitgelöschten Tabelle.

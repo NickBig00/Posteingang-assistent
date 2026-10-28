@@ -14,6 +14,7 @@ from app.core.llm.fake import FakeProvider
 from app.core.logging_config import RedactingFilter, redact, setup_logging
 from app.core.models import AuditEntry, AuditOutput
 from app.core.profiles import PROFILES_DIR
+from app.core.retention import retention_days
 from app.inbox import cli
 from app.inbox.ingest.service import import_samples, ingest_file
 from app.inbox.llm.client import LLMClient
@@ -29,7 +30,7 @@ from app.inbox.models import (
 )
 from app.inbox.pipeline import process_new_items
 from app.inbox.profiles import load_profile
-from app.inbox.retention import delete_item, purge_expired, retention_days
+from app.inbox.retention import delete_item, purge_expired
 from app.inbox.review import review_item
 from tests.conftest import SAMPLES_DIR
 

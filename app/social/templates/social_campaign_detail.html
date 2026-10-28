@@ -23,4 +23,8 @@
   {% endfor %}
 </ol>
 <p class="mt-4 text-xs text-slate-500">Jeder Beitrag wird einzeln geprüft und freigegeben.</p>
+<form method="post" action="/social/campaigns/{{ campaign.id }}/delete" class="mt-4"
+      onsubmit="return confirm('Kampagne mit allen Briefings, Entwürfen und Bildern endgültig löschen?')">
+  <button type="submit" class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-800 hover:bg-red-50">Kampagne löschen</button>
+</form>
 {% endblock %}

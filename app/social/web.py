@@ -13,6 +13,7 @@ from app.core.db import get_session
 from app.core.llm.factory import get_provider
 from app.core.models import utcnow
 from app.core.outcomes import worst_outcome
+from app.core.retention import retention_days
 from app.core.storage import get_storage_dir
 from app.core.users import current_user
 from app.core.web import NavEntry, module_templates
@@ -64,6 +65,7 @@ from app.social.models import (
     PostStatus,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
+from app.social.retention import delete_briefing, delete_campaign
 from app.social.review import (
     ReviewNotAllowedError,
     approval_blockers,
@@ -152,6 +154,7 @@ def social_index(request: Request, session: SessionDep, config: ConfigDep) -> HT
         {
             "briefings": briefings,
             "drafts": drafts,
+            "retention_days": retention_days(),
             "lights": {draft_id: _light(r) for draft_id, r in results.items()},
             "config": config,
             **_labels(config),
@@ -748,3 +751,25 @@ def campaign_detail(
             **_labels(config),
         },
     )
+
+
+# --- deletion concept ---
+
+
+@router.post("/social/briefings/{briefing_id}/delete")
+def briefing_delete(session: SessionDep, user: UserDep, briefing_id: int) -> RedirectResponse:
+    """Delete a briefing with drafts, checks, images and model outputs (audit stays)."""
+    briefing = _briefing_or_404(session, briefing_id)
+    campaign_id = briefing.campaign_id
+    delete_briefing(session, briefing_id, user)
+    if campaign_id is not None and session.get(Campaign, campaign_id) is not None:
+        return RedirectResponse(f"/social/campaigns/{campaign_id}", status_code=303)
+    return RedirectResponse("/social", status_code=303)
+
+
+@router.post("/social/campaigns/{campaign_id}/delete")
+def campaign_delete(session: SessionDep, user: UserDep, campaign_id: int) -> RedirectResponse:
+    """Delete a campaign with all its briefings."""
+    _campaign_or_404(session, campaign_id)
+    delete_campaign(session, campaign_id, user)
+    return RedirectResponse("/social/campaigns", status_code=303)

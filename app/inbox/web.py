@@ -12,6 +12,7 @@ from app.core.audit import audit_outputs
 from app.core.db import get_session
 from app.core.llm.factory import get_provider
 from app.core.profiles import active_profile_key
+from app.core.retention import retention_days
 from app.core.storage import get_storage_dir
 from app.core.web import NavEntry, module_templates
 from app.inbox.ingest.imap import (
@@ -39,7 +40,7 @@ from app.inbox.models import (
 )
 from app.inbox.pipeline import process_new_items
 from app.inbox.profiles import Profile, load_active_profile
-from app.inbox.retention import delete_item, retention_days
+from app.inbox.retention import delete_item
 from app.inbox.review import (
     ItemDetails,
     ReviewNotAllowedError,

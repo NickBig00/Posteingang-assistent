@@ -3,13 +3,17 @@
 import argparse
 from pathlib import Path
 
+from sqlmodel import Session
+
+from app.core.db import engine, init_db
 from app.core.llm.factory import get_provider
 from app.core.logging_config import setup_logging
 from app.social.evaluation import evaluate_social, write_report
 from app.social.llm.client import SocialLLMClient
 from app.social.profiles import load_social_config
+from app.social.retention import purge_expired
 
-COMMANDS = ("social-evaluate",)
+COMMANDS = ("social-evaluate", "social-purge")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -20,8 +24,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     eval_cmd.add_argument("--samples", type=Path, default=None)
     eval_cmd.add_argument("--out", type=Path, default=Path("docs/evaluation"))
+    commands.add_parser(
+        "social-purge", help="Abgeschlossene Briefings nach Ablauf der Aufbewahrungsfrist löschen"
+    )
     args = parser.parse_args(argv)
     setup_logging()
+
+    if args.command == "social-purge":
+        init_db(engine)
+        with Session(engine) as session:
+            summary = purge_expired(session)
+        print(
+            f"{len(summary.deleted_briefing_ids)} Briefings gelöscht "
+            f"(letzte Aktivität vor {summary.cutoff:%d.%m.%Y %H:%M} UTC)."
+        )
+        return 0
 
     config = load_social_config()
     report = evaluate_social(config, SocialLLMClient(get_provider()), args.samples)

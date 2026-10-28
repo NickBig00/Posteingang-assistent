@@ -62,5 +62,10 @@
     {% endfor %}
   </div>
 </div>
+<form method="post" action="/social/briefings/{{ briefing.id }}/delete" class="mt-6"
+      onsubmit="return confirm('Briefing mit allen Entwürfen, Prüfergebnissen und Bildern endgültig löschen?')">
+  <button type="submit" class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-800 hover:bg-red-50">Briefing löschen</button>
+  <span class="ml-2 text-xs text-slate-500">Entfernt Briefing, Entwürfe, Prüfergebnisse, Entscheidungen, Bilder und gespeicherte KI-Ausgaben. Der Audit-Verlauf behält nur Hashes und Metadaten.</span>
+</form>
 <div class="mt-6">{% include "_social_notice.html" %}</div>
 {% endblock %}

@@ -43,6 +43,9 @@
   {% else %}
   <p class="text-slate-600">Noch keine Briefings vorhanden.</p>
   {% endif %}
+  <p class="mt-3 text-xs text-slate-500">Abgeschlossene Briefings (alle Beiträge veröffentlicht oder verworfen) werden
+    {{ retention_days }} Tage nach der letzten Aktivität gelöscht (Befehl <code>social-purge</code>); Briefings mit offenen
+    Beiträgen bleiben erhalten. Der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
 </section>
 <div class="mt-6">{% include "_social_notice.html" %}</div>
 {% endblock %}
