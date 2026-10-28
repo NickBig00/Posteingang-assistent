@@ -300,3 +300,15 @@ def test_unplanned_approved_posts_are_listed(social_client: TestClient, session:
 
     assert "Freigegeben, noch nicht geplant" in page
     assert f"Entwurf {draft.id}" in page
+
+
+def test_time_zone_without_system_database() -> None:
+    """Windows has no system tz database: the `tzdata` package must provide Europe/Berlin."""
+    import zoneinfo  # noqa: PLC0415 - reset only within this test
+
+    zoneinfo.reset_tzpath(to=[])
+    try:
+        berlin = zoneinfo.ZoneInfo.no_cache("Europe/Berlin")
+        assert datetime(2026, 11, 3, 18, 30, tzinfo=berlin).utcoffset().total_seconds() == 3600  # type: ignore[union-attr]
+    finally:
+        zoneinfo.reset_tzpath()
