@@ -1,5 +1,6 @@
 """Deletion concept of the social media module: delete per briefing/campaign, retention."""
 
+import json
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -12,7 +13,14 @@ from sqlmodel import Session, SQLModel, select
 from app import cli
 from app.core.models import AuditEntry, AuditOutput
 from app.main import app
-from app.social.assets import save_asset
+from app.social.assets import (
+    REVOKE_STEP,
+    AssetError,
+    confirm_consent,
+    delete_asset,
+    revoke_consent,
+    save_asset,
+)
 from app.social.briefings import create_briefing
 from app.social.calendar import publish_draft, schedule_draft
 from app.social.campaigns import create_campaign, load_demo_campaign
@@ -26,15 +34,18 @@ from app.social.models import (
     CheckResult,
     PostDraft,
     PostReview,
+    PostStatus,
 )
 from app.social.retention import (
     DELETE_STEP,
+    DRAFT_DELETE_STEP,
     SYSTEM_ACTOR,
     delete_briefing,
     delete_campaign,
+    delete_draft,
     purge_expired,
 )
-from app.social.review import approve_draft, reject_draft
+from app.social.review import approval_blockers, approve_draft, confirm_warning, reject_draft
 from app.social.web import get_social_client, get_social_config
 from tests.social_helpers import course_input, demo_config, scripted
 
@@ -280,3 +291,153 @@ def test_delete_campaign_in_the_ui(social_client: TestClient, session: Session) 
     assert deleted.headers["location"] == "/social/campaigns"
     assert session.exec(select(Briefing)).all() == []
     assert social_client.post(f"{campaign_url}/delete").status_code == 404
+
+
+# --- delete per draft ---
+
+
+def test_delete_draft_keeps_briefing_and_other_drafts(session: Session) -> None:
+    briefing = _briefing(session)
+    first, second = _drafts(session, briefing)
+    approve_draft(session, first, "demo")
+    outputs_before = {o.audit_entry_id for o in session.exec(select(AuditOutput)).all()}
+    first_entries = {
+        e.id
+        for e in session.exec(select(AuditEntry)).all()
+        if e.model_params.get("draft_id") == first.id
+    }
+
+    assert delete_draft(session, first.id or 0, "demo")
+
+    assert session.get(Briefing, briefing.id) is not None
+    assert [d.id for d in _drafts(session, briefing)] == [second.id]
+    assert all(r.draft_id == second.id for r in session.exec(select(CheckResult)).all())
+    assert session.exec(select(PostReview)).all() == []
+    outputs_after = {o.audit_entry_id for o in session.exec(select(AuditOutput)).all()}
+    assert outputs_after == outputs_before - first_entries
+    assert outputs_after  # the other draft's outputs stay
+    entry = session.exec(select(AuditEntry).where(AuditEntry.step == DRAFT_DELETE_STEP)).one()
+    assert entry.model_params["draft_id"] == first.id
+    assert delete_draft(session, first.id or 0, "demo") is False
+
+
+# --- withdrawn image consent ---
+
+
+def _with_consented_image(session: Session, raw_dir: Path) -> tuple[Briefing, Asset]:
+    briefing = _briefing(session)
+    asset = save_asset(
+        session, briefing, "team.png", PNG, shows_persons=True, consent_confirmed=True,
+        user="demo", storage=raw_dir,
+    )  # fmt: skip
+    return briefing, asset
+
+
+def test_revoke_consent_lists_affected_posts(session: Session, raw_dir: Path) -> None:
+    briefing, asset = _with_consented_image(session, raw_dir)
+    planned, published = _drafts(session, briefing)
+    for draft in (planned, published):
+        approve_draft(session, draft, "demo")
+        schedule_draft(session, draft, datetime(2099, 1, 1, 9), "demo")
+    publish_draft(session, published, "demo")
+    image = Path(asset.stored_path)
+
+    revocation = revoke_consent(session, asset, "demo")
+
+    assert [d.id for d in revocation.back_to_review] == [planned.id]
+    assert [d.id for d in revocation.published] == [published.id]
+    assert planned.status is PostStatus.IN_REVIEW and planned.scheduled_at is None
+    assert published.status is PostStatus.PUBLISHED
+    assert not image.exists()
+    assert asset.consent_revoked_by == "demo" and not asset.consent_confirmed
+    assert any("widerrufen" in b for b in approval_blockers(session, planned))
+    with pytest.raises(AssetError, match="widerrufen"):
+        confirm_consent(session, asset, "demo")
+    entry = session.exec(select(AuditEntry).where(AuditEntry.step == REVOKE_STEP)).one()
+    assert entry.model_params["back_to_review"] == [planned.id]
+    assert entry.model_params["published"] == [published.id]
+
+    # Removing the image entry lifts the block.
+    delete_asset(session, asset, "demo")
+    assert approval_blockers(session, planned) == []
+
+
+def test_revoke_needs_confirmed_consent(session: Session, raw_dir: Path) -> None:
+    briefing = _briefing(session)
+    asset = save_asset(
+        session, briefing, "x.png", PNG, shows_persons=True, consent_confirmed=False,
+        user="demo", storage=raw_dir,
+    )  # fmt: skip
+
+    with pytest.raises(AssetError, match="keine bestätigte Einwilligung"):
+        revoke_consent(session, asset, "demo")
+
+
+def test_revoked_file_stays_for_other_consented_entry(session: Session, raw_dir: Path) -> None:
+    _, revoked = _with_consented_image(session, raw_dir)
+    _, other = _with_consented_image(session, raw_dir)
+
+    revoke_consent(session, revoked, "demo")
+
+    assert Path(other.stored_path).exists()
+
+
+# --- audit holds only hashes and metadata ---
+
+
+def test_audit_trail_holds_no_content(session: Session, raw_dir: Path) -> None:
+    notes = "Geheimtipp Zirkeltraining mit Trainerin Anna"
+    briefing = _briefing(session, notes=notes)
+    first, second = _drafts(session, briefing)
+    asset = save_asset(
+        session, briefing, "anna-im-kurs.png", PNG, shows_persons=True, consent_confirmed=True,
+        user="demo", storage=raw_dir,
+    )  # fmt: skip
+    for result in session.exec(select(CheckResult).where(CheckResult.draft_id == first.id)).all():
+        if result.requires_confirmation:
+            confirm_warning(session, result, "demo")
+    approve_draft(session, first, "demo")
+    schedule_draft(session, first, datetime(2099, 1, 1, 9), "demo")
+    revoke_consent(session, asset, "demo")
+    delete_draft(session, second.id or 0, "demo")
+    texts = [notes, first.text, "anna-im-kurs", "Zirkeltraining", "Anna"]
+
+    delete_briefing(session, briefing.id or 0, "demo")
+
+    entries = session.exec(select(AuditEntry)).all()
+    assert len(entries) > 10
+    for entry in entries:
+        stored = json.dumps(
+            [entry.step, entry.model, entry.model_params, entry.prompt_version, entry.error],
+            ensure_ascii=False,
+        )
+        assert not any(text in stored for text in texts), entry.step
+        assert len(entry.input_hash) == 64
+    assert session.exec(select(AuditOutput)).all() == []
+
+
+def test_revoke_and_delete_draft_in_the_ui(
+    social_client: TestClient, session: Session, raw_dir: Path
+) -> None:
+    briefing, asset = _with_consented_image(session, raw_dir)
+    first, second = _drafts(session, briefing)
+    approve_draft(session, first, "demo")
+    page = social_client.get(f"/social/briefings/{briefing.id}").text
+    assert "Einwilligung widerrufen</button>" in page
+    assert "Entwurf löschen" in page
+
+    revoked = social_client.post(f"/social/assets/{asset.id}/revoke")
+
+    assert revoked.status_code == 200
+    assert "Zurück in die Prüfung" in revoked.text
+    assert f"Entwurf {first.id} · Facebook-Beitrag" in revoked.text
+    assert social_client.get(f"/social/assets/{asset.id}").status_code == 404
+    again = social_client.post(f"/social/assets/{asset.id}/revoke")
+    assert again.status_code == 409
+
+    second_id, briefing_id = second.id, briefing.id
+    deleted = social_client.post(f"/social/drafts/{second_id}/delete", follow_redirects=False)
+    assert deleted.headers["location"] == f"/social/briefings/{briefing_id}"
+    session.expire_all()
+    assert session.get(PostDraft, second_id) is None
+    assert social_client.post(f"/social/drafts/{second_id}/delete").status_code == 404

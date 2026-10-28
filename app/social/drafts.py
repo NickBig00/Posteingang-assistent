@@ -1,7 +1,9 @@
 """Draft generation per channel via the LLM interface (SPEC_social section 5, step 2).
 
-Every LLM call is audited; invalid output is retried once, then the draft goes to
-`needs_manual_review` with an empty text that a person has to write.
+Every LLM call is audited. One retry: after invalid output, or – naming them explicitly –
+after facts of the briefing were dropped or changed. Invalid output twice: the draft goes to
+`needs_manual_review` with an empty text; facts still missing: `needs_manual_review` with the
+text, which a person completes.
 """
 
 import logging
@@ -9,13 +11,15 @@ import logging
 from pydantic import JsonValue
 from sqlmodel import Session
 
-from app.core.llm.calls import LLMCall, audit_llm_call, call_with_retry
+from app.core.llm.calls import LLMCall, audit_llm_call
 from app.social.checking import run_checks
-from app.social.facts import BriefingFacts
+from app.social.checks import missing_facts
+from app.social.facts import BriefingFacts, FactKey
 from app.social.llm.client import SocialLLMClient
 from app.social.llm.schemas import DraftOutput
 from app.social.models import Briefing, Channel, PostDraft, PostStatus
 from app.social.profiles import SocialConfig
+from app.social.status import transition
 
 logger = logging.getLogger(__name__)
 
@@ -43,18 +47,8 @@ def generate_draft(
         "channel": channel.value,
     }
 
-    def record(call: LLMCall[DraftOutput], attempt: int) -> None:
-        audit_llm_call(
-            session,
-            call,
-            attempt=attempt,
-            provider=client.provider.name,
-            step=DRAFT_STEP,
-            context=context,
-        )
-
-    call = call_with_retry(
-        lambda: client.draft_post(
+    def attempt(number: int, missing: list[FactKey] | None = None) -> LLMCall[DraftOutput]:
+        call = client.draft_post(
             config,
             area_key=briefing.area,
             occasion_key=briefing.occasion_type,
@@ -62,10 +56,34 @@ def generate_draft(
             facts=facts,
             notes=briefing.notes,
             campaign_step=campaign_step_label,
-        ),
-        record,
-    )
-    output: DraftOutput | None = call.output if call.ok else None
+            missing_facts=missing,
+        )
+        retry: dict[str, JsonValue] = {}
+        if number > 1:
+            retry = {"retry_reason": "missing_facts" if missing else "invalid_output"}
+            if missing:
+                # Only the keys: the audit holds no content.
+                retry["missing_facts"] = list(missing)
+        audit_llm_call(
+            session,
+            call,
+            attempt=number,
+            provider=client.provider.name,
+            step=DRAFT_STEP,
+            context=context | retry,
+        )
+        return call
+
+    # One retry (CLAUDE.md): for invalid output, or for facts the draft dropped or changed.
+    output = _valid(attempt(1))
+    still_missing: list[FactKey] = []
+    if output is None:
+        output = _valid(attempt(2))
+    else:
+        missing = missing_facts(_full_text(channel, output), facts)
+        if missing:
+            output = _valid(attempt(2, missing)) or output
+            still_missing = missing_facts(_full_text(channel, output), facts)
     if output is None:
         draft.status = PostStatus.NEEDS_MANUAL_REVIEW
     else:
@@ -75,8 +93,21 @@ def generate_draft(
     session.commit()
     session.refresh(draft)
     run_checks(session, config, client, draft)
+    if still_missing and draft.status is PostStatus.IN_REVIEW:
+        # Facts still missing after the retry: a person has to complete the text.
+        transition(session, draft, PostStatus.NEEDS_MANUAL_REVIEW)
     logger.info("draft %s created (channel=%s, status=%s)", draft.id, channel, draft.status)
     return draft
+
+
+def _valid(call: LLMCall[DraftOutput]) -> DraftOutput | None:
+    return call.output if call.ok else None
+
+
+def _full_text(channel: Channel, output: DraftOutput) -> str:
+    return PostDraft(
+        briefing_id=0, channel=channel, text=output.text, hashtags=output.hashtags
+    ).full_text
 
 
 def generate_drafts(

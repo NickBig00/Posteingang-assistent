@@ -34,6 +34,11 @@ Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 Regeln: Module nutzen `core`, aber nicht die Interna anderer Module; `core` importiert kein
 Modul. Tests prüfen diese Grenzen.
 
+### Anwendungstitel
+
+Der Titel in Kopfzeile und Browser-Tab kommt aus der Konfiguration: `APP_TITLE` (Standard
+„Posteingangs-Assistent“), z. B. `APP_TITLE="Demo-Assistent Musterstadt"` in der `.env`.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:
@@ -234,6 +239,13 @@ Klassifizierung.
   (alle Beiträge veröffentlicht oder verworfen), deren letzte Aktivität länger als
   `RETENTION_DAYS` zurückliegt; Briefings mit offenen oder geplanten Beiträgen bleiben erhalten.
   Jede Löschung steht mit Person (bzw. `system`) und Grund im Audit-Verlauf.
+- **Social Media – einzelner Entwurf**: „Entwurf löschen“ entfernt Text, Prüfergebnisse,
+  Entscheidungen und die KI-Ausgaben dieses Entwurfs; Briefing und andere Kanäle bleiben.
+- **Widerruf der Bild-Einwilligung**: „Einwilligung widerrufen“ löscht die Bilddatei. Freigegebene
+  und geplante Beiträge des Briefings gehen zurück in „In Prüfung“ (Termin aufgehoben); bereits
+  veröffentlichte Beiträge werden aufgelistet, damit sie auf der Plattform von Hand entfernt
+  werden. Bis der Bildeintrag entfernt ist, ist keine Freigabe möglich; eine neue Einwilligung
+  für dasselbe Bild gibt es nur per neuem Upload. Der Audit-Eintrag nennt nur IDs.
 - **Audit nach Löschung**: Audit-Einträge bleiben unverändert bestehen, enthalten aber nur
   Hashes (Eingabe, Ausgabe) und Metadaten; die Rohausgaben liegen in einer separaten,
   mitgelöschten Tabelle.
@@ -282,10 +294,14 @@ Spezifikation: [`docs/SPEC_social.md`](docs/SPEC_social.md).
   Uhrzeit, Preis, Ort, Zeitraum, Telefonnummer), Kanäle (vorbelegt aus dem Bereich) und
   Wunschtermin. Pflichtfakten des Anlass-Typs sind markiert und werden deterministisch geprüft.
 - Je gewähltem Kanal (Instagram-Beitrag, Instagram-Story, Facebook, LinkedIn) entsteht ein
-  KI-Entwurf über das LLM-Interface in `core` (Prompt `prompts/social/post_draft_v1.md`).
+  KI-Entwurf über das LLM-Interface in `core` (Prompt `prompts/social/post_draft_v2.md`).
   Anrede, Ton, Emojis, Hashtags und Handlungsaufforderung kommen aus dem gewählten Bereich.
 - Die Ausgabe (`{"text", "hashtags"}`) wird strikt gegen ein Pydantic-Schema geprüft, bei
   ungültiger Ausgabe einmal wiederholt, danach steht der Entwurf auf „Manuelle Bearbeitung“.
+  Fehlen im Entwurf Fakten des Briefings oder weichen sie ab (deterministische Prüfung), wird
+  er ebenfalls genau einmal neu erzeugt; der Prompt nennt dann die fehlenden Fakten
+  ausdrücklich. Fehlen sie danach noch, bleibt der Text erhalten und der Entwurf steht auf
+  „Manuelle Bearbeitung“. Im Audit stehen Grund und Schlüssel der fehlenden Fakten, keine Werte.
   Jeder Aufruf erzeugt einen Audit-Eintrag (`social.post_draft`, mit Briefing, Entwurf, Kanal).
 - Entwürfe sind in Oberfläche und Speicherung als KI-Vorschlag gekennzeichnet
   (`is_ai_suggestion`). Die Kennzeichnung steht nie im Beitragstext selbst.
@@ -313,16 +329,19 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
 ### Gesundheitsversprechen, Personenbezug und Anrede
 
 - **Gesundheitsversprechen:** Begriffsliste aus dem Branchenprofil (Code) plus KI-Einschätzung
-  (`prompts/social/post_assess_v1.md`). Treffer sind Warnungen mit markierter Textstelle, die
+  (`prompts/social/post_assess_v2.md`). Treffer sind Warnungen mit markierter Textstelle, die
   vor der Freigabe ausdrücklich bestätigt werden müssen. Eindeutige Heilversprechen
   (`certain_terms`, z. B. „heilt“) sind in sensiblen Bereichen (Physio, Reha) Fehler.
+  Begriffe wie „Garantie“ (`context_only_terms`) zählen nur mit Gesundheitsbezug im selben Satz
+  („garantiert weniger Schmerzen“ ja, „Bestpreis-Garantie“ nein).
 - **Personenbezug:** Namensmuster (Anrede/Titel, Rolle + Name, Vornamen-Lexikon) und die
   fiktive Mitgliederliste. Namen sind Warnungen mit Bestätigungspflicht. Mitglieder aus der
   Mitgliederliste sind Fehler; diesen Fehler hebt nur die bestätigte Einwilligung der genannten
   Person auf („Einwilligung der Person liegt vor“, mit Person, Zeitpunkt und Audit-Eintrag
   `social.person_consent`). Andere Fehler bleiben davon unberührt.
-- **Anrede:** Code erkennt du- und Sie-Formen und warnt bei Mischung oder bei falscher Anrede
-  für den Bereich; die KI-Einschätzung ergänzt, was Code nicht sieht (z. B. Imperative).
+- **Anrede:** Code erkennt du- und Sie-Formen (auch du-Imperative am Satzanfang wie „Sprich uns
+  an“, „Komm vorbei“) und warnt bei Mischung oder bei falscher Anrede für den Bereich; die
+  KI-Einschätzung ergänzt, was Code nicht sieht.
 - Die KI-Einschätzung bekommt nur den Beitragstext. Ihre Funde sind als „KI-Einschätzung“
   gekennzeichnet; was Code schon gefunden hat, wird nicht doppelt gemeldet. Bei ungültiger
   Antwort nach einem erneuten Versuch geht der Entwurf in „Manuelle Bearbeitung“.
@@ -393,10 +412,15 @@ Das Skript (`app/social/evaluation.py`) arbeitet in einer temporären Datenbank:
    Code-Prüfungen plus KI-Einschätzung → Erkennungsrate (Recall) und Präzision für
    Gesundheitsversprechen und Personen, Trefferquote der Anrede-Prüfung.
 
-Bericht: `docs/evaluation/social_<branche>_<anbieter>.md` (plus `.json`). Ziele laut SPEC: 100 %
+Bericht: `docs/evaluation/social_<branche>_<anbieter>.md` (plus `.json`), dazu
+`social_<branche>_<anbieter>_entwuerfe.md` zum Lesen der erzeugten Texte: je Briefing die
+Stichpunkte und Fakten, darunter die Entwürfe je Kanal mit Hashtags und allen
+Prüfergebnissen. Ziele laut SPEC: 100 %
 Fakten korrekt, mindestens 90 % erkannte Gesundheitsversprechen. Ergebnis mit dem Fake-Provider
-(Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 92,9 % (13 von 14, nur
-Code; der implizite Fall wird erst von einem echten Modell erkannt), Personen 100 %.
+(Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 93,3 % (14 von 15, nur
+Code; der implizite Fall g14 wird erst von einem echten Modell erkannt), Personen 100 %, keine
+Fehlalarme. Mit OpenAI (`docs/evaluation/social_fitness_openai.md`, Stand vor den Korrekturen
+zu Fakten, „Garantie“ und Imperativen): Fakten 94,7 %, Gesundheitsversprechen 14 von 14.
 
 ### Zweite Branche: Handwerk
 

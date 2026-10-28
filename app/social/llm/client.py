@@ -6,14 +6,14 @@ from app.core.llm.base import LLMProvider, LLMTask
 from app.core.llm.calls import LLMCall, parse_json_object, short_error, timed_complete
 from app.core.llm.prompts import PROMPTS_DIR, PromptTemplate, load_prompt
 from app.social.channels import CHANNEL_SPECS
-from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
+from app.social.facts import FACT_LABELS, BriefingFacts, FactKey, formatted_facts
 from app.social.llm import fake_heuristics as _fake_heuristics  # noqa: F401 - offline demo
 from app.social.llm.schemas import AssessmentOutput, DraftOutput
 from app.social.models import CHANNEL_LABELS, Channel
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig
 
 SOCIAL_PROMPTS_DIR = PROMPTS_DIR / "social"
-PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v1", "post_assess": "v1"}
+PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v2", "post_assess": "v2"}
 
 
 class SocialLLMClient:
@@ -36,9 +36,13 @@ class SocialLLMClient:
         facts: BriefingFacts,
         notes: str,
         campaign_step: str | None = None,
+        missing_facts: list[FactKey] | None = None,
     ) -> LLMCall[DraftOutput]:
+        """Draft for one channel. `missing_facts`: facts the previous attempt dropped or
+        changed; the prompt names them explicitly (second attempt)."""
         brand = config.brand
         area = brand.area(area_key)
+        formatted = formatted_facts(facts)
         template = self.prompts["post_draft"]
         prompt = template.render(
             brand_name=brand.name,
@@ -56,7 +60,8 @@ class SocialLLMClient:
             max_hashtags=brand.max_hashtags,
             occasion_label=config.industry.occasion_type(occasion_key).label,
             campaign_step=campaign_step,
-            facts=[(FACT_LABELS[key], value) for key, value in formatted_facts(facts).items()],
+            facts=[(FACT_LABELS[key], value) for key, value in formatted.items()],
+            missing_facts=[(FACT_LABELS[key], formatted[key]) for key in missing_facts or []],
             notes=notes,
             call_to_action=brand.call_to_action_for(area_key),
             hashtags=brand.fixed_hashtags(area_key),

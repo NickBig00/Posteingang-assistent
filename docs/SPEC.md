@@ -53,10 +53,10 @@ Vertragsdaten der (fiktiven) Mitglieder liegen in einer Demo-Tabelle, gegen die 
 
 ## 5. LLM-Schicht
 
-- Anbieterunabhängiges Interface in `app/llm/` mit Methoden für Klassifizierung, Extraktion und Entwurf.
+- Anbieterunabhängiges Interface in `app/core/llm/` (Provider, versionierte Prompts, Audit und ein Retry je Aufruf). Die Methoden des Posteingangs für Klassifizierung, Extraktion, Entwurf und OCR liegen in `app/inbox/llm/` und nutzen ausschließlich dieses Interface; das Social-Media-Modul hat seinen Client in `app/social/llm/`.
 - Implementierungen: `FakeProvider` (Tests, deterministisch), ein echter API-Provider (konfigurierbar per Umgebungsvariable), später optional ein lokales Modell.
 - Alle Ausgaben werden gegen Pydantic-Schemas validiert.
-- Prompts liegen versioniert als Dateien in `prompts/` (z. B. `classify_v1.md`). Jede Verarbeitung speichert die verwendete Prompt-Version.
+- Prompts liegen versioniert als Dateien in `prompts/` (z. B. `classify_v1.md`; Social Media unter `prompts/social/`). Jede Verarbeitung speichert die verwendete Prompt-Version.
 - Auswahl des produktiven Anbieters für einen späteren Echtbetrieb ist eine offene Entscheidung (Kriterien: Auftragsverarbeitungsvertrag, Verarbeitung in der EU, kein Training mit Kundendaten).
 
 ## 6. Datenmodell (Kern)

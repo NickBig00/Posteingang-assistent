@@ -23,8 +23,9 @@ from app.core.members import Member
 from app.core.models import utcnow
 from app.core.outcomes import Outcome
 from app.social.briefings import BriefingInput, create_briefing
+from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
-from app.social.facts import BriefingFacts
+from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
 from app.social.llm.client import SocialLLMClient
 from app.social.models import CHANNEL_LABELS, Channel, CheckResult, PostStatus
 from app.social.profiles import AddressForm, SocialConfig
@@ -32,6 +33,7 @@ from app.social.sensitive import (
     ADDRESS,
     HEALTH,
     PERSONS,
+    SENSITIVE_CHECK_LABELS,
     check_address_form,
     check_health_claims,
     check_persons,
@@ -54,6 +56,23 @@ class DraftEvaluation:
     length_ok: bool
     address_ok: bool
     problems: list[str] = field(default_factory=list)
+    # For the drafts report only (not in the JSON summary).
+    text: str = ""
+    hashtags: list[str] = field(default_factory=list)
+    # (outcome, check label, reason) in check order.
+    checks: list[tuple[str, str, str]] = field(default_factory=list)
+
+
+DRAFT_DETAIL_FIELDS = frozenset({"text", "hashtags", "checks"})
+
+
+@dataclass
+class BriefingSample:
+    sample_id: str
+    area: str
+    occasion: str
+    notes: str
+    facts: dict[str, str]
 
 
 @dataclass
@@ -103,6 +122,7 @@ class SocialReport:
     health: DetectionScore
     persons: DetectionScore
     address: list[Detection]
+    briefings: list[BriefingSample] = field(default_factory=list)
 
     def _rate(self, values: list[bool]) -> float:
         return sum(values) / len(values) if values else 1.0
@@ -139,7 +159,10 @@ class SocialReport:
                 "length_rate": round(self.length_rate, 4),
                 "address_rate": round(self.address_rate, 4),
                 "needs_manual_review": self.manual_review,
-                "details": [asdict(d) for d in self.drafts],
+                "details": [
+                    {k: v for k, v in asdict(d).items() if k not in DRAFT_DETAIL_FIELDS}
+                    for d in self.drafts
+                ],
             },
             "detection": {
                 "health_claims": _score_json(self.health),
@@ -192,8 +215,10 @@ def _seed_members(session: Session, path: Path) -> list[str]:
 
 def _evaluate_drafts(
     session: Session, config: SocialConfig, client: SocialLLMClient, samples: list[dict]
-) -> list[DraftEvaluation]:
+) -> tuple[list[BriefingSample], list[DraftEvaluation]]:
+    labels = _check_labels(config)
     evaluations = []
+    briefings = []
     for sample in samples:
         data = BriefingInput(
             area=sample["area"],
@@ -203,6 +228,15 @@ def _evaluate_drafts(
             facts=BriefingFacts.model_validate(sample.get("facts", {})),
         )
         briefing = create_briefing(session, config, data, "evaluation")
+        briefings.append(
+            BriefingSample(
+                sample_id=sample["id"],
+                area=config.brand.area(sample["area"]).label,
+                occasion=config.industry.occasion_type(sample["occasion_type"]).label,
+                notes=sample["notes"],
+                facts={FACT_LABELS[k]: v for k, v in formatted_facts(data.facts).items()},
+            )
+        )
         expected = AddressForm(sample["labels"]["address_form"])
         if expected is not config.brand.address_form(sample["area"]):
             raise ValueError(f"{sample['id']}: label address_form does not match the area")
@@ -222,9 +256,20 @@ def _evaluate_drafts(
                     length_ok=bool(draft.text) and not _failed(results, "laenge"),
                     address_ok=bool(draft.text) and not _failed(results, ADDRESS),
                     problems=problems,
+                    text=draft.text,
+                    hashtags=list(draft.hashtags),
+                    checks=[
+                        (r.outcome.value, labels.get(r.check_key, r.check_key), r.reason)
+                        for r in results
+                    ],
                 )
             )
-    return evaluations
+    return briefings, evaluations
+
+
+def _check_labels(config: SocialConfig) -> dict[str, str]:
+    rules = [*config.industry.term_rules, *config.industry.phrase_rules]
+    return CHECK_LABELS | SENSITIVE_CHECK_LABELS | {r.key: r.label for r in rules}
 
 
 def _evaluate_detection(
@@ -282,7 +327,7 @@ def evaluate_social(
     init_db(engine)
     with Session(engine) as session:
         members = _seed_members(session, SAMPLES_ROOT / config.industry_key / "members.json")
-        drafts = _evaluate_drafts(
+        briefings, drafts = _evaluate_drafts(
             session, config, client, _load(samples_dir / "briefings.json", "briefings")
         )
         health, persons, address = _evaluate_detection(
@@ -297,6 +342,7 @@ def evaluate_social(
         health=_score(health),
         persons=_score(persons),
         address=address,
+        briefings=briefings,
     )
 
 
@@ -363,13 +409,55 @@ def render_markdown(report: SocialReport) -> str:
     return "\n".join(lines)
 
 
-def write_report(report: SocialReport, out_dir: Path) -> tuple[Path, Path]:
+_OUTCOME_WORDS = {"ok": "ok", "warning": "Warnung", "error": "Fehler"}
+
+
+def render_drafts_markdown(report: SocialReport) -> str:
+    """Per briefing: the key points and below them the drafts per channel with hashtags and
+    check results – for reading the generated texts."""
+    lines = [
+        f"# Entwürfe der Evaluation – Branche `{report.industry}`, Anbieter `{report.provider}`",
+        "",
+        f"Erstellt: {report.created_at} · Markenprofil `{report.brand}` · nur synthetische Daten",
+        "",
+        "Alle Texte sind KI-Vorschläge aus der Evaluation und wurden nicht freigegeben.",
+        "",
+    ]
+    drafts_by_sample: dict[str, list[DraftEvaluation]] = {}
+    for draft in report.drafts:
+        drafts_by_sample.setdefault(draft.sample_id, []).append(draft)
+    for briefing in report.briefings:
+        lines += [f"## {briefing.sample_id} – {briefing.occasion} · {briefing.area}", ""]
+        lines += [f"**Stichpunkte:** {briefing.notes}", ""]
+        if briefing.facts:
+            facts = " · ".join(f"{label}: {value}" for label, value in briefing.facts.items())
+            lines += [f"**Fakten:** {facts}", ""]
+        for draft in drafts_by_sample.get(briefing.sample_id, []):
+            lines += [f"### {draft.channel} · Status `{draft.status}`", ""]
+            if draft.text:
+                lines += ["~~~text", draft.text, "~~~", ""]
+            else:
+                lines += ["_Kein gültiger Text erzeugt._", ""]
+            hashtags = " ".join(draft.hashtags) if draft.hashtags else "–"
+            lines += [f"**Hashtags:** {hashtags}", "", "**Prüfergebnisse:**", ""]
+            lines += [
+                f"- {_OUTCOME_WORDS.get(outcome, outcome)} – {label}: {reason}"
+                for outcome, label, reason in draft.checks
+            ] or ["- –"]
+            lines.append("")
+    return "\n".join(lines)
+
+
+def write_report(report: SocialReport, out_dir: Path) -> tuple[Path, Path, Path]:
+    """Summary (`.md`, `.json`) and the drafts report (`_entwuerfe.md`)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = f"social_{report.industry}_{report.provider}"
     markdown = out_dir / f"{stem}.md"
     data = out_dir / f"{stem}.json"
+    drafts = out_dir / f"{stem}_entwuerfe.md"
     markdown.write_text(render_markdown(report), encoding="utf-8")
     data.write_text(
         json.dumps(report.to_json(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    return markdown, data
+    drafts.write_text(render_drafts_markdown(report), encoding="utf-8")
+    return markdown, data, drafts

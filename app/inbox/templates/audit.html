@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Audit Eingang {{ item.id }} – Posteingangs-Assistent{% endblock %}
+{% block title %}Audit Eingang {{ item.id }} – {{ app_title }}{% endblock %}
 {% block content %}
 <a href="/items/{{ item.id }}" class="text-sm text-blue-700 hover:underline">← Eingang {{ item.id }}</a>
 <h2 class="mb-1 text-lg font-semibold">Audit-Verlauf für Eingang {{ item.id }}</h2>

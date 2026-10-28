@@ -29,6 +29,10 @@
     <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Aus Kalender nehmen</button>
   </form>
   {% endif %}
+  <form method="post" action="/social/drafts/{{ d.id }}/delete"
+        onsubmit="return confirm('Diesen Entwurf mit Prüfergebnissen und gespeicherten KI-Ausgaben löschen?')">
+    <button type="submit" class="rounded px-2 py-1.5 text-xs text-red-700 hover:underline">Entwurf löschen</button>
+  </form>
   {% if d.status.value in ("approved", "scheduled", "published") %}
   <a href="/social/drafts/{{ d.id }}/export" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Als Textdatei</a>
   <button type="button" data-copy="{{ d.full_text }}"
