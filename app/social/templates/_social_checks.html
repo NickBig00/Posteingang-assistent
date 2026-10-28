@@ -5,6 +5,18 @@
     <li class="{{ 'text-slate-500' if light == 'ok' else '' }}">{% with light_ok_label = "ok" %}{% include "_light.html" %}{% endwith %}
       <span class="text-slate-500">{{ check_labels.get(r.check_key, r.check_key) }}:</span> {{ r.reason }}
       {% if r.is_ai_assessment %}<span class="text-xs text-violet-700">KI-Einschätzung</span>{% endif %}
+      {% if r.consent_required %}
+        {% if r.confirmed_at %}
+        <span class="text-xs text-green-800">✓ Einwilligung bestätigt von {{ r.confirmed_by }} am {{ r.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+        {% elif d.status.value in ("in_review", "needs_manual_review") %}
+        <form method="post" action="/social/checks/{{ r.id }}/consent" class="mt-1 block"
+              onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Nennung in diesem Beitrag ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')">
+          <button type="submit" class="rounded border border-red-400 px-2 py-0.5 text-xs hover:bg-red-50">
+            Einwilligung der Person liegt vor</button>
+          <span class="text-xs text-slate-500">Sonst den Namen aus dem Text entfernen.</span>
+        </form>
+        {% endif %}
+      {% endif %}
       {% if r.requires_confirmation %}
         {% if r.confirmed_at %}
         <span class="text-xs text-green-800">✓ bestätigt von {{ r.confirmed_by }} am {{ r.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>

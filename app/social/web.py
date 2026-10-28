@@ -68,6 +68,7 @@ from app.social.review import (
     ReviewNotAllowedError,
     approval_blockers,
     approve_draft,
+    confirm_person_consent,
     confirm_warning,
     edit_draft,
     recheck_draft,
@@ -303,6 +304,22 @@ def check_confirm(
     draft = _draft_or_404(session, result.draft_id)
     try:
         confirm_warning(session, result, user)
+    except ReviewNotAllowedError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _back(draft)
+
+
+@router.post("/social/checks/{result_id}/consent", response_model=None)
+def check_person_consent(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, result_id: int
+) -> HTMLResponse | RedirectResponse:
+    """A person confirms the consent of a named member – recorded in the audit trail."""
+    result = session.get(CheckResult, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Prüfergebnis nicht gefunden")
+    draft = _draft_or_404(session, result.draft_id)
+    try:
+        confirm_person_consent(session, result, user)
     except ReviewNotAllowedError as error:
         return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
     return _back(draft)

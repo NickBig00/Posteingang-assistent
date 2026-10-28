@@ -56,6 +56,7 @@ def store_findings(session: Session, draft: PostDraft, findings: Sequence[Findin
                 excerpt=text[start:end] if start is not None else None,
                 is_ai_assessment=finding.is_ai_assessment,
                 requires_confirmation=finding.requires_confirmation,
+                consent_required=finding.consent_required,
             )
         )
     session.commit()

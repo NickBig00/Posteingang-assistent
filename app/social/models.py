@@ -136,6 +136,9 @@ class CheckResult(SQLModel, table=True):
     is_ai_assessment: bool = False
     # Warnings that must be confirmed by a person before approval (health claims, persons).
     requires_confirmation: bool = False
+    # Errors that only the confirmed consent of the named person lifts (members in a post);
+    # the consent is recorded in `confirmed_by`/`confirmed_at`.
+    consent_required: bool = False
     confirmed_by: str | None = None
     confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
 

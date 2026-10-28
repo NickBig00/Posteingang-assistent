@@ -311,8 +311,10 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
   vor der Freigabe ausdrücklich bestätigt werden müssen. Eindeutige Heilversprechen
   (`certain_terms`, z. B. „heilt“) sind in sensiblen Bereichen (Physio, Reha) Fehler.
 - **Personenbezug:** Namensmuster (Anrede/Titel, Rolle + Name, Vornamen-Lexikon) und die
-  fiktive Mitgliederliste. Namen sind Warnungen mit Bestätigungspflicht; Mitglieder aus der
-  Mitgliederliste sind Fehler (keine Mitgliedernamen in Beiträgen).
+  fiktive Mitgliederliste. Namen sind Warnungen mit Bestätigungspflicht. Mitglieder aus der
+  Mitgliederliste sind Fehler; diesen Fehler hebt nur die bestätigte Einwilligung der genannten
+  Person auf („Einwilligung der Person liegt vor“, mit Person, Zeitpunkt und Audit-Eintrag
+  `social.person_consent`). Andere Fehler bleiben davon unberührt.
 - **Anrede:** Code erkennt du- und Sie-Formen und warnt bei Mischung oder bei falscher Anrede
   für den Bereich; die KI-Einschätzung ergänzt, was Code nicht sieht (z. B. Imperative).
 - Die KI-Einschätzung bekommt nur den Beitragstext. Ihre Funde sind als „KI-Einschätzung“

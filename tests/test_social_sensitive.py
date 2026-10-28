@@ -22,9 +22,11 @@ from app.social.models import Channel, CheckResult, PostDraft, PostStatus
 from app.social.profiles import AddressForm
 from app.social.review import (
     CONFIRM_STEP,
+    PERSON_CONSENT_STEP,
     ReviewNotAllowedError,
     approval_blockers,
     approve_draft,
+    confirm_person_consent,
     confirm_warning,
 )
 from app.social.sensitive import (
@@ -332,8 +334,83 @@ def test_member_in_post_blocks_approval(session: Session) -> None:
 
     errors = [r for r in _results(session, draft) if r.outcome is Outcome.ERROR]
     assert [r.check_key for r in errors] == [PERSONS]
-    with pytest.raises(ReviewNotAllowedError, match="Mitgliederliste"):
+    with pytest.raises(ReviewNotAllowedError, match="Einwilligung fehlt.*Mitgliederliste"):
         approve_draft(session, draft, "demo")
+
+
+def _member_draft(session: Session) -> tuple[PostDraft, CheckResult]:
+    seed_members(session)
+    draft = _draft(session, notes="Danke an Erika Beispiel für die Idee")
+    (error,) = [r for r in _results(session, draft) if r.outcome is Outcome.ERROR]
+    return draft, error
+
+
+def test_member_error_needs_consent_not_a_plain_confirmation(session: Session) -> None:
+    draft, error = _member_draft(session)
+
+    assert error.consent_required and not error.requires_confirmation
+    with pytest.raises(ReviewNotAllowedError, match="braucht keine Bestätigung"):
+        confirm_warning(session, error, "demo")
+    assert approval_blockers(session, draft)
+
+
+def test_member_consent_lifts_only_that_error(session: Session) -> None:
+    draft, error = _member_draft(session)
+
+    confirm_person_consent(session, error, "demo")
+
+    assert error.confirmed_by == "demo" and error.confirmed_at is not None
+    assert approval_blockers(session, draft) == []
+    approve_draft(session, draft, "demo")
+    assert draft.status is PostStatus.APPROVED
+    (entry,) = session.exec(select(AuditEntry).where(AuditEntry.step == PERSON_CONSENT_STEP)).all()
+    assert entry.model_params["actor"] == "demo"
+    assert entry.model_params["check_result_id"] == error.id
+    # The member's name is not copied into the immutable audit trail.
+    assert "Beispiel" not in json.dumps(entry.model_params)
+
+
+def test_member_consent_does_not_lift_other_errors(session: Session) -> None:
+    seed_members(session)
+    draft = _draft(
+        session, area="physio", notes="Erika Beispiel sagt: unsere Behandlung heilt Rückenschmerzen"
+    )
+    for result in _results(session, draft):
+        if result.consent_required:
+            confirm_person_consent(session, result, "demo")
+        elif result.requires_confirmation:
+            confirm_warning(session, result, "demo")
+
+    with pytest.raises(ReviewNotAllowedError, match="Heilversprechen"):
+        approve_draft(session, draft, "demo")
+
+
+def test_consent_only_for_member_findings(session: Session) -> None:
+    draft = _draft(session, notes="Trainerin Anna zeigt die Geräte")
+    warning = next(r for r in _results(session, draft) if r.check_key == PERSONS)
+
+    with pytest.raises(ReviewNotAllowedError, match="keine Einwilligung"):
+        confirm_person_consent(session, warning, "demo")
+
+
+def test_member_consent_twice_and_after_approval(session: Session) -> None:
+    draft, error = _member_draft(session)
+    confirm_person_consent(session, error, "demo")
+
+    with pytest.raises(ReviewNotAllowedError, match="bereits bestätigt"):
+        confirm_person_consent(session, error, "demo")
+    approve_draft(session, draft, "demo")
+    with pytest.raises(ReviewNotAllowedError, match="vor der Freigabe"):
+        confirm_person_consent(session, error, "demo")
+
+
+def test_edit_resets_member_consent(session: Session) -> None:
+    draft, error = _member_draft(session)
+    confirm_person_consent(session, error, "demo")
+
+    run_checks(session, CONFIG, SocialLLMClient(scripted()), draft)
+
+    assert any("Einwilligung fehlt" in b for b in approval_blockers(session, draft))
 
 
 # --- confirmation and approval ---
@@ -443,5 +520,21 @@ def test_health_notice_in_the_ui(social_client: TestClient) -> None:
     assert "ersetzt aber keine rechtliche Prüfung" in page
 
 
+def test_member_consent_in_the_ui(social_client: TestClient, session: Session) -> None:
+    draft, error = _member_draft(session)
+    page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
+    assert "Einwilligung der Person liegt vor" in page
+    assert f'action="/social/checks/{error.id}/consent"' in page
+    assert "Geprüft – bestätigen" not in page
+
+    assert social_client.post(f"/social/drafts/{draft.id}/approve").status_code == 409
+    consent = social_client.post(f"/social/checks/{error.id}/consent", follow_redirects=False)
+    assert consent.status_code == 303
+    page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
+    assert "Einwilligung bestätigt von demo" in page
+    assert social_client.post(f"/social/drafts/{draft.id}/approve").status_code == 200
+
+
 def test_unknown_check_result(social_client: TestClient) -> None:
     assert social_client.post("/social/checks/999/confirm").status_code == 404
+    assert social_client.post("/social/checks/999/consent").status_code == 404

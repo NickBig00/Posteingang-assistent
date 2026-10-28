@@ -21,6 +21,7 @@ from app.social.profiles import HASHTAG_PATTERN, SocialConfig
 from app.social.status import ALLOWED_TRANSITIONS, transition
 
 CONFIRM_STEP = "social.confirm_warning"
+PERSON_CONSENT_STEP = "social.person_consent"
 REVIEW_STEP = "social.review"
 EDIT_STEP = "social.edit"
 RECHECK_STEP = "social.recheck"
@@ -49,7 +50,10 @@ def approval_blockers(session: Session, draft: PostDraft) -> list[str]:
     if not results:
         blockers.append("Der Entwurf wurde noch nicht geprüft.")
     for result in results:
-        if result.outcome is Outcome.ERROR:
+        if result.outcome is Outcome.ERROR and result.consent_required:
+            if result.confirmed_at is None:
+                blockers.append(f"Einwilligung fehlt: {result.reason}")
+        elif result.outcome is Outcome.ERROR:
             blockers.append(f"Fehler: {result.reason}")
         elif result.requires_confirmation and result.confirmed_at is None:
             blockers.append(f"Warnung noch nicht bestätigt: {result.reason}")
@@ -90,6 +94,27 @@ def confirm_warning(session: Session, result: CheckResult, user: str) -> CheckRe
         check_key=result.check_key,
         is_ai_assessment=result.is_ai_assessment,
     )
+    return result
+
+
+def confirm_person_consent(session: Session, result: CheckResult, user: str) -> CheckResult:
+    """A person confirms that the named member agreed to be named in this post.
+
+    Only for findings marked `consent_required`; lifts that error and nothing else.
+    """
+    draft = session.get(PostDraft, result.draft_id)
+    if draft is None or draft.status not in (PostStatus.IN_REVIEW, PostStatus.NEEDS_MANUAL_REVIEW):
+        raise ReviewNotAllowedError("Einwilligungen können nur vor der Freigabe bestätigt werden.")
+    if not result.consent_required or result.outcome is not Outcome.ERROR:
+        raise ReviewNotAllowedError("Für dieses Prüfergebnis gibt es keine Einwilligung.")
+    if result.confirmed_at is not None:
+        raise ReviewNotAllowedError("Die Einwilligung ist bereits bestätigt.")
+    result.confirmed_by, result.confirmed_at = user, utcnow()
+    session.add(result)
+    session.commit()
+    session.refresh(result)
+    # As for warnings: which finding, not the name itself (data minimisation).
+    _audit(session, draft, PERSON_CONSENT_STEP, user, check_result_id=result.id)
     return result
 
 

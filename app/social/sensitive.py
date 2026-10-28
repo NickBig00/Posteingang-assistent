@@ -282,7 +282,8 @@ def check_health_claims(
 
 
 def check_persons(text: str, member_names: Sequence[str]) -> list[Finding]:
-    """Members named in the post are errors; other names (title, role, first name) warnings."""
+    """Members named in the post are errors that only their confirmed consent lifts; other
+    names (title, role, first name) are warnings that must be confirmed."""
     findings: list[Finding] = []
     taken: list[Span] = []
     for name in member_names:
@@ -291,9 +292,10 @@ def check_persons(text: str, member_names: Sequence[str]) -> list[Finding]:
                 Finding(
                     PERSONS,
                     Outcome.ERROR,
-                    f"„{match.group(0)}“ steht in der Mitgliederliste – keine Namen von "
-                    "Mitgliedern in Beiträgen.",
+                    f"„{match.group(0)}“ steht in der Mitgliederliste – Namen von Mitgliedern "
+                    "nur mit ihrer dokumentierten Einwilligung.",
                     match.span(),
+                    consent_required=True,
                 )
             )
             taken.append(match.span())

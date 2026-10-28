@@ -82,3 +82,13 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 - Einige Beispiel-Briefings mit Labels
 
 **Akzeptanz:** Umschalten per Konfiguration ohne Änderung am Kern-Code; Evaluation läuft für beide Branchen.
+
+---
+
+## Offene Punkte
+
+- [ ] **Begriffsliste Gesundheitsbezug für Handwerk:** In S9 vorläufig als kurze Liste in
+  `profiles/handwerk.yaml` angelegt (SPEC Kapitel 4.1 sieht für Handwerk keine vor).
+  Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert.
+- [ ] **Evaluation mit echtem Modell:** zunächst nur für Fitness; Handwerk wird vorerst nicht
+  mit einem echten Modell evaluiert.

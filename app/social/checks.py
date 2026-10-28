@@ -53,6 +53,8 @@ class Finding:
     span: Span | None = None
     requires_confirmation: bool = False
     is_ai_assessment: bool = False
+    # Error that only the documented consent of the named person lifts (members in a post).
+    consent_required: bool = False
 
 
 def _ok(key: str, reason: str) -> Finding:
