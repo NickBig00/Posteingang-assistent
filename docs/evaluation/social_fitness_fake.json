@@ -2,7 +2,7 @@
   "industry": "fitness",
   "brand": "demo",
   "provider": "fake",
-  "created_at": "2026-10-27 22:36 UTC",
+  "created_at": "2026-10-28 19:47 UTC",
   "generation": {
     "drafts": 26,
     "facts_rate": 1.0,
@@ -300,22 +300,20 @@
   },
   "detection": {
     "health_claims": {
-      "positives": 14,
-      "negatives": 22,
-      "true_positives": 13,
-      "false_positives": 1,
+      "positives": 15,
+      "negatives": 24,
+      "true_positives": 14,
+      "false_positives": 0,
       "missed": [
         "g14"
       ],
-      "false_alarms": [
-        "n07"
-      ],
-      "recall": 0.9286,
-      "precision": 0.9286
+      "false_alarms": [],
+      "recall": 0.9333,
+      "precision": 1.0
     },
     "persons": {
       "positives": 8,
-      "negatives": 28,
+      "negatives": 31,
       "true_positives": 8,
       "false_positives": 0,
       "missed": [],
@@ -323,7 +321,7 @@
       "recall": 1.0,
       "precision": 1.0
     },
-    "address_form_accuracy": 0.9722
+    "address_form_accuracy": 1.0
   },
   "targets": {
     "facts_rate": 1.0,

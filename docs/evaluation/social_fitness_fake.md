@@ -1,6 +1,6 @@
 # Evaluation Social Media – Branche `fitness`, Anbieter `fake`
 
-Erstellt: 2026-10-27 22:36 UTC · Markenprofil `demo` · nur synthetische Daten
+Erstellt: 2026-10-28 19:47 UTC · Markenprofil `demo` · nur synthetische Daten
 
 ## Ergebnis
 
@@ -10,19 +10,19 @@ Erstellt: 2026-10-27 22:36 UTC · Markenprofil `demo` · nur synthetische Daten
 | Länge je Kanal eingehalten | 100,0 % | 100 % |
 | Anrede passend zum Bereich | 100,0 % | – |
 | Entwürfe in manueller Bearbeitung | 0 von 26 | – |
-| Gesundheitsversprechen erkannt (Recall) | 92,9 % | ≥ 90 % |
-| Gesundheitsversprechen – Präzision | 92,9 % | – |
+| Gesundheitsversprechen erkannt (Recall) | 93,3 % | ≥ 90 % |
+| Gesundheitsversprechen – Präzision | 100,0 % | – |
 | Personen erkannt (Recall) | 100,0 % | – |
 | Personen – Präzision | 100,0 % | – |
-| Anrede-Prüfung korrekt | 97,2 % | – |
+| Anrede-Prüfung korrekt | 100,0 % | – |
 
 Ziele laut SPEC (100 % Fakten, ≥ 90 % Gesundheitsversprechen): erreicht.
 
 ## Erkennung (gelabelter Testsatz)
 
-- Gesundheitsversprechen: 13 von 14 erkannt; nicht erkannt: g14; Fehlalarme: n07
+- Gesundheitsversprechen: 14 von 15 erkannt; nicht erkannt: g14; Fehlalarme: –
 - Personen: 8 von 8 erkannt; nicht erkannt: –; Fehlalarme: –
-- Anrede falsch erkannt bei: a04
+- Anrede falsch erkannt bei: –
 
 ## Entwürfe mit Problemen
 

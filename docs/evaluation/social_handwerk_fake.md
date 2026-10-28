@@ -1,6 +1,6 @@
 # Evaluation Social Media – Branche `handwerk`, Anbieter `fake`
 
-Erstellt: 2026-10-27 22:39 UTC · Markenprofil `handwerk_demo` · nur synthetische Daten
+Erstellt: 2026-10-28 19:47 UTC · Markenprofil `handwerk_demo` · nur synthetische Daten
 
 ## Ergebnis
 

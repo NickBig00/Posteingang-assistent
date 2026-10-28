@@ -47,7 +47,7 @@ def test_evaluation_with_fake_provider() -> None:
     assert report.manual_review == 0
     assert report.health.recall >= 0.9
     assert report.health.missed == ["g14"]
-    assert report.health.false_alarms == ["n07"]
+    assert report.health.false_alarms == []
     assert report.persons.recall == 1.0 and report.persons.false_alarms == []
     assert report.to_json()["targets"]["met"] is True  # type: ignore[index]
 
@@ -84,7 +84,7 @@ def test_report_files(tmp_path: Path) -> None:
     assert markdown.name == "social_fitness_fake.md"
     text = markdown.read_text(encoding="utf-8")
     assert "| Fakten unverändert übernommen | 100,0 % | 100 % |" in text
-    assert "Gesundheitsversprechen: 13 von 14 erkannt" in text
+    assert "Gesundheitsversprechen: 14 von 15 erkannt" in text
     payload = json.loads(data.read_text(encoding="utf-8"))
     assert payload["generation"]["facts_rate"] == 1.0
     assert payload["detection"]["health_claims"]["missed"] == ["g14"]

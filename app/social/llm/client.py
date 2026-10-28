@@ -13,7 +13,7 @@ from app.social.models import CHANNEL_LABELS, Channel
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig
 
 SOCIAL_PROMPTS_DIR = PROMPTS_DIR / "social"
-PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v2", "post_assess": "v1"}
+PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v2", "post_assess": "v2"}
 
 
 class SocialLLMClient:

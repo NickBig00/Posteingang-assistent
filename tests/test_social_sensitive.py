@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.audit import HUMAN_ACTOR_MODEL
+from app.core.llm.prompts import load_prompt
 from app.core.models import AuditEntry
 from app.core.outcomes import Outcome
 from app.inbox.seed import seed_members
@@ -16,7 +17,7 @@ from app.main import app
 from app.social.briefings import create_briefing
 from app.social.checking import ASSESS_STEP, run_checks
 from app.social.drafts import generate_drafts
-from app.social.llm.client import SocialLLMClient
+from app.social.llm.client import SOCIAL_PROMPTS_DIR, SocialLLMClient
 from app.social.llm.schemas import AssessmentFinding, AssessmentOutput
 from app.social.models import Channel, CheckResult, PostDraft, PostStatus
 from app.social.profiles import AddressForm
@@ -82,8 +83,8 @@ def test_health_claim_detection_on_labelled_set() -> None:
     # the implicit promise g14 is left to the LLM assessment).
     assert len(found) / len(positives) >= 0.9
     assert sorted(set(c["id"] for c in positives) - set(found)) == ["g14"]
-    # Known false alarm of the term list: "Bestpreis-Garantie" (a warning, not an error).
-    assert false_alarms == ["n07"]
+    # "Garantie" counts only with health context (n07 "Bestpreis-Garantie", n11 not; g15 yes).
+    assert false_alarms == []
 
 
 def test_person_detection_on_labelled_set() -> None:
@@ -110,8 +111,9 @@ def test_address_form_on_labelled_set() -> None:
     }
 
     assert warned <= expected_wrong
-    # Known gap of the code check: imperative du-forms ("Sprich") are left to the LLM.
-    assert expected_wrong - warned == {"a04"}
+    # Du-imperatives ("Sprich uns an", "Komm vorbei") count as du-forms (a04, a05).
+    assert {"a04", "a05"} <= warned
+    assert expected_wrong - warned == set()
 
 
 # --- health claims ---
@@ -306,7 +308,7 @@ def test_ai_assessment_is_stored_and_audited(session: Session) -> None:
     assert ai.check_key == PERSONS and ai.requires_confirmation
     entries = session.exec(select(AuditEntry).where(AuditEntry.step == ASSESS_STEP)).all()
     assert len(entries) == 1
-    assert entries[0].prompt_version == "post_assess_v1"
+    assert entries[0].prompt_version == "post_assess_v2"
 
 
 def test_invalid_assessment_twice_needs_manual_review(session: Session) -> None:
@@ -538,3 +540,53 @@ def test_member_consent_in_the_ui(social_client: TestClient, session: Session) -
 def test_unknown_check_result(social_client: TestClient) -> None:
     assert social_client.post("/social/checks/999/confirm").status_code == 404
     assert social_client.post("/social/checks/999/consent").status_code == 404
+
+
+# --- "Garantie" only with health context, du-imperatives ---
+
+
+@pytest.mark.parametrize(
+    ("text", "flagged"),
+    [
+        ("Bestpreis-Garantie für deine Mitgliedschaft.", False),
+        ("Zufriedenheitsgarantie: 30 Tage testen.", False),
+        ("Geld-zurück-Garantie, falls es dir nicht gefällt.", False),
+        ("Mit Rücken-Fit garantiert weniger Schmerzen.", True),
+        ("Wir garantieren dir: Abnehmen ohne Hunger.", True),
+        ("Garantie! Mehr Infos an der Theke. Dein Rücken freut sich.", False),
+    ],
+)
+def test_guarantee_needs_health_context(text: str, flagged: bool) -> None:
+    assert bool(_health(text, "fitness")) is flagged
+
+
+def test_unambiguous_guarantee_promise_still_counts() -> None:
+    (finding,) = _health("Danach bist du garantiert schmerzfrei.", "fitness")
+
+    assert finding.span is not None
+    assert "garantiert schmerzfrei" in finding.reason
+
+
+@pytest.mark.parametrize(
+    ("text", "du_forms"),
+    [
+        ("Sprich uns an!", 1),
+        ("Komm vorbei. Starte jetzt!", 2),
+        ("Sprechen Sie uns an. Kommen Sie vorbei!", 0),
+        ("Neue Geräte – komm vorbei", 0),  # not at the start of a sentence
+        ("Kommentare sind willkommen.", 0),
+    ],
+)
+def test_du_imperatives(text: str, du_forms: int) -> None:
+    du, _ = address_forms(text)
+
+    assert len(du) == du_forms
+
+
+def test_assess_prompt_v2_clarifies_groups_guarantees_and_imperatives() -> None:
+    source = load_prompt("post_assess", "v2", SOCIAL_PROMPTS_DIR).source
+
+    assert "„Mitarbeitende“" in source and "keine Personen" in source
+    assert "Bestpreis-" in source
+    assert "„Sprich uns an“" in source
+    assert load_prompt("post_assess", "v1", SOCIAL_PROMPTS_DIR).prompt_id == "post_assess_v1"

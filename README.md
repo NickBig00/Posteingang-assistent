@@ -324,16 +324,19 @@ Fehler. Jedes Ergebnis hat eine Begründung; die betroffene Textstelle wird im E
 ### Gesundheitsversprechen, Personenbezug und Anrede
 
 - **Gesundheitsversprechen:** Begriffsliste aus dem Branchenprofil (Code) plus KI-Einschätzung
-  (`prompts/social/post_assess_v1.md`). Treffer sind Warnungen mit markierter Textstelle, die
+  (`prompts/social/post_assess_v2.md`). Treffer sind Warnungen mit markierter Textstelle, die
   vor der Freigabe ausdrücklich bestätigt werden müssen. Eindeutige Heilversprechen
   (`certain_terms`, z. B. „heilt“) sind in sensiblen Bereichen (Physio, Reha) Fehler.
+  Begriffe wie „Garantie“ (`context_only_terms`) zählen nur mit Gesundheitsbezug im selben Satz
+  („garantiert weniger Schmerzen“ ja, „Bestpreis-Garantie“ nein).
 - **Personenbezug:** Namensmuster (Anrede/Titel, Rolle + Name, Vornamen-Lexikon) und die
   fiktive Mitgliederliste. Namen sind Warnungen mit Bestätigungspflicht. Mitglieder aus der
   Mitgliederliste sind Fehler; diesen Fehler hebt nur die bestätigte Einwilligung der genannten
   Person auf („Einwilligung der Person liegt vor“, mit Person, Zeitpunkt und Audit-Eintrag
   `social.person_consent`). Andere Fehler bleiben davon unberührt.
-- **Anrede:** Code erkennt du- und Sie-Formen und warnt bei Mischung oder bei falscher Anrede
-  für den Bereich; die KI-Einschätzung ergänzt, was Code nicht sieht (z. B. Imperative).
+- **Anrede:** Code erkennt du- und Sie-Formen (auch du-Imperative am Satzanfang wie „Sprich uns
+  an“, „Komm vorbei“) und warnt bei Mischung oder bei falscher Anrede für den Bereich; die
+  KI-Einschätzung ergänzt, was Code nicht sieht.
 - Die KI-Einschätzung bekommt nur den Beitragstext. Ihre Funde sind als „KI-Einschätzung“
   gekennzeichnet; was Code schon gefunden hat, wird nicht doppelt gemeldet. Bei ungültiger
   Antwort nach einem erneuten Versuch geht der Entwurf in „Manuelle Bearbeitung“.
@@ -406,8 +409,10 @@ Das Skript (`app/social/evaluation.py`) arbeitet in einer temporären Datenbank:
 
 Bericht: `docs/evaluation/social_<branche>_<anbieter>.md` (plus `.json`). Ziele laut SPEC: 100 %
 Fakten korrekt, mindestens 90 % erkannte Gesundheitsversprechen. Ergebnis mit dem Fake-Provider
-(Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 92,9 % (13 von 14, nur
-Code; der implizite Fall wird erst von einem echten Modell erkannt), Personen 100 %.
+(Branche Fitness): Fakten 100 %, Längen 100 %, Gesundheitsversprechen 93,3 % (14 von 15, nur
+Code; der implizite Fall g14 wird erst von einem echten Modell erkannt), Personen 100 %, keine
+Fehlalarme. Mit OpenAI (`docs/evaluation/social_fitness_openai.md`, Stand vor den Korrekturen
+zu Fakten, „Garantie“ und Imperativen): Fakten 94,7 %, Gesundheitsversprechen 14 von 14.
 
 ### Zweite Branche: Handwerk
 

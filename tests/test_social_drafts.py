@@ -199,7 +199,7 @@ def test_every_call_is_audited(session: Session) -> None:
     # Per draft: the draft call, then the assessment of its checks.
     assert [e.step for e in entries] == [DRAFT_STEP, ASSESS_STEP] * 2
     for entry, draft in zip(entries[1::2], drafts, strict=True):
-        assert entry.prompt_version == "post_assess_v1"
+        assert entry.prompt_version == "post_assess_v2"
         assert entry.model_params["draft_id"] == draft.id
     for entry, draft in zip(entries[::2], drafts, strict=True):
         assert entry.prompt_version == "post_draft_v2"
