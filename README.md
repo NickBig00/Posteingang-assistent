@@ -234,6 +234,13 @@ Klassifizierung.
   (alle Beiträge veröffentlicht oder verworfen), deren letzte Aktivität länger als
   `RETENTION_DAYS` zurückliegt; Briefings mit offenen oder geplanten Beiträgen bleiben erhalten.
   Jede Löschung steht mit Person (bzw. `system`) und Grund im Audit-Verlauf.
+- **Social Media – einzelner Entwurf**: „Entwurf löschen“ entfernt Text, Prüfergebnisse,
+  Entscheidungen und die KI-Ausgaben dieses Entwurfs; Briefing und andere Kanäle bleiben.
+- **Widerruf der Bild-Einwilligung**: „Einwilligung widerrufen“ löscht die Bilddatei. Freigegebene
+  und geplante Beiträge des Briefings gehen zurück in „In Prüfung“ (Termin aufgehoben); bereits
+  veröffentlichte Beiträge werden aufgelistet, damit sie auf der Plattform von Hand entfernt
+  werden. Bis der Bildeintrag entfernt ist, ist keine Freigabe möglich; eine neue Einwilligung
+  für dasselbe Bild gibt es nur per neuem Upload. Der Audit-Eintrag nennt nur IDs.
 - **Audit nach Löschung**: Audit-Einträge bleiben unverändert bestehen, enthalten aber nur
   Hashes (Eingabe, Ausgabe) und Metadaten; die Rohausgaben liegen in einer separaten,
   mitgelöschten Tabelle.
