@@ -73,11 +73,11 @@ def test_navigation_shows_all_modules(client: TestClient) -> None:
     assert "Social Media" in html
 
 
-def test_social_placeholder_page(client: TestClient) -> None:
+def test_social_start_page(client: TestClient) -> None:
     response = client.get("/social")
 
     assert response.status_code == 200
-    assert "in Vorbereitung" in response.text
+    assert "Neues Briefing" in response.text
     assert re.search(r'<a href="/social"\s+aria-current="page"', response.text)
 
 

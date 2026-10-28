@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Kampagne {{ campaign.id }} – Social Media{% endblock %}
+{% block content %}
+<a href="/social/campaigns" class="text-sm text-blue-700 hover:underline">← Kampagnen</a>
+<h2 class="text-lg font-semibold">Kampagne {{ campaign.id }}: {{ campaign.name }}</h2>
+<p class="mb-4 text-sm text-slate-500">{{ occasion_labels.get(campaign.occasion_type, campaign.occasion_type) }} · {{ area_labels.get(campaign.area, campaign.area) }} · Anlass am {{ campaign.event_date.strftime("%d.%m.%Y") }}</p>
+<ol class="space-y-3" id="plan">
+  {% for s in plan %}
+  <li class="rounded-lg border border-slate-200 bg-white p-4" data-step="{{ s.step.key }}">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h3 class="font-semibold">{{ loop.index }}. {{ s.step.label }}
+        <span class="text-sm font-normal text-slate-500">· Wunschtermin {{ s.briefing.desired_date.strftime("%d.%m.%Y") if s.briefing.desired_date else "–" }}</span></h3>
+      <a class="text-sm text-blue-700 hover:underline" href="/social/briefings/{{ s.briefing.id }}">Entwürfe prüfen und freigeben</a>
+    </div>
+    <ul class="mt-2 space-y-1 text-sm">
+      {% for d in s.drafts %}
+      <li>{{ channel_labels[d.channel] }}:
+        <span class="rounded bg-slate-100 px-2 py-0.5">{{ post_status_labels[d.status] }}</span>
+        {% set light = lights.get(d.id) %}{% include "_light.html" %}</li>
+      {% endfor %}
+    </ul>
+  </li>
+  {% endfor %}
+</ol>
+<p class="mt-4 text-xs text-slate-500">Jeder Beitrag wird einzeln geprüft und freigegeben.</p>
+<form method="post" action="/social/campaigns/{{ campaign.id }}/delete" class="mt-4"
+      onsubmit="return confirm('Kampagne mit allen Briefings, Entwürfen und Bildern endgültig löschen?')">
+  <button type="submit" class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-800 hover:bg-red-50">Kampagne löschen</button>
+</form>
+{% endblock %}

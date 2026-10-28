@@ -2,9 +2,50 @@
 {% block title %}Social Media – Posteingangs-Assistent{% endblock %}
 {% block content %}
 <section class="bg-white rounded-lg border border-slate-200 p-6">
-  <h2 class="text-lg font-semibold mb-2">Social Media</h2>
-  <p class="text-sm text-slate-600">Dieses Modul ist in Vorbereitung. Künftig entstehen hier aus
-    kurzen Stichpunkten Entwürfe für Social-Media-Beiträge, die vor jeder Veröffentlichung von
-    einem Menschen geprüft und freigegeben werden.</p>
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 class="text-lg font-semibold">Social Media</h2>
+      <p class="text-sm text-slate-500">{{ config.brand.name }} · Branche {{ config.industry_key }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="/social/calendar" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Kalender</a>
+      <a href="/social/campaigns" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Kampagnen</a>
+      <a href="/social/briefings/new"
+         class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">Neues Briefing</a>
+    </div>
+  </div>
+  {% if briefings %}
+  <table class="w-full text-left text-sm">
+    <thead class="border-b border-slate-200 text-slate-500">
+      <tr><th class="py-2">Nr.</th><th>Bereich</th><th>Anlass</th><th>Kampagne</th><th>Entwürfe</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for b in briefings %}
+      <tr class="border-b border-slate-100 align-top">
+        <td class="py-2">{{ b.id }}</td>
+        <td>{{ area_labels.get(b.area, b.area) }}</td>
+        <td>{{ occasion_labels.get(b.occasion_type, b.occasion_type) }}</td>
+        <td>{% if b.campaign_id %}<a class="text-blue-700 hover:underline" href="/social/campaigns/{{ b.campaign_id }}">Nr. {{ b.campaign_id }}</a>{% else %}–{% endif %}</td>
+        <td>
+          <ul class="space-y-0.5">
+            {% for d in drafts.get(b.id, []) %}
+            <li>{{ channel_labels[d.channel] }}:
+              <span class="rounded bg-slate-100 px-2 py-0.5">{{ post_status_labels[d.status] }}</span>
+              {% set light = lights.get(d.id) %}{% include "_light.html" %}</li>
+            {% endfor %}
+          </ul>
+        </td>
+        <td><a class="text-blue-700 hover:underline" href="/social/briefings/{{ b.id }}">Öffnen</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-slate-600">Noch keine Briefings vorhanden.</p>
+  {% endif %}
+  <p class="mt-3 text-xs text-slate-500">Abgeschlossene Briefings (alle Beiträge veröffentlicht oder verworfen) werden
+    {{ retention_days }} Tage nach der letzten Aktivität gelöscht (Befehl <code>social-purge</code>); Briefings mit offenen
+    Beiträgen bleiben erhalten. Der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
 </section>
+<div class="mt-6">{% include "_social_notice.html" %}</div>
 {% endblock %}

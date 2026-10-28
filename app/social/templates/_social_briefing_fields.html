@@ -1,0 +1,66 @@
+{% macro err(name) %}{% if errors.get(name) %}<p class="mt-1 text-xs text-red-700">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+{% macro mark(name) %}{% if name in required %} <span class="text-red-700" title="Pflichtangabe">*</span>{% endif %}{% endmacro %}
+<div class="grid gap-4 md:grid-cols-2">
+  <label class="block text-sm">Bereich
+    <select name="area" class="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+            hx-get="/social/briefings/form" hx-include="closest form" hx-target="#briefing-fields"
+            hx-vals='{"changed": "area"}'>
+      {% for a in config.brand.areas %}
+      <option value="{{ a.key }}" {% if a.key == values.area %}selected{% endif %}>{{ a.label }}</option>
+      {% endfor %}
+    </select>
+    <span class="mt-1 block text-xs text-slate-500">Anrede: {{ address_form_labels[area.address_form] }} · Ton: {{ area.tone }}</span>
+    {{ err("area") }}
+  </label>
+  <label class="block text-sm">Anlass
+    <select name="occasion_type" class="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+            hx-get="/social/briefings/form" hx-include="closest form" hx-target="#briefing-fields">
+      {% for o in config.industry.occasion_types %}
+      <option value="{{ o.key }}" {% if o.key == values.occasion_type %}selected{% endif %}>{{ o.label }}</option>
+      {% endfor %}
+    </select>
+    {{ err("occasion_type") }}
+  </label>
+</div>
+
+<label class="mt-4 block text-sm">Stichpunkte
+  <textarea name="notes" rows="4" maxlength="2000" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ values.get("notes", "") }}</textarea>
+  {{ err("notes") }}
+</label>
+
+<fieldset class="mt-4">
+  <legend class="text-sm font-medium">Fakten <span class="text-xs font-normal text-slate-500">(werden unverändert übernommen; * = Pflicht für „{{ occasion.label }}“)</span></legend>
+  <div class="mt-2 grid gap-3 md:grid-cols-3">
+    <label class="block text-sm">Datum{{ mark("datum") }}
+      <input type="date" name="datum" value="{{ values.get('datum', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("datum") }}</label>
+    <label class="block text-sm">Uhrzeit{{ mark("uhrzeit") }}
+      <input type="time" name="uhrzeit" value="{{ values.get('uhrzeit', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("uhrzeit") }}</label>
+    <label class="block text-sm">Preis in €{{ mark("preis") }}
+      <input type="text" name="preis" inputmode="decimal" placeholder="19,00" value="{{ values.get('preis', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("preis") }}</label>
+    <label class="block text-sm">Ort{{ mark("ort") }}
+      <input type="text" name="ort" maxlength="200" value="{{ values.get('ort', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("ort") }}</label>
+    <label class="block text-sm">Zeitraum von{{ mark("zeitraum_von") }}
+      <input type="date" name="zeitraum_von" value="{{ values.get('zeitraum_von', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("zeitraum_von") }}</label>
+    <label class="block text-sm">Zeitraum bis{{ mark("zeitraum_bis") }}
+      <input type="date" name="zeitraum_bis" value="{{ values.get('zeitraum_bis', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("zeitraum_bis") }}</label>
+    <label class="block text-sm">Telefonnummer{{ mark("telefon") }}
+      <input type="text" name="telefon" value="{{ values.get('telefon', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">{{ err("telefon") }}</label>
+  </div>
+</fieldset>
+
+<fieldset class="mt-4">
+  <legend class="text-sm font-medium">Kanäle <span class="text-xs font-normal text-slate-500">(vorbelegt aus dem Bereich)</span></legend>
+  <div class="mt-2 flex flex-wrap gap-4 text-sm">
+    {% for c in channels %}
+    <label><input type="checkbox" name="channels" value="{{ c.value }}" {% if c.value in selected_channels %}checked{% endif %}> {{ channel_labels[c] }}</label>
+    {% endfor %}
+  </div>
+  {{ err("channels") }}
+</fieldset>
+
+{% if not campaign %}
+<label class="mt-4 block text-sm md:w-1/3">Wunschtermin
+  <input type="date" name="desired_date" value="{{ values.get('desired_date', '') }}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1">
+  {{ err("desired_date") }}
+</label>
+{% endif %}

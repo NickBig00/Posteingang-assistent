@@ -185,3 +185,45 @@ document_types:
     actions:
       - key: zur_kenntnis
         label: Zur Kenntnis nehmen
+
+# Social-Media-Modul (docs/SPEC_social.md, Abschnitt 4.1): was für alle Handwerksbetriebe gilt.
+social:
+  occasion_types:
+    - {key: referenzprojekt, label: Referenzprojekt}
+    - {key: saisonhinweis, label: Saisonhinweis}
+    - {key: notdienst, label: Notdienst, required_facts: [telefon, zeitraum]}
+    - {key: aktion, label: Aktion, required_facts: [zeitraum, preis]}
+    - {key: team, label: Team}
+    - {key: stellenangebot, label: Stellenangebot}
+    - {key: ausbildung, label: Ausbildung}
+  # Gesundheitsbezogene Werbeaussagen (z. B. zu Wasserfiltern, Luftreinigern, Schimmel) sind
+  # auch im Handwerk heikel: kurze Begriffsliste, Warnung mit Bestätigungspflicht.
+  health_claims:
+    terms: [heilt, heilen, Allergie, Allergien, Immunsystem, gesundheitsfördernd, Krankheiten, Asthma, Atemwegserkrankungen]
+    certain_terms: [heilt]
+  term_rules:
+    - key: vorher_nachher
+      label: Vorher-nachher-Bilder
+      terms: [vorher-nachher, vorher/nachher, vorher und nachher]
+      outcome: warning
+      reason: >-
+        Vorher-nachher-Bilder von Kundenprojekten nur mit Einwilligung der Kundschaft zeigen
+        (und ohne Adresse oder erkennbare Personen).
+  phrase_rules:
+    - key: preisangabe
+      label: Preisangabe
+      when_fact: preis
+      phrases: [inkl. MwSt, inkl. Mehrwertsteuer, einschließlich MwSt, einschließlich Mehrwertsteuer]
+      outcome: warning
+      reason: >-
+        Preise gegenüber Privatkunden als Endpreis inklusive Mehrwertsteuer angeben
+        (z. B. „inkl. MwSt.“).
+  campaign_steps:
+    - key: ankuendigung
+      label: Ankündigung
+      offset_days: -14
+      instruction: Hinweis auf die Aktion, rechtzeitig Termine sichern
+    - key: letzter_aufruf
+      label: Letzter Aufruf
+      offset_days: -2
+      instruction: nur noch wenige Tage, jetzt Termin vereinbaren

@@ -24,7 +24,14 @@ DEFAULT_MODEL = "claude-opus-5-5"
 DEFAULT_EFFORT = "medium"
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 # Classification/extraction answers are short JSON; drafts and transcriptions are longer.
-MAX_TOKENS: dict[LLMTask, int] = {"classify": 2000, "extract": 4000, "draft": 8000, "ocr": 16000}
+MAX_TOKENS: dict[LLMTask, int] = {
+    "classify": 2000,
+    "extract": 4000,
+    "draft": 8000,
+    "ocr": 16000,
+    "post_draft": 4000,
+    "post_assess": 4000,
+}
 
 
 class _MessagesAPI(Protocol):

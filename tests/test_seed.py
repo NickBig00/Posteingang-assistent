@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 from sqlmodel import Session, select
 
-from app.inbox.models import Member
+from app.core.members import Member
 from app.inbox.seed import load_member_seeds, seed_members
 
 

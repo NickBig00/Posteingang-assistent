@@ -1,0 +1,10 @@
+{% if d.status.value in ("approved", "scheduled") %}
+<form method="post" action="/social/drafts/{{ d.id }}/schedule" class="flex flex-wrap items-center gap-2 text-sm">
+  {% if back %}<input type="hidden" name="back" value="{{ back }}">{% endif %}
+  <input type="datetime-local" name="when" required aria-label="Geplanter Termin"
+         value="{{ (d.scheduled_at | local).strftime('%Y-%m-%dT%H:%M') if d.scheduled_at else '' }}"
+         class="rounded border border-slate-300 px-2 py-1">
+  <button type="submit" class="rounded border border-slate-300 px-3 py-1 hover:bg-slate-100">
+    {{ "Verschieben" if d.status.value == "scheduled" else "Planen" }}</button>
+</form>
+{% endif %}

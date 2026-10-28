@@ -9,9 +9,10 @@ from app.core.db import engine, init_db
 from app.core.llm.factory import get_provider
 from app.core.logging_config import setup_logging
 from app.core.profiles import active_profile_key
+from app.core.storage import storage_dir
 from app.inbox.evaluation import evaluate, write_report
 from app.inbox.ingest.imap import fetch_new_mail, imap_config_from_env
-from app.inbox.ingest.service import import_samples, samples_dir_for, storage_dir
+from app.inbox.ingest.service import import_samples, samples_dir_for
 from app.inbox.llm.client import LLMClient
 from app.inbox.models import ItemStatus
 from app.inbox.pipeline import process_new_items

@@ -2,13 +2,13 @@
 
 import hashlib
 import logging
-import os
 from dataclasses import dataclass
 from pathlib import Path, PurePath
 
 from sqlmodel import Session, select
 
 from app.core.config import PROJECT_ROOT
+from app.core.storage import storage_dir
 from app.inbox.ingest.normalize import SUPPORTED_SUFFIXES, file_suffix, normalize
 from app.inbox.models import InboxItem, ItemSource, ItemStatus
 from app.inbox.seed import seed_members
@@ -24,11 +24,6 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 def samples_dir_for(profile_key: str) -> Path:
     """Sample data of a profile: `samples/<profile>/`."""
     return SAMPLES_ROOT / profile_key
-
-
-def storage_dir() -> Path:
-    """Directory for raw incoming files (env `STORAGE_DIR`, default `data/raw`)."""
-    return Path(os.environ.get("STORAGE_DIR", PROJECT_ROOT / "data" / "raw"))
 
 
 @dataclass

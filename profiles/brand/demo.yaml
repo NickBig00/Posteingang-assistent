@@ -1,0 +1,86 @@
+# Fiktives Demo-Markenprofil (docs/SPEC_social.md, Abschnitt 4.2). Alle Angaben sind erfunden.
+# Markenprofile echter Kunden gehören NICHT ins Repository (BRAND_PROFILES_DIR, siehe README).
+key: demo
+name: Demo-Gesundheitszentrum Musterstadt
+description: >-
+  Fiktives, familiengeführtes Gesundheitszentrum mit Fitness, Kursen, Physiotherapie,
+  Rehasport und Firmenfitness.
+industry: fitness
+hashtags: ["#DemoGesundheitszentrum", "#Musterstadt"]
+max_hashtags: 6
+call_to_action: 14 Tage kostenlos probetrainieren
+contact:
+  address: Beispielweg 1, 12345 Musterstadt
+  phone: 01234 567890
+  email: info@gesundheitszentrum.example
+  website: https://gesundheitszentrum.example
+forbidden_terms: [billig, Schnäppchen, Bikinifigur, Problemzonen, sofort abnehmen]
+areas:
+  - key: fitness
+    label: Fitness
+    address_form: du
+    tone: locker, motivierend, nicht marktschreierisch
+    channels: [instagram_post, instagram_story, facebook]
+    emojis: {allowed: true, max: 3}
+    hashtags: ["#Fitness"]
+    examples:
+      - >-
+        Neue Woche, neue Runde! Unser Trainingsteam zeigt dir am Montag die neuen Geräte auf
+        der Trainingsfläche. Komm vorbei und probier's aus. 💪
+      - >-
+        Du willst wieder regelmäßig trainieren? Wir erstellen dir einen Plan, der zu deinem
+        Alltag passt – ganz ohne Druck.
+  - key: kurse
+    label: Kurse
+    address_form: du
+    tone: freundlich, gemeinschaftlich, einladend
+    channels: [instagram_post, facebook]
+    emojis: {allowed: true, max: 2}
+    hashtags: ["#Kurse"]
+    examples:
+      - >-
+        Neuer Kurs am Donnerstagabend: Rücken-Fit mit Trainerin Demo. Melde dich an der Theke
+        oder in der App an – die Plätze sind begrenzt.
+      - >-
+        Yoga am Samstagmorgen: entspannt ins Wochenende starten. Matten liegen bereit, bring
+        einfach dich und gute Laune mit. 🧘
+  - key: physio
+    label: Physiotherapie
+    address_form: sie
+    tone: ruhig, fachlich, vertrauensvoll
+    channels: [facebook, instagram_post]
+    emojis: {allowed: false}
+    examples:
+      - >-
+        Unsere Praxis für Physiotherapie hat neue Termine frei. Sprechen Sie uns gern an – wir
+        beraten Sie zu den Möglichkeiten einer Behandlung mit ärztlicher Verordnung.
+      - >-
+        Ab sofort erreichen Sie unser Physio-Team auch telefonisch am Mittwochnachmittag.
+  - key: reha
+    label: Rehasport
+    address_form: sie
+    tone: ruhig, fachlich, vertrauensvoll
+    channels: [facebook]
+    emojis: {allowed: false}
+    examples:
+      - >-
+        Neue Rehasport-Gruppe am Dienstagvormittag: Bewegung in kleiner Gruppe unter
+        fachlicher Anleitung. Informieren Sie sich gern an unserer Anmeldung.
+      - >-
+        Für die Teilnahme am Rehasport benötigen Sie eine Verordnung. Wir helfen Ihnen gern bei
+        den nächsten Schritten.
+  - key: firmenfitness
+    label: Firmenfitness
+    address_form: sie
+    tone: sachlich, Nutzen für Arbeitgeber im Vordergrund
+    channels: [linkedin]
+    emojis: {allowed: false}
+    hashtags: ["#Firmenfitness"]
+    call_to_action: Jetzt ein unverbindliches Angebot für Ihr Unternehmen anfragen
+    examples:
+      - >-
+        Bewegung im Arbeitsalltag: Mit unserem Firmenfitness-Programm trainieren Ihre
+        Mitarbeitenden zu festen Konditionen in unserem Zentrum.
+      - >-
+        Gesund arbeiten beginnt mit kleinen Schritten. Wir stellen Ihnen unser Angebot für
+        Unternehmen gern persönlich vor.

@@ -13,7 +13,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Alle bestehenden Tests grün, Evaluation des Posteingangs liefert dasselbe Ergebnis wie vorher, Demo-Durchlauf funktioniert unverändert.
 
-## [ ] S1 – Datenmodell, Branchen- und Markenprofil
+## [x] S1 – Datenmodell, Branchen- und Markenprofil
 
 - Modelle gemäß SPEC Kapitel 7
 - Abschnitt `social:` im Branchenprofil `profiles/fitness.yaml` gemäß SPEC Kapitel 4.1 (Anlass-Typen, Pflichtfakten, Prüfregeln, sensible Bereiche)
@@ -23,7 +23,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Ungültige Profile werden mit klarer Fehlermeldung abgelehnt. Tests für Modelle, Loader und die Zuordnung Bereich → Anrede/Kanäle.
 
-## [ ] S2 – Briefing und Entwürfe
+## [x] S2 – Briefing und Entwürfe
 
 - Formular „Neues Briefing“ gemäß SPEC Kapitel 5 und 8
 - Entwurfserzeugung je Kanal über das LLM-Interface in `core`, versionierte Prompts in `prompts/social/`
@@ -31,14 +31,14 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Aus einem Briefing entstehen Entwürfe für alle gewählten Kanäle. Tests nur mit Fake-Provider.
 
-## [ ] S3 – Deterministische Prüfungen
+## [x] S3 – Deterministische Prüfungen
 
 - Länge je Kanal, Anzahl Hashtags, verbotene Begriffe, Fakten aus dem Briefing unverändert enthalten
 - Ergebnisse mit Begründung und markierter Textstelle
 
 **Akzeptanz:** Umfangreiche Unit-Tests inkl. Grenzfälle (Datumsformate „3.11.“ vs. „3. November“, Preise „19 €“ vs. „19,00 EUR“).
 
-## [ ] S4 – Prüfung auf Gesundheitsversprechen und Personenbezug
+## [x] S4 – Prüfung auf Gesundheitsversprechen und Personenbezug
 
 - Begriffsliste plus LLM-Einschätzung für Gesundheitsversprechen
 - Erkennung namentlich genannter Personen
@@ -46,7 +46,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Gelabelter Testsatz mit Positiv- und Negativbeispielen; Tests, dass Freigabe ohne Bestätigung nicht möglich ist.
 
-## [ ] S5 – Freigabe, Bilder und Einwilligung
+## [x] S5 – Freigabe, Bilder und Einwilligung
 
 - Status-Workflow gemäß SPEC Kapitel 5
 - Bild-Upload mit Einwilligungs-Checkbox; Freigabe mit Personenbild nur bei bestätigter Einwilligung
@@ -54,7 +54,7 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Kompletter Durchlauf Briefing → Entwurf → Prüfung → Freigabe in der UI. Test, dass Fehler die Freigabe blockieren.
 
-## [ ] S6 – Redaktionskalender und Export
+## [x] S6 – Redaktionskalender und Export
 
 - Wochen- und Monatsansicht, geplante Termine setzen und verschieben
 - Status „veröffentlicht“ per Klick
@@ -62,23 +62,37 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 **Akzeptanz:** Geplante Beiträge erscheinen korrekt im Kalender; `.ics` lässt sich in einen Kalender importieren.
 
-## [ ] S7 – Kampagnen
+## [x] S7 – Kampagnen
 
 - Aus einem Anlass einen Plan über mehrere Wochen erzeugen (z. B. Ankündigung, Erinnerung, letzter Aufruf)
 - Jeder Beitrag einzeln prüf- und freigebbar
 
 **Akzeptanz:** Kampagne mit mindestens drei Beiträgen in der Demo; alle Prüfungen greifen je Beitrag.
 
-## [ ] S8 – Evaluation
+## [x] S8 – Evaluation
 
 - Synthetische Briefings mit Labels unter `samples/social/`, verteilt über alle Bereiche (inkl. Anrede-Prüfung du/Sie)
 - Evaluationsskript gemäß SPEC Kapitel 9, Bericht unter `docs/evaluation/`
 
 **Akzeptanz:** Bericht wird erzeugt; Ergebnis im PR dokumentiert.
 
-## [ ] S9 – Zweites Branchenprofil für Social Media
+## [x] S9 – Zweites Branchenprofil für Social Media
 
 - Abschnitt `social:` im Profil `profiles/handwerk.yaml` und ein fiktives Handwerker-Markenprofil
 - Einige Beispiel-Briefings mit Labels
 
 **Akzeptanz:** Umschalten per Konfiguration ohne Änderung am Kern-Code; Evaluation läuft für beide Branchen.
+
+---
+
+## Offene Punkte
+
+- [x] **Löschkonzept Social Media:** Löschen je Briefing/Kampagne und Aufbewahrungsfrist
+  (`social-purge`, `RETENTION_DAYS`), analog zum Posteingang.
+- [x] **Mitgliedernamen:** Fehler, der sich nur mit bestätigter Einwilligung der genannten
+  Person aufheben lässt.
+- [ ] **Begriffsliste Gesundheitsbezug für Handwerk:** In S9 vorläufig als kurze Liste in
+  `profiles/handwerk.yaml` angelegt (SPEC Kapitel 4.1 sieht für Handwerk keine vor).
+  Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert.
+- [ ] **Evaluation mit echtem Modell:** zunächst nur für Fitness; Handwerk wird vorerst nicht
+  mit einem echten Modell evaluiert.

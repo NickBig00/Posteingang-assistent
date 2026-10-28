@@ -6,7 +6,6 @@ raw model outputs). Audit entries stay – they only hold hashes and metadata.
 """
 
 import logging
-import os
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -14,6 +13,7 @@ from pathlib import Path
 from sqlmodel import Session, SQLModel, delete, select
 
 from app.core.models import AuditOutput
+from app.core.retention import retention_days
 from app.inbox.models import (
     AdditionalRequest,
     Classification,
@@ -27,7 +27,6 @@ from app.inbox.models import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_RETENTION_DAYS = 90
 # Only finished items are purged automatically; items still waiting for processing,
 # review or execution are kept until a human has dealt with them.
 PURGEABLE_STATUSES = frozenset({ItemStatus.DONE, ItemStatus.REJECTED})
@@ -40,18 +39,6 @@ _DERIVED: tuple[type[SQLModel], ...] = (
     Extraction,
     Classification,
 )
-
-
-def retention_days() -> int:
-    """Retention period in days from env `RETENTION_DAYS` (default 90, minimum 1)."""
-    raw = os.environ.get("RETENTION_DAYS", str(DEFAULT_RETENTION_DAYS))
-    try:
-        days = int(raw)
-    except ValueError as error:
-        raise ValueError(f"RETENTION_DAYS must be an integer, got {raw!r}") from error
-    if days < 1:
-        raise ValueError("RETENTION_DAYS must be at least 1")
-    return days
 
 
 @dataclass

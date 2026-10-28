@@ -1,7 +1,6 @@
 """Data model of the inbox module (SPEC section 6)."""
 
-from datetime import date, datetime
-from decimal import Decimal
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import JsonValue
@@ -10,6 +9,7 @@ from sqlmodel import Field, SQLModel
 
 from app.core.approval import ReviewDecision
 from app.core.models import timestamp_column, utcnow
+from app.core.outcomes import Outcome as RuleOutcome
 
 
 class ItemStatus(StrEnum):
@@ -41,12 +41,6 @@ class ItemSource(StrEnum):
 class ValidationStatus(StrEnum):
     VALID = "valid"
     INVALID = "invalid"
-
-
-class RuleOutcome(StrEnum):
-    OK = "ok"
-    WARNING = "warning"
-    ERROR = "error"
 
 
 class InboxItem(SQLModel, table=True):
@@ -118,17 +112,3 @@ class Review(SQLModel, table=True):
     edited_text: str | None = None
     reviewed_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
     reviewer: str
-
-
-class Member(SQLModel, table=True):
-    """Fictitious member with contract data (demo table the rules check against)."""
-
-    id: int | None = Field(default=None, primary_key=True)
-    member_number: str = Field(unique=True, index=True)
-    name: str
-    email: str
-    contract_start: date
-    minimum_term_months: int = Field(ge=1)
-    notice_period_months: int = Field(ge=0)
-    renewal_period_months: int = Field(ge=1)
-    monthly_fee_eur: Decimal = Field(max_digits=8, decimal_places=2)

@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlmodel import Session, select
 
 from app.core.config import PROJECT_ROOT
-from app.inbox.models import Member
+from app.core.members import Member
 
 DEFAULT_MEMBERS_FILE = PROJECT_ROOT / "samples/fitness/members.json"
 

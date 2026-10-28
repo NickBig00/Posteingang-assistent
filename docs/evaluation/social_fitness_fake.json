@@ -1,0 +1,333 @@
+{
+  "industry": "fitness",
+  "brand": "demo",
+  "provider": "fake",
+  "created_at": "2026-10-27 22:36 UTC",
+  "generation": {
+    "drafts": 26,
+    "facts_rate": 1.0,
+    "length_rate": 1.0,
+    "address_rate": 1.0,
+    "needs_manual_review": 0,
+    "details": [
+      {
+        "sample_id": "b01",
+        "area": "kurse",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b01",
+        "area": "kurse",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b02",
+        "area": "fitness",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b02",
+        "area": "fitness",
+        "channel": "Instagram-Story",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b02",
+        "area": "fitness",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b03",
+        "area": "physio",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b03",
+        "area": "physio",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b04",
+        "area": "reha",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b05",
+        "area": "firmenfitness",
+        "channel": "LinkedIn-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b06",
+        "area": "fitness",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b06",
+        "area": "fitness",
+        "channel": "Instagram-Story",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b07",
+        "area": "kurse",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b08",
+        "area": "fitness",
+        "channel": "LinkedIn-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b08",
+        "area": "fitness",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b09",
+        "area": "fitness",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b10",
+        "area": "physio",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b11",
+        "area": "reha",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b12",
+        "area": "kurse",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b12",
+        "area": "kurse",
+        "channel": "Instagram-Story",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b13",
+        "area": "fitness",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b14",
+        "area": "firmenfitness",
+        "channel": "LinkedIn-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b15",
+        "area": "physio",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b16",
+        "area": "fitness",
+        "channel": "Instagram-Story",
+        "status": "in_review",
+        "has_facts": false,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b17",
+        "area": "kurse",
+        "channel": "Instagram-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b17",
+        "area": "kurse",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      },
+      {
+        "sample_id": "b18",
+        "area": "reha",
+        "channel": "Facebook-Beitrag",
+        "status": "in_review",
+        "has_facts": true,
+        "facts_ok": true,
+        "length_ok": true,
+        "address_ok": true,
+        "problems": []
+      }
+    ]
+  },
+  "detection": {
+    "health_claims": {
+      "positives": 14,
+      "negatives": 22,
+      "true_positives": 13,
+      "false_positives": 1,
+      "missed": [
+        "g14"
+      ],
+      "false_alarms": [
+        "n07"
+      ],
+      "recall": 0.9286,
+      "precision": 0.9286
+    },
+    "persons": {
+      "positives": 8,
+      "negatives": 28,
+      "true_positives": 8,
+      "false_positives": 0,
+      "missed": [],
+      "false_alarms": [],
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    "address_form_accuracy": 0.9722
+  },
+  "targets": {
+    "facts_rate": 1.0,
+    "health_recall": 0.9,
+    "met": true
+  }
+}

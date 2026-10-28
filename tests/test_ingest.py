@@ -5,10 +5,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlmodel import Session, select
 
+from app.core.members import Member
 from app.inbox import cli
 from app.inbox.ingest.normalize import UnsupportedFileTypeError
 from app.inbox.ingest.service import MAX_UPLOAD_BYTES, import_samples, ingest_file
-from app.inbox.models import InboxItem, ItemSource, ItemStatus, Member
+from app.inbox.models import InboxItem, ItemSource, ItemStatus
 from tests.conftest import SAMPLES_DIR
 
 

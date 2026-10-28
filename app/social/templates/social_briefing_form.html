@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Neues Briefing – Social Media{% endblock %}
+{% block content %}
+<a href="/social" class="text-sm text-blue-700 hover:underline">← Social Media</a>
+<h2 class="mb-4 text-lg font-semibold">Neues Briefing</h2>
+{% if errors %}
+<p class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+  Bitte die markierten Angaben prüfen.</p>
+{% endif %}
+<form method="post" action="/social/briefings" class="rounded-lg border border-slate-200 bg-white p-6">
+  <div id="briefing-fields">{% include "_social_briefing_fields.html" %}</div>
+  <p class="mt-4 text-xs text-slate-500">Bitte keine Namen oder Daten von Mitgliedern, Patientinnen
+    oder Patienten eintragen. Die Stichpunkte werden zur Formulierung an das KI-Modell gesendet.</p>
+  <button type="submit" class="mt-4 rounded bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">
+    Entwürfe erstellen</button>
+</form>
+{% endblock %}
