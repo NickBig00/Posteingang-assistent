@@ -58,7 +58,9 @@ from app.inbox.rules import validate_profile_rules
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
-NAV_ENTRY = NavEntry(module="inbox", label="Posteingang", path="/")
+NAV_ENTRY = NavEntry(
+    module="inbox", label="Posteingang", path="/", icon="inbox", prefixes=("/items",)
+)
 
 router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)

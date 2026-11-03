@@ -9,15 +9,15 @@ from fastapi.responses import RedirectResponse
 from app.core.config import app_title, enabled_modules
 from app.core.db import engine, init_db
 from app.core.logging_config import setup_logging
-from app.core.web import NavEntry
+from app.core.web import SETTINGS_ENTRY, NavEntry, mount_static
 from app.core.web import router as core_router
 from app.inbox import web as inbox_web
 from app.social import web as social_web
 
-# Available modules in navigation order: key -> (routes, navigation entry).
-MODULES: dict[str, tuple[APIRouter, NavEntry]] = {
-    "inbox": (inbox_web.router, inbox_web.NAV_ENTRY),
-    "social": (social_web.router, social_web.NAV_ENTRY),
+# Available modules in navigation order: key -> (routes, sidebar entries).
+MODULES: dict[str, tuple[APIRouter, list[NavEntry]]] = {
+    "inbox": (inbox_web.router, [inbox_web.NAV_ENTRY]),
+    "social": (social_web.router, [social_web.NAV_ENTRY, social_web.CALENDAR_NAV_ENTRY]),
 }
 
 
@@ -31,13 +31,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     """Build the application with the modules enabled via env `MODULES`."""
     application = FastAPI(title=app_title(), version="0.1.0", lifespan=lifespan)
+    mount_static(application)
     application.include_router(core_router)
     navigation: list[NavEntry] = []
     for key in enabled_modules(list(MODULES)):
-        router, entry = MODULES[key]
+        router, entries = MODULES[key]
         application.include_router(router)
-        navigation.append(entry)
-    application.state.navigation = navigation
+        navigation.extend(entries)
+    application.state.navigation = [*navigation, SETTINGS_ENTRY]
     if all(entry.path != "/" for entry in navigation):
         start = navigation[0].path
 

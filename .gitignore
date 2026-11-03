@@ -32,3 +32,6 @@ data/
 profiles/brand/*
 !profiles/brand/demo.yaml
 !profiles/brand/handwerk_demo.yaml
+
+# Node build tooling for the CSS (package.json); the compiled CSS is committed.
+node_modules/

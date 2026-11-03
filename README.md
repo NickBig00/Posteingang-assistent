@@ -6,8 +6,7 @@ einem Menschen freigegeben.** Das System ist auf EU-AI-Act- und DSGVO-konforme G
 ausgelegt und arbeitet ausschließlich mit synthetischen Daten.
 
 Die Anwendung ist ein **modularer Monolith**: ein gemeinsamer Kern und fachliche Module mit
-gemeinsamer Navigation. Neben dem Posteingang entsteht ein Social-Media-Modul (bisher nur ein
-Platzhalter).
+gemeinsamer Navigation: Posteingang und Social Media.
 
 Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 [`docs/SPEC_social.md`](docs/SPEC_social.md) (Social Media) · Fahrpläne:
@@ -19,12 +18,13 @@ Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 |---|---|
 | `app/main.py` | FastAPI-Einstieg: setzt Kern und aktivierte Module zusammen |
 | `app/cli.py` | Kommandozeile (`python -m app.cli …`) |
-| `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Navigation |
+| `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Seitenleiste, Design-System, Einstellungen |
+| `app/core/static/` | Lokal ausgeliefertes CSS (Tailwind, kompiliert), HTMX, Schrift Inter, kleines JavaScript |
 | `app/core/llm/` | Anbieterunabhängiges LLM-Interface (einziger Ort für Anbieter-SDKs) |
 | `app/inbox/` | Modul Posteingang: Eingang, Pipeline, Vorschläge, Freigabe, Löschkonzept, Evaluation |
 | `app/inbox/llm/` | LLM-Client des Posteingangs (Klassifizierung, Extraktion, Entwurf, OCR) und Ausgabe-Schemas |
 | `app/inbox/rules/` | Deterministische Regel-Engine (Fristen, Pflichtfelder, Plausibilität) |
-| `app/social/` | Modul Social Media (Platzhalter, siehe `docs/ROADMAP_social.md`) |
+| `app/social/` | Modul Social Media: Briefings, KI-Entwürfe, Prüfungen, Freigabe, Kalender, Kampagnen |
 | `profiles/` | Branchenprofile als YAML |
 | `prompts/` | Versionierte Prompt-Dateien |
 | `samples/` | Synthetische Beispieldaten mit Labels |
@@ -39,12 +39,24 @@ Modul. Tests prüfen diese Grenzen.
 Der Titel in Kopfzeile und Browser-Tab kommt aus der Konfiguration: `APP_TITLE` (Standard
 „Posteingangs-Assistent“), z. B. `APP_TITLE="Demo-Assistent Musterstadt"` in der `.env`.
 
+### Oberfläche und Markenfarbe
+
+Gemeinsames Design-System mit Seitenleiste, Kopfzeile und zentral definierten Komponenten:
+[`docs/DESIGN.md`](docs/DESIGN.md), lebende Übersicht unter `/design`. Die Markenfarbe kommt
+aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`). CSS, HTMX und Schrift werden lokal unter
+`/static` ausgeliefert, nicht per CDN. Nach Änderungen an Templates das CSS neu erzeugen:
+`npm install` (einmalig) und `uv run python scripts/build_css.py`.
+
+Screenshots für Pull Requests: `node scripts/screenshots.cjs U1` (Playwright mit Chromium nötig)
+startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs unter
+`docs/screenshots/<Meilenstein>/` ab.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:
 
 ```bash
-MODULES=inbox uv run uvicorn app.main:app   # nur Posteingang, ohne Navigationsleiste
+MODULES=inbox uv run uvicorn app.main:app   # nur Posteingang (Seitenleiste ohne Social Media)
 ```
 
 Unbekannte Modulnamen oder eine leere Liste brechen den Start mit einer Fehlermeldung ab. Ist

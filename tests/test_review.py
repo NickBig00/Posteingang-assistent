@@ -255,7 +255,7 @@ def test_full_ui_flow_load_review_approve_execute(
     assert "27 Beispiel-Eingänge importiert" in client.post("/samples/import").text
     inbox = client.post("/items/process").text
     assert "27 Eingänge verarbeitet" in inbox
-    assert "bg-red-600" in inbox  # traffic light for rule errors
+    assert "dot-error" in inbox  # traffic light for rule errors
 
     with Session(engine) as session:
         suggestion = session.exec(

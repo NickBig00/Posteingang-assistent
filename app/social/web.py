@@ -83,7 +83,10 @@ from app.social.sensitive import SENSITIVE_CHECK_LABELS
 from app.social.status import latest_review
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
-NAV_ENTRY = NavEntry(module="social", label="Social Media", path="/social")
+NAV_ENTRY = NavEntry(module="social", label="Social Media", path="/social", icon="megaphone")
+CALENDAR_NAV_ENTRY = NavEntry(
+    module="social", label="Kalender", path="/social/calendar", icon="calendar"
+)
 
 router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)

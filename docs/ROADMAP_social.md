@@ -91,7 +91,7 @@ Spezifikation: `docs/SPEC.md` Abschnitt 10 (Oberfläche), `docs/SPEC_social.md` 
 (Veröffentlichung, KI-Bilder, Grafiken aus Vorlagen). Reihenfolge: zuerst das Design-System,
 damit die Bildfunktionen gleich im neuen Stil entstehen.
 
-## [ ] U1 – Design-System und Layout
+## [x] U1 – Design-System und Layout
 
 Design-Tokens, Komponenten, Seitenleiste, Kopfzeile, Markenfarbe aus Konfiguration. Eine Beispielseite umgestellt. Screenshots im PR.
 

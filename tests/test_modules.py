@@ -68,7 +68,7 @@ def test_navigation_shows_all_modules(client: TestClient) -> None:
     html = client.get("/").text
 
     assert 'aria-label="Module"' in html
-    assert re.search(r'<a href="/"\s+aria-current="page"', html)
+    assert re.search(r'<a href="/"[^>]*\s+aria-current="page"', html)
     assert 'href="/social"' in html
     assert "Social Media" in html
 
@@ -78,7 +78,7 @@ def test_social_start_page(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert "Neues Briefing" in response.text
-    assert re.search(r'<a href="/social"\s+aria-current="page"', response.text)
+    assert re.search(r'<a href="/social"[^>]*\s+aria-current="page"', response.text)
 
 
 def test_health_is_part_of_core(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -93,8 +93,9 @@ def test_inbox_only_hides_social(monkeypatch: pytest.MonkeyPatch) -> None:
     page = client.get("/")
     assert page.status_code == 200
     assert "Posteingang" in page.text
-    # A single module needs no navigation bar.
-    assert 'aria-label="Module"' not in page.text
+    # The sidebar only lists enabled modules (plus the settings page).
+    assert 'href="/social"' not in page.text
+    assert 'href="/settings"' in page.text
 
 
 def test_social_only_redirects_start_page(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -157,7 +158,7 @@ def test_configured_title_on_every_page(
 
     for path in ("/", "/social", "/social/campaigns"):
         html = client.get(path).text
-        assert '<h1 class="text-xl font-semibold">Demo-Assistent Musterstadt</h1>' in html, path
+        assert "data-app-title>Demo-Assistent Musterstadt</span>" in html, path
         assert "Posteingangs-Assistent" not in html, path
     assert "<title>Social Media – Demo-Assistent Musterstadt</title>" in client.get("/social").text
 

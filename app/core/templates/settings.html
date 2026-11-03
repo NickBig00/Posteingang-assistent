@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Einstellungen – {{ app_title }}{% endblock %}
+{% block content %}
+{% call ui.page_header("Einstellungen", "Aktuelle Konfiguration dieser Installation") %}
+<a href="/design" class="btn btn-secondary">Design-System ansehen</a>
+{% endcall %}
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <section class="card lg:col-span-2" aria-labelledby="config-title">
+    <div class="card-header"><h2 class="card-title" id="config-title">Konfiguration</h2>{{ ui.badge("nur lesbar", "neutral") }}</div>
+    <div class="table-wrap">
+      <table class="table" id="settings">
+        <thead><tr><th scope="col">Einstellung</th><th scope="col">Wert</th><th scope="col">Umgebungsvariable</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td class="font-medium">{{ row.label }}</td>
+            <td>
+              {% if row.variable == "BRAND_COLOR" %}<span class="mr-1.5 inline-block h-3.5 w-3.5 rounded align-[-2px] ring-1 ring-line-strong" style="background: {{ theme.brand }}" aria-hidden="true"></span>{% endif %}{{ row.value }}
+              {% if row.note %}<span class="hint">{{ row.note }}</span>{% endif %}
+            </td>
+            <td><code>{{ row.variable }}</code></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <aside class="space-y-4">
+    {% call ui.alert("", "info") %}
+      <p class="font-medium">Änderungen über die Konfiguration</p>
+      <p class="mt-1">Die Werte stammen aus Umgebungsvariablen bzw. der Datei <code>.env</code> und werden
+        hier nur angezeigt. Nach einer Änderung die Anwendung neu starten.</p>
+    {% endcall %}
+    {% call ui.alert("", "warning") %}
+      <p>API-Schlüssel und Zugangsdaten werden hier bewusst nie angezeigt.</p>
+    {% endcall %}
+  </aside>
+</div>
+{% endblock %}
