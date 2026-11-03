@@ -10,9 +10,10 @@ Demo-Fall: ein fiktives Fitness- und Gesundheitsstudio. Nur synthetische Daten.
 
 ## 2. Nicht-Ziele in V1
 
-- Kein direktes Posten über Plattform-Schnittstellen (Meta usw.)
+- Kein direktes Posten über Plattform-Schnittstellen (Meta usw.); das ist auch künftig nicht geplant, veröffentlicht wird von Hand (Abschnitt 12)
 - Keine Auswertung von Reichweite oder Interaktionen
-- Keine KI-Bilderzeugung
+- Keine KI-Bilderzeugung ohne ausdrückliche Aktivierung: KI-Bilder sind optional, standardmäßig ausgeschaltet und nur mit menschlicher Auswahl und Freigabe nutzbar (Abschnitt 13)
+- Kein Text in KI-Bildern; Text in Grafiken entsteht ausschließlich deterministisch aus Vorlagen (Abschnitt 14)
 - Keine Werbeanzeigen (Ads)
 - Keine personenbezogenen Daten von Mitgliedern oder Patienten in Beiträgen (einzige Ausnahme: die namentliche Nennung eines Mitglieds mit bestätigter Einwilligung, siehe Abschnitt 6)
 
@@ -133,10 +134,12 @@ Regeln:
 
 ## 10. Später (nicht V1)
 
-- Direktes Posten über Plattform-Schnittstellen
 - Auswertung von Reichweite und Interaktionen
-- Bildvorschläge oder -bearbeitung
+- Bearbeitung eigener Fotos (Zuschneiden, Filter)
+- Weitere Bildanbieter neben dem ersten (Abschnitt 13.2)
 - Vorschläge für Bildbeschreibungen (Alt-Text)
+
+Direktes Posten über Plattform-Schnittstellen ist nicht mehr „später“, sondern bewusst nicht geplant (Abschnitt 12). KI-Bildvorschläge und Grafiken aus Vorlagen sind seit den Abschnitten 13 und 14 Teil des Moduls.
 
 ## 11. Ergänzung für CLAUDE.md
 
@@ -145,3 +148,55 @@ Folgender Abschnitt soll in `CLAUDE.md` aufgenommen werden:
 > **Architektur:** Die Anwendung ist ein modularer Monolith mit `app/core/`, `app/inbox/` und `app/social/`. Module nutzen `core`, aber nicht die Interna anderer Module. Gemeinsame Funktionen gehören nach `core`. Spezifikationen: `docs/SPEC.md` (Kern und Posteingang), `docs/SPEC_social.md` (Social Media). Fahrpläne: `docs/ROADMAP.md`, `docs/ROADMAP_social.md`.
 >
 > **Social-Media-Regeln:** Kein automatisches Veröffentlichen. Keine Namen oder Daten von Mitgliedern oder Patienten in Beiträgen; ein Mitgliedername ist ein Fehler, den nur die bestätigte Einwilligung der Person aufhebt (Audit-Eintrag). Fakten aus dem Briefing (Datum, Uhrzeit, Preis, Ort) dürfen vom LLM nicht verändert werden. Warnungen zu Gesundheitsversprechen müssen vor der Freigabe bestätigt werden.
+
+## 12. Entscheidung zur Veröffentlichung
+
+- Direktes Posten über Plattform-Schnittstellen ist **nicht geplant**.
+- Veröffentlicht wird manuell über die Meta Business Suite bzw. direkt in LinkedIn.
+- Das Tool unterstützt das mit: „Text kopieren“ je Kanal (inkl. Hashtags), Bild-Download als JPEG im passenden Format, Status „eingeplant (extern)“ im Kalender.
+
+## 13. KI-Bilder (optional)
+
+Alle bestehenden Regeln (Freigabe, Audit, Löschkonzept, nur synthetische Daten im Repository) gelten weiter.
+
+### 13.1 Ziel
+
+Zu einem Beitrag optional passende Bilder erzeugen: Stimmungs- und Hintergrundbilder sowie Grafiken mit Text aus Vorlagen. Eigene Fotos bleiben der Normalfall; KI-Bilder sind eine Ergänzung.
+
+### 13.2 Architektur
+
+- Anbieterunabhängiges Bild-Interface in `app/core/images/`, analog zum LLM-Interface
+- Implementierungen: `FakeImageProvider` (Tests, liefert Platzhalterbild), ein echter Anbieter (zuerst OpenAI, Modell per `IMAGE_MODEL`), weitere später
+- Per `IMAGE_GENERATION_ENABLED` schaltbar, Standard: aus
+- Tests rufen nie echte Bild-APIs auf
+
+### 13.3 Ablauf
+
+1. Im Entwurf auf „Bild vorschlagen“ klicken.
+2. Das LLM formuliert aus Briefing und Bildstil des Markenprofils einen Bild-Prompt. Der Prompt ist in der Oberfläche sichtbar und bearbeitbar.
+3. Es werden 2–3 Varianten im gewählten Format erzeugt (1:1, 4:5, 9:16 für Stories).
+4. Der Mensch wählt eine Variante, erzeugt neu oder verwirft.
+5. Das gewählte Bild wird dem Beitrag zugeordnet und mit dem Beitrag freigegeben.
+
+### 13.4 Bildstil im Markenprofil
+
+Neues Feld `image_style` je Bereich, z. B. Farben, Stimmung („hell, freundlich, ruhig“), Motive („Trainingsgeräte, Natur, Wald“), Ausschlüsse.
+
+### 13.5 Schutzregeln (nicht verhandelbar)
+
+- **Keine realistischen Personen**, keine erkennbaren Gesichter. Der Bild-Prompt enthält standardmäßig einen entsprechenden Ausschluss; ein Code-Check prüft den Prompt auf Personenbezug.
+- **Keine Darstellung, die vorgibt, das echte Studio, echte Räume oder echte Ergebnisse zu zeigen.** Keine Vorher-nachher-Bilder, keine medizinischen Darstellungen.
+- **Kein Text im KI-Bild.** Text kommt ausschließlich über Vorlagen (Abschnitt 14), damit Fakten nicht verfälscht werden.
+- **Keine personenbezogenen Daten im Bild-Prompt** (keine Namen, keine Mitgliederdaten).
+- **Kennzeichnung:** KI-Bilder werden gespeichert mit Kennzeichen „KI-generiert“, in der Oberfläche als solche markiert. Beim Download erscheint der Hinweis, das Bild beim Posten als KI-generiert zu kennzeichnen.
+- **Audit:** Bild-Prompt, Modell, Parameter, Anzahl Varianten und Kosten-Schätzung je Erzeugung.
+- **Kostenbremse:** maximale Anzahl Erzeugungen pro Beitrag und pro Tag, konfigurierbar.
+- **Löschkonzept:** Erzeugte Bilder werden wie hochgeladene Bilder behandelt (Aufbewahrung, Löschen, Audit nur mit Hashes).
+
+## 14. Grafiken aus Vorlagen
+
+- Deterministische Grafiken mit Text (Kursankündigung, Aktion, Öffnungszeiten, Veranstaltung): Hintergrund (eigenes Foto, KI-Bild oder Farbfläche) plus Logo, Markenfarben, Schrift und Fakten aus dem Briefing
+- Rendering per Code (z. B. Pillow oder HTML→PNG), kein LLM
+- Vorlagen je Anlass-Typ, Farben und Schrift aus dem Markenprofil
+- Text in der Grafik muss exakt den Fakten aus dem Briefing entsprechen (Prüfung analog zur Faktenprüfung)
+- Formate 1:1, 4:5, 9:16; Export als JPEG
