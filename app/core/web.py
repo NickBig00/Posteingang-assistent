@@ -16,6 +16,7 @@ from sqlmodel import Session
 
 from app.core.config import MODULES_VARIABLE, app_title
 from app.core.db import get_session
+from app.core.images.service import image_generation_enabled, image_limits
 from app.core.models import utcnow
 from app.core.overview import ModuleOverview, OverviewProvider
 from app.core.profiles import active_profile_key
@@ -170,6 +171,7 @@ def settings_rows() -> list[SettingRow]:
     except ThemeConfigError:
         color_note = "ungültig – Standardfarbe wird verwendet"
     llm = (os.environ.get("LLM_PROVIDER") or "fake").strip().lower()
+    limits = image_limits()
     return [
         SettingRow("Anwendungstitel", app_title(), "APP_TITLE"),
         SettingRow("Markenfarbe", color, BRAND_COLOR_VARIABLE, color_note),
@@ -189,6 +191,17 @@ def settings_rows() -> list[SettingRow]:
             llm,
             "LLM_PROVIDER",
             "„fake“ arbeitet offline und deterministisch" if llm == "fake" else "",
+        ),
+        SettingRow(
+            "KI-Bilder",
+            "an" if image_generation_enabled() else "aus",
+            "IMAGE_GENERATION_ENABLED",
+            (
+                f"Anbieter {os.environ.get('IMAGE_PROVIDER') or 'fake'} · höchstens "
+                f"{limits.per_scope} Erzeugungen je Beitrag, {limits.per_day} pro Tag"
+            )
+            if image_generation_enabled()
+            else "Standard: aus",
         ),
         SettingRow(
             "Aufbewahrung abgeschlossener Vorgänge", f"{retention_days()} Tage", "RETENTION_DAYS"

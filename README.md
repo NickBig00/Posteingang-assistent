@@ -21,6 +21,7 @@ Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 | `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Seitenleiste, Design-System, Einstellungen |
 | `app/core/static/` | Lokal ausgeliefertes CSS (Tailwind, kompiliert), HTMX, Schrift Inter, kleines JavaScript |
 | `app/core/llm/` | Anbieterunabhängiges LLM-Interface (einziger Ort für Anbieter-SDKs) |
+| `app/core/images/` | Anbieterunabhängiges Bild-Interface: Fake- und OpenAI-Anbieter, Schalter, Kostenbremse, Audit |
 | `app/inbox/` | Modul Posteingang: Eingang, Pipeline, Vorschläge, Freigabe, Löschkonzept, Evaluation |
 | `app/inbox/llm/` | LLM-Client des Posteingangs (Klassifizierung, Extraktion, Entwurf, OCR) und Ausgabe-Schemas |
 | `app/inbox/rules/` | Deterministische Regel-Engine (Fristen, Pflichtfelder, Plausibilität) |
@@ -58,6 +59,16 @@ direkt in LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (ink
 Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Facebook 4:5, Story
 9:16, LinkedIn 1:1; Metadaten wie Standort werden entfernt) und die Markierung „eingeplant
 (extern)“ im Kalender. Die Entwurfsansicht zeigt eine ungefähre Vorschau je Kanal.
+
+### KI-Bilder (optional)
+
+Standardmäßig aus. Einschalten mit `IMAGE_GENERATION_ENABLED=true`; Anbieter über
+`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Das
+anbieterunabhängige Interface liegt in `app/core/images/` (einziger Ort für Bild-SDKs neben
+`app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3) und `IMAGE_MAX_PER_DAY`
+(Standard 20) Erzeugungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht
+mit Modell, Parametern, Variantenzahl und Kostenschätzung (`IMAGE_COST_PER_IMAGE_EUR`) im Audit.
+Tests rufen nie eine echte Bild-API auf.
 
 ### Module ein- und ausschalten
 

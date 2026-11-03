@@ -115,7 +115,7 @@ Liste, Detailansicht, Audit-Ansicht umgestellt, ohne Funktionsänderung.
 
 **Akzeptanz:** Tests grün; Screenshots im PR.
 
-## [ ] B1 – Bild-Interface
+## [x] B1 – Bild-Interface
 
 Interface, Fake-Anbieter, OpenAI-Anbieter, Schalter `IMAGE_GENERATION_ENABLED`, Kostenbremse, Audit.
 
