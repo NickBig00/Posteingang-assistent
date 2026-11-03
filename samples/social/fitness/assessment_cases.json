@@ -15,17 +15,19 @@
     {"id": "g11", "area": "physio", "text": "Ärztlich empfohlen: unsere Rückenschule für Ihren Alltag.", "labels": {"health_claim": true, "person": false, "address_form": "sie"}},
     {"id": "g12", "area": "kurse", "text": "Unser Entspannungskurs hilft gegen Depression und Schlafprobleme.", "labels": {"health_claim": true, "person": false, "address_form": "neutral"}},
     {"id": "g13", "area": "fitness", "text": "Dein Körper wird es dir danken: weniger Diabetes-Risiko durch Krafttraining.", "labels": {"health_claim": true, "person": false, "address_form": "du"}},
-    {"id": "g14", "area": "kurse", "text": "Nach vier Wochen Rücken-Fit verschwinden deine Beschwerden wie von selbst.", "labels": {"health_claim": true, "person": false, "address_form": "du"}},
+    {"id": "g14", "area": "kurse", "text": "Nach vier Wochen Rücken-Fit verschwinden deine Beschwerden wie von selbst.", "labels": {"health_claim": true, "person": false, "address_form": "du"}, "note": "Bekannte Lücke der Begriffsliste: implizites Heilversprechen ohne Listenbegriff. Erkennt nur die KI-Einschätzung (OpenAI-Evaluation: erkannt)."},
+    {"id": "g15", "area": "kurse", "text": "Mit Rücken-Fit garantiert weniger Schmerzen im Alltag.", "labels": {"health_claim": true, "person": false, "address_form": "neutral"}, "note": "Garantie mit Gesundheitsbezug: zählt."},
     {"id": "n01", "area": "fitness", "text": "Neue Geräte auf der Trainingsfläche – komm vorbei und probier sie aus!", "labels": {"health_claim": false, "person": false, "address_form": "du"}},
     {"id": "n02", "area": "kurse", "text": "Yoga am Samstagmorgen: entspannt ins Wochenende starten.", "labels": {"health_claim": false, "person": false, "address_form": "neutral"}},
     {"id": "n03", "area": "physio", "text": "Unsere Praxis hat neue Termine frei. Sprechen Sie uns gern an.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
     {"id": "n04", "area": "reha", "text": "Neue Rehasport-Gruppe am Dienstagvormittag. Informieren Sie sich an der Anmeldung.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
     {"id": "n05", "area": "fitness", "text": "Bewegung macht Spaß – vor allem gemeinsam. Bring deine Freunde mit!", "labels": {"health_claim": false, "person": false, "address_form": "du"}},
-    {"id": "n06", "area": "firmenfitness", "text": "Firmenfitness: Ihre Mitarbeitenden trainieren zu festen Konditionen bei uns.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
-    {"id": "n07", "area": "fitness", "text": "Bestpreis-Garantie für deine Mitgliedschaft im November.", "labels": {"health_claim": false, "person": false, "address_form": "du"}},
+    {"id": "n06", "area": "firmenfitness", "text": "Firmenfitness: Ihre Mitarbeitenden trainieren zu festen Konditionen bei uns.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}, "note": "Fehlalarm der KI-Einschätzung (OpenAI): Gruppenbezeichnung „Mitarbeitende“ als Person gewertet. Ursache: Prompt post_assess_v1 („auch Mitarbeitende“); in v2 präzisiert. Label korrekt."},
+    {"id": "n07", "area": "fitness", "text": "Bestpreis-Garantie für deine Mitgliedschaft im November.", "labels": {"health_claim": false, "person": false, "address_form": "du"}, "note": "Fehlalarm der Begriffsliste: „Garantie“ ohne Gesundheitsbezug. Behoben: „Garantie“ zählt nur mit Gesundheitsbezug im selben Satz. Label korrekt."},
     {"id": "n08", "area": "kurse", "text": "Rücken-Fit für Einsteiger: kräftigen, dehnen, bewegen. Anmeldung an der Theke.", "labels": {"health_claim": false, "person": false, "address_form": "neutral"}},
     {"id": "n09", "area": "physio", "text": "Für eine Behandlung benötigen Sie eine ärztliche Verordnung.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
     {"id": "n10", "area": "fitness", "text": "Am Feiertag haben wir von 9 bis 14 Uhr geöffnet.", "labels": {"health_claim": false, "person": false, "address_form": "neutral"}},
+    {"id": "n11", "area": "fitness", "text": "Zufriedenheitsgarantie: Du kannst die ersten 30 Tage jederzeit kündigen.", "labels": {"health_claim": false, "person": false, "address_form": "du"}, "note": "Garantie ohne Gesundheitsbezug: zählt nicht."},
     {"id": "p01", "area": "fitness", "text": "Trainerin Anna zeigt dir am Montag die neuen Geräte.", "labels": {"health_claim": false, "person": true, "address_form": "du"}},
     {"id": "p02", "area": "physio", "text": "Frau Beispiel ist neu in unserem Physio-Team. Herzlich willkommen!", "labels": {"health_claim": false, "person": true, "address_form": "neutral"}},
     {"id": "p03", "area": "kurse", "text": "Glückwunsch an Erika Beispiel zur 100. Kursstunde!", "labels": {"health_claim": false, "person": true, "address_form": "neutral"}},
@@ -37,6 +39,7 @@
     {"id": "a01", "area": "fitness", "text": "Kommen Sie vorbei und probieren Sie unsere neuen Geräte aus.", "labels": {"health_claim": false, "person": false, "address_form": "sie"}},
     {"id": "a02", "area": "physio", "text": "Melde dich jetzt für einen Termin an – wir freuen uns auf dich.", "labels": {"health_claim": false, "person": false, "address_form": "du"}},
     {"id": "a03", "area": "kurse", "text": "Hast du Lust auf Yoga? Dann melden Sie sich gleich an.", "labels": {"health_claim": false, "person": false, "address_form": "gemischt"}},
-    {"id": "a04", "area": "firmenfitness", "text": "Sie möchten Ihr Team fit halten? Sprich uns an!", "labels": {"health_claim": false, "person": false, "address_form": "gemischt"}}
+    {"id": "a04", "area": "firmenfitness", "text": "Sie möchten Ihr Team fit halten? Sprich uns an!", "labels": {"health_claim": false, "person": false, "address_form": "gemischt"}, "note": "Gemischte Anrede mit du-Imperativ („Sprich“). Ursache: Code erkannte Imperative nicht, Prompt post_assess_v1 nannte sie nicht; beides behoben. Label korrekt."},
+    {"id": "a05", "area": "physio", "text": "Sie suchen einen Termin? Komm einfach vorbei!", "labels": {"health_claim": false, "person": false, "address_form": "gemischt"}, "note": "Gemischte Anrede mit du-Imperativ im Sie-Bereich."}
   ]
 }

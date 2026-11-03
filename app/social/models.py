@@ -158,6 +158,11 @@ class Asset(SQLModel, table=True):
     consent_confirmed: bool = False
     consent_by: str | None = None
     consent_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+    # Consent withdrawn: the file is deleted, the entry stays as record until removed.
+    consent_revoked_by: str | None = None
+    consent_revoked_at: datetime | None = Field(
+        default=None, sa_column=_optional_timestamp_column()
+    )
 
 
 class PostReview(SQLModel, table=True):

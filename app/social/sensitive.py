@@ -240,6 +240,20 @@ def check_health_claims(
         for s in _dedupe([s for term in rules.terms for s in find_term(text, term)])
         if not _overlaps(s, certain)
     ]
+    context_words = [*rules.terms, *rules.certain_terms, *rules.context_terms]
+    for span in _dedupe([s for term in rules.context_only_terms for s in find_term(text, term)]):
+        if _overlaps(span, certain) or _overlaps(span, general):
+            continue
+        start, end = _sentence(text, span)
+        others = [
+            s
+            for word in context_words
+            for s in find_term(text[start:end], word)
+            if not _overlaps((s[0] + start, s[1] + start), [span])
+        ]
+        if others:
+            general.append(span)
+    general.sort()
     findings: list[Finding] = []
     for span in certain:
         quote = text[span[0] : span[1]]
@@ -276,6 +290,16 @@ def check_health_claims(
             )
         )
     return sorted(findings, key=lambda f: f.span or (0, 0))
+
+
+_SENTENCE_END = re.compile(r"[.!?\n]")
+
+
+def _sentence(text: str, span: Span) -> Span:
+    """Bounds of the sentence containing `span`."""
+    before = [m.end() for m in _SENTENCE_END.finditer(text, 0, span[0])]
+    after = _SENTENCE_END.search(text, span[1])
+    return (before[-1] if before else 0, after.start() if after else len(text))
 
 
 # --- persons ---
@@ -332,13 +356,24 @@ _DU = re.compile(
     re.IGNORECASE,
 )
 _SIE = re.compile(r"(?<!\w)(?:Sie|Ihnen|Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres)(?!\w)")
+# Du-imperatives at the start of a sentence ("Sprich uns an!", "Komm vorbei"); the Sie-form
+# ("Sprechen Sie", "Kommen Sie") has a different verb form and never matches.
+_DU_IMPERATIVE = re.compile(
+    r"(?:^|(?<=[.!?:;]\s)|(?<=\n)|(?<=[.!?]))\s*(?P<verb>Komm|Sprich|Schau|Probier|Melde|Hol|Mach|"
+    r"Sichere|Lern|Bewirb|Frag|Schreib|Besuch|Trainier|Teste|Starte|Buch|Ruf|Gönn|Nutze|"
+    r"Entdecke|Lass|Bring|Sag|Zeig|Werde|Triff|Sei)(?![\wäöüß])",
+    re.MULTILINE,
+)
 _SENTENCE_START = re.compile(r"(?:^|[.!?:;]\s*|\n\s*|[„\"(]\s*)$")
 
 
 def address_forms(text: str) -> tuple[list[Span], list[Span]]:
-    """Spans of du-forms and of capitalised Sie-forms. A capitalised "Sie/Ihr" at the start of
-    a sentence is ambiguous (also "she/they") and is not counted, except "Ihnen"."""
+    """Spans of du-forms (pronouns and imperatives at the start of a sentence) and of
+    capitalised Sie-forms. A capitalised "Sie/Ihr" at the start of a sentence is ambiguous
+    (also "she/they") and is not counted, except "Ihnen"."""
     du = [m.span() for m in _DU.finditer(text)]
+    du += [m.span("verb") for m in _DU_IMPERATIVE.finditer(text)]
+    du.sort()
     sie = []
     for match in _SIE.finditer(text):
         at_start = _SENTENCE_START.search(text[max(0, match.start() - 3) : match.start()])

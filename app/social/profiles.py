@@ -55,6 +55,11 @@ class HealthClaimRules(_Strict):
 
     terms: list[str] = Field(min_length=1)
     certain_terms: list[str] = Field(default_factory=list)
+    # Terms that only count with a health context in the same sentence (e.g. "Garantie":
+    # "Bestpreis-Garantie" is no health claim, "garantiert weniger Schmerzen" is one).
+    context_only_terms: list[str] = Field(default_factory=list)
+    # Words that make up such a health context (besides `terms` and `certain_terms`).
+    context_terms: list[str] = Field(default_factory=list)
 
 
 class TermRule(_Strict):

@@ -235,8 +235,6 @@ social:
       - beseitigt
       - kuriert
       - therapiert
-      - garantiert
-      - Garantie
       - Wundermittel
       - entgiftet
       - Entgiftung
@@ -255,6 +253,9 @@ social:
       - klinisch bewiesen
       - wissenschaftlich bewiesen
       - ärztlich empfohlen
+    # Nur mit Gesundheitsbezug im selben Satz (keine Bestpreis- oder Zufriedenheitsgarantie).
+    context_only_terms: [garantiert, Garantie, garantieren]
+    context_terms: [gesund, Gesundheit, Schmerz, Beschwerden, Rücken, Gelenk, Wirkung, wirkt, Krankheit, Therapie, abnehmen, Kilo, Gewicht]
     certain_terms:
       - heilt
       - Heilung garantiert

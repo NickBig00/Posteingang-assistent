@@ -1,5 +1,6 @@
 """Deletion concept of the social media module (analogous to the inbox, SPEC section 7).
 
+Deleting a single draft removes its text, check results, decisions and raw model outputs.
 Deleting a briefing removes everything with content: the briefing (key points, facts),
 its drafts, check results, review decisions, images (database entries and files) and the
 raw model outputs of its LLM calls. Audit entries stay: they only hold hashes, ids and
@@ -34,6 +35,7 @@ from app.social.models import (
 logger = logging.getLogger(__name__)
 
 DELETE_STEP = "social.briefing_delete"
+DRAFT_DELETE_STEP = "social.draft_delete"
 SYSTEM_ACTOR = "system"
 FINISHED_STATUSES = frozenset({PostStatus.PUBLISHED, PostStatus.REJECTED})
 
@@ -100,6 +102,40 @@ def delete_briefing(session: Session, briefing_id: int, user: str, reason: str =
         },
     )
     logger.info("social briefing %s deleted (%s)", briefing_id, reason)
+    return True
+
+
+def delete_draft(session: Session, draft_id: int, user: str) -> bool:
+    """Delete one draft with its check results, decisions and raw model outputs.
+
+    The briefing (and the other channels) stay. Returns False if the draft does not exist.
+    """
+    draft = session.get(PostDraft, draft_id)
+    if draft is None:
+        return False
+    briefing_id = draft.briefing_id
+    entry_ids = [
+        e.id
+        for e in briefing_audit_trail(session, briefing_id)
+        if e.id is not None and e.model_params.get("draft_id") == draft_id
+    ]
+    statements = [
+        delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
+        delete(CheckResult).where(col(CheckResult.draft_id) == draft_id),
+        delete(PostReview).where(col(PostReview.draft_id) == draft_id),
+    ]
+    for statement in statements:
+        session.exec(statement)  # type: ignore[call-overload]
+    session.delete(draft)
+    session.commit()
+    write_human_audit_entry(
+        session,
+        item_id=None,
+        step=DRAFT_DELETE_STEP,
+        actor=user,
+        details={"briefing_id": briefing_id, "draft_id": draft_id},
+    )
+    logger.info("social draft %s deleted", draft_id)
     return True
 
 

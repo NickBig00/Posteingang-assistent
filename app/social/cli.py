@@ -42,10 +42,11 @@ def main(argv: list[str] | None = None) -> int:
 
     config = load_social_config()
     report = evaluate_social(config, SocialLLMClient(get_provider()), args.samples)
-    markdown, _ = write_report(report, args.out)
+    markdown, _, drafts = write_report(report, args.out)
     print(
         f"Fakten {report.facts_rate:.1%}, Längen {report.length_rate:.1%}, "
         f"Gesundheitsversprechen erkannt {report.health.recall:.1%}, "
-        f"Personen erkannt {report.persons.recall:.1%} – Bericht: {markdown}"
+        f"Personen erkannt {report.persons.recall:.1%} – Bericht: {markdown}, "
+        f"Entwürfe: {drafts}"
     )
     return 0

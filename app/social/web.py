@@ -20,9 +20,11 @@ from app.core.web import NavEntry, module_templates
 from app.social.assets import (
     MAX_IMAGE_BYTES,
     AssetError,
+    Revocation,
     briefing_assets,
     confirm_consent,
     delete_asset,
+    revoke_consent,
     save_asset,
 )
 from app.social.audit import briefing_audit_trail
@@ -65,7 +67,7 @@ from app.social.models import (
     PostStatus,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
-from app.social.retention import delete_briefing, delete_campaign
+from app.social.retention import delete_briefing, delete_campaign, delete_draft
 from app.social.review import (
     ReviewNotAllowedError,
     approval_blockers,
@@ -246,6 +248,7 @@ def _render_briefing(
     briefing_id: int,
     error: str | None = None,
     status_code: int = 200,
+    revocation: Revocation | None = None,
 ) -> HTMLResponse:
     briefing = session.get(Briefing, briefing_id)
     if briefing is None:
@@ -269,6 +272,7 @@ def _render_briefing(
             "facts": facts,
             "config": config,
             "error": error,
+            "revocation": revocation,
             **_labels(config),
         },
         status_code=status_code,
@@ -765,6 +769,28 @@ def briefing_delete(session: SessionDep, user: UserDep, briefing_id: int) -> Red
     if campaign_id is not None and session.get(Campaign, campaign_id) is not None:
         return RedirectResponse(f"/social/campaigns/{campaign_id}", status_code=303)
     return RedirectResponse("/social", status_code=303)
+
+
+@router.post("/social/drafts/{draft_id}/delete")
+def draft_delete(session: SessionDep, user: UserDep, draft_id: int) -> RedirectResponse:
+    """Delete one draft (the briefing and its other drafts stay)."""
+    draft = _draft_or_404(session, draft_id)
+    briefing_id = draft.briefing_id
+    delete_draft(session, draft_id, user)
+    return RedirectResponse(f"/social/briefings/{briefing_id}", status_code=303)
+
+
+@router.post("/social/assets/{asset_id}/revoke", response_model=None)
+def asset_revoke(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, asset_id: int
+) -> HTMLResponse:
+    """Consent withdrawn: delete the image and show the affected posts."""
+    asset = _asset_or_404(session, asset_id)
+    try:
+        revocation = revoke_consent(session, asset, user)
+    except AssetError as error:
+        return _render_briefing(request, session, config, asset.briefing_id, str(error), 409)
+    return _render_briefing(request, session, config, asset.briefing_id, revocation=revocation)
 
 
 @router.post("/social/campaigns/{campaign_id}/delete")

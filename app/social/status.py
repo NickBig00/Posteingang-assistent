@@ -16,9 +16,10 @@ ALLOWED_TRANSITIONS: dict[PostStatus, frozenset[PostStatus]] = {
     S.IN_REVIEW: frozenset({S.IN_REVIEW, S.NEEDS_MANUAL_REVIEW, S.APPROVED, S.REJECTED}),
     S.NEEDS_MANUAL_REVIEW: frozenset({S.IN_REVIEW, S.NEEDS_MANUAL_REVIEW, S.REJECTED}),
     # -> rejected: an approved or planned post can still be withdrawn before publishing.
-    S.APPROVED: frozenset({S.SCHEDULED, S.REJECTED}),
+    # -> in_review: the consent for an image of the briefing was withdrawn.
+    S.APPROVED: frozenset({S.SCHEDULED, S.REJECTED, S.IN_REVIEW}),
     # scheduled -> scheduled: moved to another date; -> approved: taken off the calendar.
-    S.SCHEDULED: frozenset({S.SCHEDULED, S.APPROVED, S.PUBLISHED, S.REJECTED}),
+    S.SCHEDULED: frozenset({S.SCHEDULED, S.APPROVED, S.PUBLISHED, S.REJECTED, S.IN_REVIEW}),
     S.PUBLISHED: frozenset(),
     # -> in_review: a person reopens a rejected draft (checks run again).
     S.REJECTED: frozenset({S.IN_REVIEW}),

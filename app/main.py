@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import RedirectResponse
 
-from app.core.config import enabled_modules
+from app.core.config import app_title, enabled_modules
 from app.core.db import engine, init_db
 from app.core.logging_config import setup_logging
 from app.core.web import NavEntry
@@ -30,7 +30,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     """Build the application with the modules enabled via env `MODULES`."""
-    application = FastAPI(title="Posteingangs-Assistent", version="0.1.0", lifespan=lifespan)
+    application = FastAPI(title=app_title(), version="0.1.0", lifespan=lifespan)
     application.include_router(core_router)
     navigation: list[NavEntry] = []
     for key in enabled_modules(list(MODULES)):

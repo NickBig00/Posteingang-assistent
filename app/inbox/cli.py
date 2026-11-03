@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlmodel import Session
 
+from app.core.config import app_title
 from app.core.db import engine, init_db
 from app.core.llm.factory import get_provider
 from app.core.logging_config import setup_logging
@@ -22,7 +23,7 @@ from app.inbox.rules import validate_profile_rules
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="app.cli", description="Posteingangs-Assistent")
+    parser = argparse.ArgumentParser(prog="app.cli", description=app_title())
     commands = parser.add_subparsers(dest="command", required=True)
     import_cmd = commands.add_parser("import-samples", help="Beispieldaten importieren")
     import_cmd.add_argument("--dir", type=Path, default=None)

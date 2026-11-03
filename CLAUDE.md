@@ -16,7 +16,7 @@ Lies vor jeder Aufgabe `docs/SPEC.md` und `docs/ROADMAP.md`.
 ## Architektur und Module
 
 - **Architektur:** Die Anwendung ist ein modularer Monolith mit `app/core/`, `app/inbox/` und `app/social/`. Module nutzen `core`, aber nicht die Interna anderer Module. Gemeinsame Funktionen gehören nach `core`. Spezifikationen: `docs/SPEC.md` (Kern und Posteingang), `docs/SPEC_social.md` (Social Media). Fahrpläne: `docs/ROADMAP.md`, `docs/ROADMAP_social.md`.
-- **Social-Media-Regeln:** Kein automatisches Veröffentlichen. Keine Namen oder Daten von Mitgliedern oder Patienten in Beiträgen. Fakten aus dem Briefing (Datum, Uhrzeit, Preis, Ort) dürfen vom LLM nicht verändert werden. Warnungen zu Gesundheitsversprechen müssen vor der Freigabe bestätigt werden.
+- **Social-Media-Regeln:** Kein automatisches Veröffentlichen. Keine Namen oder Daten von Mitgliedern oder Patienten in Beiträgen; ein Mitgliedername ist ein Fehler, den nur die bestätigte Einwilligung der Person aufhebt (Audit-Eintrag). Fakten aus dem Briefing (Datum, Uhrzeit, Preis, Ort) dürfen vom LLM nicht verändert werden. Warnungen zu Gesundheitsversprechen müssen vor der Freigabe bestätigt werden.
 
 ## Tech-Stack
 

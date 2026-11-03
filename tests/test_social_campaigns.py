@@ -133,7 +133,8 @@ def test_create_campaign(session: Session) -> None:
 def test_checks_apply_to_every_post(session: Session) -> None:
     good = json.dumps({"text": "Rücken-Fit am 1.12. um 18:30 Uhr im Kursraum 2", "hashtags": []})
     wrong = json.dumps({"text": "Rücken-Fit am 2.12. um 18:30 Uhr im Kursraum 2", "hashtags": []})
-    provider = scripted(post_draft=[good, wrong, good])
+    # The faulty step gets the one retry for missing facts and stays wrong.
+    provider = scripted(post_draft=[good, wrong, wrong, good])
     data = _input(channels=[Channel.FACEBOOK])
 
     campaign = create_campaign(session, CONFIG, SocialLLMClient(provider), data, "demo")
@@ -156,7 +157,7 @@ def test_checks_apply_to_every_post(session: Session) -> None:
     assert approval_blockers(session, drafts[1])
     assert [d.status for d in drafts] == [
         PostStatus.APPROVED,
-        PostStatus.IN_REVIEW,
+        PostStatus.NEEDS_MANUAL_REVIEW,
         PostStatus.APPROVED,
     ]
 
