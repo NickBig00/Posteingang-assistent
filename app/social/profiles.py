@@ -196,6 +196,14 @@ def _check_hashtags(hashtags: list[str]) -> None:
         raise ValueError(f"invalid hashtags (expected '#Wort'): {', '.join(invalid)}")
 
 
+class BrandDesign(_Strict):
+    """Colours and font of graphics from templates (SPEC_social 14)."""
+
+    primary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    accent_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    font: Literal["inter"] = "inter"
+
+
 class BrandProfile(_Strict):
     key: str = Field(pattern=KEY_PATTERN)
     name: str = Field(min_length=1)
@@ -208,6 +216,8 @@ class BrandProfile(_Strict):
     call_to_action: str = Field(min_length=1)
     contact: Contact
     forbidden_terms: list[str] = Field(default_factory=list)
+    # Optional: colours and font of graphics from templates (default: neutral design).
+    design: BrandDesign | None = None
     areas: list[Area] = Field(min_length=1)
 
     @model_validator(mode="after")

@@ -77,6 +77,15 @@ Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten ab. Die ge
 ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
 hochgeladenes Bild gelöscht.
 
+### Grafiken aus Vorlagen (Social Media)
+
+Im Briefing erzeugt „Grafik aus Vorlage“ deterministisch per Code (Pillow, Schrift Inter, kein
+LLM) eine Grafik je Anlass-Typ (Ankündigung, Aktion mit Preis, Hinweis, Standard): Hintergrund
+(eigenes Foto, gewähltes KI-Bild oder Farbfläche), Markenname, Markenfarben aus `design:` im
+Markenprofil und die Fakten aus dem Briefing. Vor dem Rendern prüft der Code: jeder Fakt genau
+einmal in Anzeige-Schreibweise, kein anderes Datum, keine andere Uhrzeit, kein anderer Preis,
+keine andere Telefonnummer, keine verbotenen Begriffe. Formate 1:1, 4:5, 9:16; Export als JPEG.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:

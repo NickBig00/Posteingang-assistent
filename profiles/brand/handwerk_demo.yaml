@@ -14,6 +14,11 @@ contact:
   email: info@haustechnik.example
   website: https://haustechnik.example
 forbidden_terms: [billig, Pfusch, Dumpingpreis, schwarz]
+# Farben und Schrift für Grafiken aus Vorlagen (fiktiv).
+design:
+  primary_color: "#334155"
+  accent_color: "#ea580c"
+  font: inter
 areas:
   - key: heizung
     label: Heizung

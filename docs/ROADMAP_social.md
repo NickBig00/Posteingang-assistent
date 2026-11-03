@@ -127,7 +127,7 @@ Bildstil im Markenprofil, Bild-Prompt aus Briefing (sichtbar, bearbeitbar), Schu
 
 **Akzeptanz:** Tests für Schutzregeln (Personenbezug im Prompt wird abgelehnt), Kennzeichnung und Löschen.
 
-## [ ] B3 – Grafiken aus Vorlagen
+## [x] B3 – Grafiken aus Vorlagen
 
 Vorlagen je Anlass-Typ, Rendering per Code, Faktenprüfung für Text in der Grafik, Formate und JPEG-Export.
 

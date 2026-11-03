@@ -6,8 +6,17 @@ Shared by uploaded photos, AI images and graphics from templates (SPEC_social 12
 import io
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 
 from PIL import Image, ImageOps
+
+# Fonts shipped with the app (Inter, SIL Open Font License 1.1); used by the UI and graphics.
+FONTS_DIR = Path(__file__).parent / "static" / "fonts"
+FONT_FILES: dict[str, Path] = {
+    "regular": FONTS_DIR / "Inter_400Regular.ttf",
+    "semibold": FONTS_DIR / "Inter_600SemiBold.ttf",
+    "bold": FONTS_DIR / "Inter_700Bold.ttf",
+}
 
 JPEG_QUALITY = 88
 # Upper bound against decompression bombs (a 10 MB upload never needs more).

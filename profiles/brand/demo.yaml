@@ -15,6 +15,11 @@ contact:
   email: info@gesundheitszentrum.example
   website: https://gesundheitszentrum.example
 forbidden_terms: [billig, Schnäppchen, Bikinifigur, Problemzonen, sofort abnehmen]
+# Farben und Schrift für Grafiken aus Vorlagen (fiktiv).
+design:
+  primary_color: "#0f766e"
+  accent_color: "#f59e0b"
+  font: inter
 areas:
   - key: fitness
     label: Fitness

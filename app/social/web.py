@@ -4,6 +4,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
@@ -65,6 +66,15 @@ from app.social.campaigns import (
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
+from app.social.graphics import (
+    LAYOUT_LABELS,
+    GraphicError,
+    GraphicLayoutError,
+    graphic_text,
+    layout_for,
+    render_graphic,
+    verify_graphic_text,
+)
 from app.social.highlight import highlight
 from app.social.images import (
     AI_IMAGE_LABEL,
@@ -290,6 +300,38 @@ async def briefing_create(
     return RedirectResponse(f"/social/briefings/{briefing.id}", status_code=303)
 
 
+def _graphic_context(
+    request: Request, config: SocialConfig, briefing: Briefing, usable: list[Asset]
+) -> dict[str, object]:
+    """Form values, layout and fact check result of the graphic from a template."""
+    params = request.query_params
+    fmt = params.get("graphic_format") or ImageFormat.PORTRAIT.value
+    if fmt not in {f.value for f in ImageFormat}:
+        fmt = ImageFormat.PORTRAIT.value
+    background = params.get("graphic_background") or "color"
+    if background != "color" and background not in {str(a.id) for a in usable}:
+        background = "color"
+    headline = (params.get("graphic_headline") or "")[:80]
+    text = graphic_text(config, briefing, headline)
+    try:
+        verify_graphic_text(text, BriefingFacts.from_json(briefing.facts), config)
+        problems: list[str] = []
+    except GraphicError as error:
+        problems = error.problems
+    query = urlencode({"format": fmt, "background": background, "headline": headline})
+    ai_background = any(str(a.id) == background and a.ai_generated for a in usable)
+    return {
+        "format": fmt,
+        "background": background,
+        "headline": headline,
+        "layout": LAYOUT_LABELS[layout_for(briefing.occasion_type)],
+        "lines": text.lines,
+        "problems": problems,
+        "src": f"/social/briefings/{briefing.id}/graphic.jpg?{query}",
+        "ai_background": ai_background,
+    }
+
+
 def _render_briefing(
     request: Request,
     session: Session,
@@ -317,6 +359,7 @@ def _render_briefing(
         for d in drafts
     }
     images_enabled = image_generation_enabled()
+    graphic = _graphic_context(request, config, briefing, usable)
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -329,11 +372,13 @@ def _render_briefing(
             "reviews": {d.id: latest_review(session, d.id) for d in drafts if d.id},
             "assets": briefing_assets(session, briefing_id),
             "draft_images": draft_images,
+            "usable_assets": usable,
             "images_enabled": images_enabled,
             "image_states": {d.id: image_state(session, config, d) for d in drafts}
             if images_enabled
             else {},
             "image_formats": list(ImageFormat),
+            "graphic": graphic,
             "facts": facts,
             "config": config,
             "error": error,
@@ -797,6 +842,47 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
         media_type="image/jpeg",
         headers={
             "Content-Disposition": f'attachment; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/social/briefings/{briefing_id}/graphic.jpg", response_model=None)
+def briefing_graphic(
+    session: SessionDep,
+    config: ConfigDep,
+    briefing_id: int,
+    format: str = ImageFormat.PORTRAIT.value,  # noqa: A002 - query parameter name
+    background: str = "color",
+    headline: str = "",
+    download: bool = False,
+) -> Response:
+    """Graphic from the template of the occasion type: rendered by code, facts checked."""
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        fmt = ImageFormat(format)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Unbekanntes Format") from error
+    image: Asset | None = None
+    if background != "color":
+        image = session.get(Asset, int(background)) if background.isdigit() else None
+        if image is None or image.briefing_id != briefing_id or not is_usable(image):
+            raise HTTPException(status_code=404, detail="Hintergrundbild nicht verfügbar")
+    content = Path(image.stored_path).read_bytes() if image else None
+    try:
+        body, _ = render_graphic(config, briefing, fmt, headline=headline, background=content)
+    except GraphicError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except (GraphicLayoutError, ImageExportError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    label = "-ki-generiert" if image is not None and image.ai_generated else ""
+    name = f"grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
+    disposition = "attachment" if download else "inline"
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{name}"',
             "X-Content-Type-Options": "nosniff",
         },
     )
