@@ -1,33 +1,39 @@
+{% import "_ui.html" as ui %}
 {% if message %}
-<p class="mb-3 rounded px-3 py-2 text-sm {{ 'bg-red-50 text-red-800' if error else 'bg-green-50 text-green-800' }}"
-   role="status">{{ message }}</p>
+<div class="mb-4">{{ ui.alert(message, "error" if error else "ok", "alert" if error else "status") }}</div>
 {% endif %}
 {% if items %}
-<table class="w-full text-left text-sm">
-  <thead class="border-b border-slate-200 text-slate-500">
-    <tr>
-      <th class="py-2">Nr.</th><th>Datei</th><th>Eingang</th><th>Typ (KI)</th>
-      <th>Prüfung</th><th>Status</th><th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item, classification, light in items %}
-    <tr class="border-b border-slate-100">
-      <td class="py-2">{{ item.id }}</td>
-      <td>{{ item.filename or "–" }}</td>
-      <td>{{ item.received_at.strftime("%d.%m.%Y %H:%M") }}</td>
-      <td>
-        {% if classification %}{{ classification.document_type }}
-        <span class="text-slate-500">({{ "%.0f"|format(classification.confidence * 100) }} %)</span>
-        {% else %}–{% endif %}
-      </td>
-      <td>{% include "_light.html" %}</td>
-      <td><span class="rounded bg-slate-100 px-2 py-0.5">{{ status_labels[item.status] }}</span></td>
-      <td><a class="text-blue-700 hover:underline" href="/items/{{ item.id }}">Öffnen</a></td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Nr.</th><th scope="col">Datei</th><th scope="col">Eingang</th><th scope="col">Typ (KI)</th>
+          <th scope="col">Prüfung</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Aktion</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item, classification, light in items %}
+        <tr data-item="{{ item.id }}">
+          <td class="tabular-nums text-ink-subtle">{{ item.id }}</td>
+          <td class="max-w-[16rem] truncate font-medium" title="{{ item.filename or '' }}">{{ item.filename or "–" }}</td>
+          <td class="whitespace-nowrap tabular-nums text-ink-muted">{{ item.received_at.strftime("%d.%m.%Y %H:%M") }}</td>
+          <td>
+            {% if classification %}<span class="inline-flex flex-wrap items-center gap-1.5">{{ classification.document_type }}
+              <span class="badge badge-ai" data-ai-label title="KI-Klassifizierung, Konfidenz">{{ "%.0f"|format(classification.confidence * 100) }} %</span></span>
+            {% else %}<span class="text-ink-subtle">–</span>{% endif %}
+          </td>
+          <td class="whitespace-nowrap">{% include "_light.html" %}</td>
+          <td>{{ ui.badge(status_labels[item.status], status_tones[item.status]) }}</td>
+          <td class="text-right"><a class="btn btn-secondary btn-sm" href="/items/{{ item.id }}">Öffnen</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% else %}
-<p class="text-slate-600">Noch keine Eingänge vorhanden.</p>
+{% call ui.empty_state("Noch keine Eingänge vorhanden.", "Laden Sie eine Datei hoch oder laden Sie die synthetischen Beispieldaten, um die Demo auszuprobieren.") %}
+<button hx-post="/samples/import" hx-target="#inbox" hx-indicator="#inbox-loading" class="btn btn-primary">Beispieldaten laden</button>
+{% endcall %}
 {% endif %}

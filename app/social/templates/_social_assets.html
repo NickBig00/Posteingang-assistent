@@ -1,39 +1,43 @@
-<section class="rounded-lg border border-slate-200 bg-white p-4" id="bilder">
-  <h3 class="mb-2 font-semibold">Bilder</h3>
-  {% for a in assets %}
-  <div class="mb-3 flex gap-3 border-b border-slate-100 pb-3 text-sm">
-    {% if not a.consent_revoked_at %}<img src="/social/assets/{{ a.id }}" alt="Hochgeladenes Bild {{ a.filename }}" class="h-20 w-20 rounded object-cover">{% endif %}
-    <div class="space-y-1">
-      <p>{{ a.filename }}</p>
-      {% if a.consent_revoked_at %}
-        <p class="text-xs text-red-700">Einwilligung widerrufen von {{ a.consent_revoked_by }} am {{ a.consent_revoked_at.strftime("%d.%m.%Y %H:%M") }} – Bilddatei gelöscht. Eintrag entfernen, um die Beiträge wieder freigeben zu können.</p>
-      {% elif a.shows_persons %}
-        {% if a.consent_confirmed %}
-        <p class="text-xs text-green-800">✓ Personen abgebildet – Einwilligung bestätigt von {{ a.consent_by }} am {{ a.consent_at.strftime("%d.%m.%Y %H:%M") }}</p>
-        <form method="post" action="/social/assets/{{ a.id }}/revoke"
-              onsubmit="return confirm('Einwilligung widerrufen? Das Bild wird gelöscht, freigegebene und geplante Beiträge gehen zurück in die Prüfung.')">
-          <button type="submit" class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-800 hover:bg-red-50">Einwilligung widerrufen</button>
-        </form>
+{% import "_ui.html" as ui %}
+<section class="card" id="bilder" aria-labelledby="images-title">
+  <div class="card-header"><h2 class="card-title" id="images-title">Bilder</h2>{{ ui.badge(assets | length, "neutral") }}</div>
+  <div class="card-body space-y-4">
+    {% for a in assets %}
+    <div class="flex gap-3 border-b border-line pb-4 text-sm last:border-b-0 last:pb-0">
+      {% if not a.consent_revoked_at %}<img src="/social/assets/{{ a.id }}" alt="Hochgeladenes Bild {{ a.filename }}" class="h-20 w-20 shrink-0 rounded-lg object-cover ring-1 ring-line">
+      {% else %}<span class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}</span>{% endif %}
+      <div class="min-w-0 space-y-1.5">
+        <p class="truncate font-medium">{{ a.filename }}</p>
+        {% if a.consent_revoked_at %}
+          <p class="text-xs font-medium text-red-700">Einwilligung widerrufen von {{ a.consent_revoked_by }} am {{ a.consent_revoked_at.strftime("%d.%m.%Y %H:%M") }} – Bilddatei gelöscht. Eintrag entfernen, um die Beiträge wieder freigeben zu können.</p>
+        {% elif a.shows_persons %}
+          {% if a.consent_confirmed %}
+          <p class="text-xs text-green-800">✓ Personen abgebildet – Einwilligung bestätigt von {{ a.consent_by }} am {{ a.consent_at.strftime("%d.%m.%Y %H:%M") }}</p>
+          <form method="post" action="/social/assets/{{ a.id }}/revoke"
+                onsubmit="return confirm('Einwilligung widerrufen? Das Bild wird gelöscht, freigegebene und geplante Beiträge gehen zurück in die Prüfung.')">
+            <button type="submit" class="btn btn-danger btn-sm">Einwilligung widerrufen</button>
+          </form>
+          {% else %}
+          <p class="text-xs font-medium text-red-700">Personen abgebildet – Einwilligung fehlt. Freigabe erst nach Bestätigung.</p>
+          <form method="post" action="/social/assets/{{ a.id }}/consent">
+            <button type="submit" class="btn btn-secondary btn-sm border-amber-400">Einwilligung aller abgebildeten Personen liegt vor</button>
+          </form>
+          {% endif %}
         {% else %}
-        <p class="text-xs text-red-700">Personen abgebildet – Einwilligung fehlt. Freigabe erst nach Bestätigung.</p>
-        <form method="post" action="/social/assets/{{ a.id }}/consent">
-          <button type="submit" class="rounded border border-amber-400 px-2 py-0.5 text-xs hover:bg-amber-50">Einwilligung aller abgebildeten Personen liegt vor</button>
-        </form>
+        <p class="text-xs text-ink-subtle">Keine Personen abgebildet (laut Angabe).</p>
         {% endif %}
-      {% else %}
-      <p class="text-xs text-slate-500">Keine Personen abgebildet (laut Angabe).</p>
-      {% endif %}
-      <form method="post" action="/social/assets/{{ a.id }}/delete">
-        <button type="submit" class="text-xs text-red-700 hover:underline">Bild entfernen</button>
-      </form>
+        <form method="post" action="/social/assets/{{ a.id }}/delete">
+          <button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Bild entfernen</button>
+        </form>
+      </div>
     </div>
+    {% endfor %}
+    <form method="post" action="/social/briefings/{{ briefing.id }}/assets" enctype="multipart/form-data" class="space-y-2 text-sm">
+      <input type="file" name="file" accept=".png,.jpg,.jpeg" required aria-label="Bild hochladen" class="file-input">
+      <label class="flex items-center gap-2"><input type="checkbox" class="checkbox" name="shows_persons" value="true"> Auf dem Bild sind Personen zu sehen</label>
+      <label class="flex items-center gap-2"><input type="checkbox" class="checkbox" name="consent_confirmed" value="true"> Die Einwilligung aller abgebildeten Personen liegt vor</label>
+      <button type="submit" class="btn btn-secondary btn-sm">Bild hochladen</button>
+    </form>
+    <p class="text-xs text-ink-subtle">PNG oder JPG, höchstens 10 MB. Bilder werden nur lokal gespeichert; der JPEG-Download entfernt Metadaten (z. B. Standort).</p>
   </div>
-  {% endfor %}
-  <form method="post" action="/social/briefings/{{ briefing.id }}/assets" enctype="multipart/form-data" class="space-y-2 text-sm">
-    <input type="file" name="file" accept=".png,.jpg,.jpeg" required aria-label="Bild hochladen">
-    <label class="block"><input type="checkbox" name="shows_persons" value="true"> Auf dem Bild sind Personen zu sehen</label>
-    <label class="block"><input type="checkbox" name="consent_confirmed" value="true"> Die Einwilligung aller abgebildeten Personen liegt vor</label>
-    <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-100">Bild hochladen</button>
-  </form>
-  <p class="mt-2 text-xs text-slate-500">PNG oder JPG, höchstens 10 MB. Keine KI-Bilderzeugung; Bilder werden nur lokal gespeichert.</p>
 </section>

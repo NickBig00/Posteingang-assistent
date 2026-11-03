@@ -45,6 +45,17 @@ def briefing_assets(session: Session, briefing_id: int) -> list[Asset]:
     return list(session.exec(statement).all())
 
 
+def is_usable(asset: Asset) -> bool:
+    """The image may be used for publishing: file present, consent not missing or revoked."""
+    if asset.consent_revoked_at is not None:
+        return False
+    return not asset.shows_persons or asset.consent_confirmed
+
+
+def usable_assets(session: Session, briefing_id: int) -> list[Asset]:
+    return [a for a in briefing_assets(session, briefing_id) if is_usable(a)]
+
+
 def consent_blockers(session: Session, briefing_id: int) -> list[str]:
     blockers = []
     for asset in briefing_assets(session, briefing_id):

@@ -230,7 +230,7 @@ def imap_server(monkeypatch: pytest.MonkeyPatch) -> Iterator[FakeImap]:
 def test_fetch_button_and_endpoint(
     client: TestClient, engine: Engine, imap_server: FakeImap
 ) -> None:
-    assert "Postfach abrufen" in client.get("/").text
+    assert "Postfach abrufen" in client.get("/inbox").text
 
     response = client.post("/mail/fetch")
 
@@ -243,7 +243,7 @@ def test_fetch_button_and_endpoint(
 def test_fetch_without_configuration(client: TestClient) -> None:
     app.dependency_overrides[get_imap_config] = lambda: None
 
-    assert "Postfach abrufen" not in client.get("/").text
+    assert "Postfach abrufen" not in client.get("/inbox").text
     assert "Kein IMAP-Postfach konfiguriert" in client.post("/mail/fetch").text
 
 

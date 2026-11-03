@@ -1,0 +1,11 @@
+{
+  "name": "posteingang-assistent-ui",
+  "private": true,
+  "description": "Build tooling only: compiles the Tailwind CSS that the app serves from app/core/static/ (no CDN).",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i app/core/static/src/app.css -o app/core/static/css/app.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.19"
+  }
+}

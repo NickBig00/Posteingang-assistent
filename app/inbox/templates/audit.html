@@ -1,34 +1,41 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Audit Eingang {{ item.id }} – {{ app_title }}{% endblock %}
 {% block content %}
-<a href="/items/{{ item.id }}" class="text-sm text-blue-700 hover:underline">← Eingang {{ item.id }}</a>
-<h2 class="mb-1 text-lg font-semibold">Audit-Verlauf für Eingang {{ item.id }}</h2>
-<p class="mb-4 text-sm text-slate-500">Alle KI-Verarbeitungsschritte und Eingriffe von Menschen (neu verarbeiten,
-  wieder öffnen) in zeitlicher Reihenfolge. Einträge sind unveränderlich; gespeichert wird nur ein Hash der Eingabe.</p>
+{% call ui.page_header("Audit-Verlauf für Eingang " ~ item.id, "Alle KI-Verarbeitungsschritte und Eingriffe von Menschen (neu verarbeiten, wieder öffnen) in zeitlicher Reihenfolge. Einträge sind unveränderlich; gespeichert wird nur ein Hash der Eingabe.", "/items/" ~ item.id, "Eingang " ~ item.id) %}{% endcall %}
 {% if entries %}
-<ol class="space-y-3">
+<ol class="relative space-y-3 border-l-2 border-line pl-6">
   {% for e in entries %}
-  <li class="rounded-lg border {{ 'border-red-200' if e.error else 'border-slate-200' }} bg-white p-3 text-sm">
-    <div class="flex flex-wrap gap-x-4 text-slate-600">
-      <span>{{ e.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</span>
-      <strong class="text-slate-900">{{ e.step }}</strong>
-      {% if e.model == "mensch" %}
-      <span>durch Mensch: {{ e.model_params.get("actor", "–") }}</span>
-      <span>Status: {{ e.model_params.get("from_status", "–") }} → {{ e.model_params.get("to_status", "–") }}</span>
-      {% else %}
-      <span>Modell: {{ e.model }}{% if e.model_params.get("fallback_used") %} (Fallback; angefragt: {{ e.model_params.get("requested_model") }}){% endif %}</span>
-      <span>Prompt: {{ e.prompt_version or "–" }}</span>
-      <span>Dauer: {{ e.duration_ms }} ms</span>
-      <span>Versuch: {{ e.model_params.get("attempt", "–") }}</span>
-      {% endif %}
-    </div>
-    <div class="mt-1 font-mono text-xs text-slate-500">Eingabe-Hash: {{ e.input_hash }}</div>
-    {% if e.error %}<div class="mt-1 text-red-700">Fehler: {{ e.error }}</div>{% endif %}
-    {% if e.output_hash %}<div class="font-mono text-xs text-slate-500">Ausgabe-Hash: {{ e.output_hash }}</div>{% endif %}
-    {% if outputs.get(e.id) %}<pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{{ outputs[e.id] }}</pre>
-    {% elif e.output_hash %}<p class="mt-1 text-xs text-slate-500">Ausgabe gelöscht (nur Hash und Metadaten aufbewahrt).</p>{% endif %}
+  {% set human = e.model == "mensch" %}
+  <li class="relative">
+    <span class="absolute -left-[1.95rem] top-4 flex h-4 w-4 items-center justify-center rounded-full ring-4 ring-surface-muted {{ 'bg-red-600' if e.error else ('bg-slate-500' if human else 'bg-violet-500') }}" aria-hidden="true"></span>
+    <article class="card p-4 text-sm {{ 'border-red-200' if e.error else '' }}">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <strong class="text-ink">{{ e.step }}</strong>
+        {% if human %}{{ ui.badge("Mensch", "neutral") }}{% else %}{{ ui.ai_badge("KI-Schritt") }}{% endif %}
+        <span class="tabular-nums text-ink-subtle">{{ e.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</span>
+      </div>
+      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-ink-muted">
+        {% if human %}
+        <span>durch Mensch: {{ e.model_params.get("actor", "–") }}</span>
+        <span>Status: {{ e.model_params.get("from_status", "–") }} → {{ e.model_params.get("to_status", "–") }}</span>
+        {% else %}
+        <span>Modell: {{ e.model }}{% if e.model_params.get("fallback_used") %} (Fallback; angefragt: {{ e.model_params.get("requested_model") }}){% endif %}</span>
+        <span>Prompt: {{ e.prompt_version or "–" }}</span>
+        <span>Dauer: {{ e.duration_ms }} ms</span>
+        <span>Versuch: {{ e.model_params.get("attempt", "–") }}</span>
+        {% endif %}
+      </div>
+      <div class="mt-2 break-all font-mono text-xs text-ink-subtle">Eingabe-Hash: {{ e.input_hash }}</div>
+      {% if e.error %}<div class="mt-1 font-medium text-red-700">Fehler: {{ e.error }}</div>{% endif %}
+      {% if e.output_hash %}<div class="break-all font-mono text-xs text-ink-subtle">Ausgabe-Hash: {{ e.output_hash }}</div>{% endif %}
+      {% if outputs.get(e.id) %}<pre class="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-surface-muted p-2 text-xs">{{ outputs[e.id] }}</pre>
+      {% elif e.output_hash %}<p class="mt-1 text-xs text-ink-subtle">Ausgabe gelöscht (nur Hash und Metadaten aufbewahrt).</p>{% endif %}
+    </article>
   </li>
   {% endfor %}
 </ol>
-{% else %}<p class="text-slate-500">Keine KI-Schritte protokolliert.</p>{% endif %}
+{% else %}
+{{ ui.empty_state("Keine KI-Schritte protokolliert.", "Sobald der Eingang verarbeitet wird, erscheint hier jeder Schritt.", "clock") }}
+{% endif %}
 {% endblock %}

@@ -85,6 +85,62 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 
 ---
 
+## Oberfläche und KI-Bilder
+
+Spezifikation: `docs/SPEC.md` Abschnitt 10 (Oberfläche), `docs/SPEC_social.md` Abschnitte 12–14
+(Veröffentlichung, KI-Bilder, Grafiken aus Vorlagen). Reihenfolge: zuerst das Design-System,
+damit die Bildfunktionen gleich im neuen Stil entstehen.
+
+## [x] U1 – Design-System und Layout
+
+Design-Tokens, Komponenten, Seitenleiste, Kopfzeile, Markenfarbe aus Konfiguration. Eine Beispielseite umgestellt. Screenshots im PR.
+
+**Akzeptanz:** Alle Tests grün; Komponenten zentral definiert und dokumentiert.
+
+## [x] U2 – Startseite als Übersicht
+
+Tagesübersicht über beide Module gemäß `docs/SPEC.md` Abschnitt 10.2.
+
+**Akzeptanz:** Zahlen stimmen mit den Listen überein (Tests); Screenshots im PR.
+
+## [x] U3 – Posteingang im neuen Design
+
+Liste, Detailansicht, Audit-Ansicht umgestellt, ohne Funktionsänderung.
+
+**Akzeptanz:** Bestehende Tests grün; Screenshots im PR.
+
+## [x] U4 – Social Media im neuen Design und Veröffentlichungshilfen
+
+Übersicht, Briefing, Entwurf-Detail, Kalender umgestellt; Beitragsvorschau; „Text kopieren“, JPEG-Download, Status „eingeplant (extern)“.
+
+**Akzeptanz:** Tests grün; Screenshots im PR.
+
+## [ ] B1 – Bild-Interface
+
+Interface, Fake-Anbieter, OpenAI-Anbieter, Schalter `IMAGE_GENERATION_ENABLED`, Kostenbremse, Audit.
+
+**Akzeptanz:** Tests nur mit Fake; Bildfunktion ohne Schalter unsichtbar.
+
+## [ ] B2 – Bildvorschläge im Entwurf
+
+Bildstil im Markenprofil, Bild-Prompt aus Briefing (sichtbar, bearbeitbar), Schutzregeln gemäß `docs/SPEC_social.md` Abschnitt 13.5, Varianten, Auswahl, Kennzeichnung, Löschkonzept.
+
+**Akzeptanz:** Tests für Schutzregeln (Personenbezug im Prompt wird abgelehnt), Kennzeichnung und Löschen.
+
+## [ ] B3 – Grafiken aus Vorlagen
+
+Vorlagen je Anlass-Typ, Rendering per Code, Faktenprüfung für Text in der Grafik, Formate und JPEG-Export.
+
+**Akzeptanz:** Tests für Faktentreue und Formate; Beispielgrafiken im PR.
+
+## [ ] U5 – Feinschliff
+
+Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
+
+**Akzeptanz:** Kontrast- und Tastatur-Prüfung dokumentiert; Screenshots Laptop und Tablet im PR.
+
+---
+
 ## Offene Punkte
 
 - [x] **Löschkonzept Social Media:** Löschen je Briefing/Kampagne und Aufbewahrungsfrist
