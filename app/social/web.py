@@ -10,7 +10,14 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse,
 from sqlmodel import Session, col, select
 
 from app.core.db import get_session
-from app.core.image_formats import ImageExportError, export_jpeg
+from app.core.image_formats import (
+    FORMAT_SPECS,
+    ImageExportError,
+    ImageFormat,
+    export_jpeg,
+)
+from app.core.images.base import ImageError, ImageProvider
+from app.core.images.service import get_image_provider, image_generation_enabled
 from app.core.llm.factory import get_provider
 from app.core.models import utcnow
 from app.core.outcomes import worst_outcome
@@ -59,6 +66,15 @@ from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
 from app.social.highlight import highlight
+from app.social.images import (
+    AI_IMAGE_LABEL,
+    ImageSuggestionError,
+    choose_candidate,
+    discard_candidates,
+    generate_variants,
+    image_state,
+    suggest_prompt,
+)
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
     CHANNEL_IMAGE_FORMATS,
@@ -70,6 +86,7 @@ from app.social.models import (
     Campaign,
     Channel,
     CheckResult,
+    ImageCandidate,
     PostDraft,
     PostStatus,
 )
@@ -101,6 +118,8 @@ templates.env.globals["channel_labels"] = CHANNEL_LABELS
 templates.env.globals["post_status_labels"] = POST_STATUS_LABELS
 templates.env.globals["post_status_tones"] = POST_STATUS_TONES
 templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
+templates.env.globals["format_specs"] = FORMAT_SPECS
+templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
@@ -114,6 +133,10 @@ def get_social_config() -> SocialConfig:
 
 def get_social_client() -> SocialLLMClient:
     return SocialLLMClient(get_provider())
+
+
+def get_social_image_provider() -> ImageProvider:
+    return get_image_provider()
 
 
 def _labels(config: SocialConfig) -> dict[str, dict[str, str]]:
@@ -285,6 +308,15 @@ def _render_briefing(
     facts = formatted_facts(BriefingFacts.from_json(briefing.facts))
     results = _results_by_draft(session, [d.id for d in drafts if d.id])
     usable = usable_assets(session, briefing_id)
+    # Per draft: its own AI image first, then the uploaded images of the briefing.
+    draft_images = {
+        d.id: sorted(
+            (a for a in usable if a.draft_id in (None, d.id)),
+            key=lambda a: (not a.ai_generated, a.id or 0),
+        )
+        for d in drafts
+    }
+    images_enabled = image_generation_enabled()
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -296,8 +328,12 @@ def _render_briefing(
             "blockers": {d.id: approval_blockers(session, d) for d in drafts},
             "reviews": {d.id: latest_review(session, d.id) for d in drafts if d.id},
             "assets": briefing_assets(session, briefing_id),
-            "usable_assets": usable,
-            "preview_image": usable[0] if usable else None,
+            "draft_images": draft_images,
+            "images_enabled": images_enabled,
+            "image_states": {d.id: image_state(session, config, d) for d in drafts}
+            if images_enabled
+            else {},
+            "image_formats": list(ImageFormat),
             "facts": facts,
             "config": config,
             "error": error,
@@ -533,6 +569,122 @@ def asset_file(session: SessionDep, asset_id: int) -> Response:
     )
 
 
+# --- AI images (only with IMAGE_GENERATION_ENABLED) ---
+
+
+ImageProviderDep = Annotated[ImageProvider, Depends(get_social_image_provider)]
+
+
+def _images_draft(session: Session, draft_id: int) -> PostDraft:
+    if not image_generation_enabled():
+        raise HTTPException(status_code=404, detail="Nicht gefunden")
+    return _draft_or_404(session, draft_id)
+
+
+def _images_back(draft: PostDraft) -> RedirectResponse:
+    return RedirectResponse(
+        f"/social/briefings/{draft.briefing_id}#images-{draft.id}", status_code=303
+    )
+
+
+def _image_format(value: str, draft: PostDraft) -> ImageFormat:
+    try:
+        return ImageFormat(value)
+    except ValueError:
+        return CHANNEL_IMAGE_FORMATS[draft.channel]
+
+
+@router.post("/social/drafts/{draft_id}/images/suggest", response_model=None)
+def image_suggest(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    draft_id: int,
+    image_format: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """The AI suggests an image prompt from briefing and image style (visible, editable)."""
+    draft = _images_draft(session, draft_id)
+    try:
+        suggest_prompt(session, config, client, draft, _image_format(image_format, draft))
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/images/generate", response_model=None)
+def image_generate(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    provider: ImageProviderDep,
+    user: UserDep,
+    storage: StorageDep,
+    draft_id: int,
+    prompt: Annotated[str, Form()] = "",
+    image_format: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """Check the prompt and generate 2–3 variants (cost brake and audit in core)."""
+    draft = _images_draft(session, draft_id)
+    try:
+        generate_variants(
+            session,
+            config,
+            provider,
+            draft,
+            prompt=prompt,
+            fmt=_image_format(image_format, draft),
+            user=user,
+            storage=storage,
+        )
+    except (ImageSuggestionError, ImageError) as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _images_back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/images/{candidate_id}/choose", response_model=None)
+def image_choose(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    user: UserDep,
+    draft_id: int,
+    candidate_id: int,
+) -> HTMLResponse | RedirectResponse:
+    draft = _images_draft(session, draft_id)
+    try:
+        choose_candidate(session, draft, candidate_id, user)
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/images/discard", response_model=None)
+def image_discard(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    draft = _images_draft(session, draft_id)
+    try:
+        discard_candidates(session, draft, user)
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.get("/social/images/candidates/{candidate_id}", response_model=None)
+def image_candidate_file(session: SessionDep, candidate_id: int) -> Response:
+    if not image_generation_enabled():
+        raise HTTPException(status_code=404, detail="Nicht gefunden")
+    candidate = session.get(ImageCandidate, candidate_id)
+    if candidate is None or not Path(candidate.stored_path).is_file():
+        raise HTTPException(status_code=404, detail="Variante nicht gefunden")
+    return Response(
+        Path(candidate.stored_path).read_bytes(),
+        media_type=candidate.media_type,
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )
+
+
 # --- audit ---
 
 
@@ -624,7 +776,11 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
     if draft.status not in (PostStatus.APPROVED, PostStatus.SCHEDULED, PostStatus.PUBLISHED):
         raise HTTPException(status_code=409, detail="Download erst nach der Freigabe")
     image = session.get(Asset, asset)
-    if image is None or image.briefing_id != draft.briefing_id:
+    if (
+        image is None
+        or image.briefing_id != draft.briefing_id
+        or image.draft_id not in (None, draft.id)
+    ):
         raise HTTPException(status_code=404, detail="Bild nicht gefunden")
     path = Path(image.stored_path)
     if not is_usable(image) or not path.is_file():
@@ -634,7 +790,8 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
         body = export_jpeg(path.read_bytes(), fmt)
     except ImageExportError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    name = f"beitrag-{draft.id}-{draft.channel.value}-{fmt.value.replace(':', 'x')}.jpg"
+    label = "-ki-generiert" if image.ai_generated else ""
+    name = f"beitrag-{draft.id}-{draft.channel.value}-{fmt.value.replace(':', 'x')}{label}.jpg"
     return Response(
         body,
         media_type="image/jpeg",

@@ -174,7 +174,13 @@ async function seed(withImages) {
   if (withImages) {
     const first = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
     const draft = (first.match(/id="draft-(\d+)"/) || [])[1];
-    if (draft) await post(`/social/drafts/${draft}/images/suggest`);
+    if (draft) {
+      await post(`/social/drafts/${draft}/images/suggest`, { image_format: "4:5" });
+      const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      const match = page.match(new RegExp(`id="prompt-${draft}"[^>]*>([^<]*)</textarea>`));
+      const prompt = match ? match[1].replace(/&amp;/g, "&").replace(/&#34;/g, '"').replace(/&#39;/g, "'") : "";
+      if (prompt) await post(`/social/drafts/${draft}/images/generate`, { prompt, image_format: "4:5" });
+    }
   }
   return ids;
 }

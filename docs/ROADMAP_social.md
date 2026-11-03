@@ -121,7 +121,7 @@ Interface, Fake-Anbieter, OpenAI-Anbieter, Schalter `IMAGE_GENERATION_ENABLED`, 
 
 **Akzeptanz:** Tests nur mit Fake; Bildfunktion ohne Schalter unsichtbar.
 
-## [ ] B2 – Bildvorschläge im Entwurf
+## [x] B2 – Bildvorschläge im Entwurf
 
 Bildstil im Markenprofil, Bild-Prompt aus Briefing (sichtbar, bearbeitbar), Schutzregeln gemäß `docs/SPEC_social.md` Abschnitt 13.5, Varianten, Auswahl, Kennzeichnung, Löschkonzept.
 

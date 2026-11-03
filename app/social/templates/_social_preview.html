@@ -8,7 +8,7 @@
 {% set fmt = channel_formats[d.channel].value %}
 {% set limit = limits.get(d.channel.value, 200) %}
 {% set text = d.full_text %}
-{% set image = preview_image %}
+{% set images = draft_images[d.id] %}{% set image = images[0] if images else none %}
 {% set name = config.brand.name %}
 
 {% macro body_text(text, limit, more_label) -%}
@@ -44,7 +44,8 @@
     </div>
     {% if d.channel.value != "instagram_post" %}<div class="px-3 pb-2">{{ body_text(text, limit, "Mehr anzeigen" if d.channel.value == "facebook" else "…mehr") }}</div>{% endif %}
     <div class="{{ ratios[fmt] }} w-full bg-surface-sunken">
-      {% if image %}<img src="/social/assets/{{ image.id }}" alt="Vorschaubild: {{ image.filename }}" class="h-full w-full object-cover">
+      {% if image %}<div class="relative h-full w-full"><img src="/social/assets/{{ image.id }}" alt="Vorschaubild: {{ image.filename }}" class="h-full w-full object-cover">
+        {% if image.ai_generated %}<span class="absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{{ ai_image_label }}</span>{% endif %}</div>
       {% else %}<div class="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}Kein Bild</div>{% endif %}
     </div>
     {% if d.channel.value == "instagram_post" %}

@@ -153,6 +153,15 @@ class Contact(_Strict):
     website: str = Field(min_length=1)
 
 
+class ImageStyle(_Strict):
+    """Look of AI images for an area (SPEC_social 13.4). Never names, never people."""
+
+    colors: str = Field(min_length=1, max_length=200)
+    mood: str = Field(min_length=1, max_length=200)
+    motifs: str = Field(min_length=1, max_length=300)
+    exclusions: list[str] = Field(default_factory=list)
+
+
 class Area(_Strict):
     key: str = Field(pattern=KEY_PATTERN)
     label: str = Field(min_length=1)
@@ -165,6 +174,8 @@ class Area(_Strict):
     hashtags: list[str] = Field(default_factory=list)
     call_to_action: str | None = None
     examples: list[str] = Field(min_length=2, max_length=3)
+    # Optional: style of AI images (only used when image generation is switched on).
+    image_style: ImageStyle | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:

@@ -24,7 +24,9 @@ from app.core.llm.base import (
 
 # Tasks whose answer must be a JSON object: JSON mode guarantees syntactically valid
 # JSON; the schema itself is still checked strictly against the Pydantic models.
-JSON_TASKS: frozenset[LLMTask] = frozenset({"classify", "extract", "post_draft", "post_assess"})
+JSON_TASKS: frozenset[LLMTask] = frozenset(
+    {"classify", "extract", "post_draft", "post_assess", "image_prompt"}
+)
 MAX_TOKENS: dict[LLMTask, int] = {
     "classify": 2000,
     "extract": 4000,
@@ -32,6 +34,7 @@ MAX_TOKENS: dict[LLMTask, int] = {
     "ocr": 16000,
     "post_draft": 4000,
     "post_assess": 4000,
+    "image_prompt": 2000,
 }
 
 

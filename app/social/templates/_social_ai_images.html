@@ -1,0 +1,60 @@
+{# AI image suggestions for one draft (SPEC_social 13.3); rendered only when switched on. #}
+{% import "_ui.html" as ui %}
+{% set st = image_states.get(d.id) %}
+{% set editable = d.status.value in ("draft", "in_review", "needs_manual_review") %}
+{% set default_format = channel_formats[d.channel].value %}
+<div class="mt-4 rounded-lg border border-violet-200 bg-violet-50/40 p-4" id="images-{{ d.id }}" data-ai-images>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h4 class="flex items-center gap-2 text-sm font-semibold">{{ ui.icon("image") }}KI-Bild {{ ui.ai_badge(ai_image_label) }}</h4>
+    {% if st and st.chosen %}<span class="badge badge-ok">Variante gewählt</span>{% endif %}
+  </div>
+  <p class="mt-1 text-xs text-ink-muted">Optional: ein Stimmungsbild ohne Menschen und ohne Text. Eigene Fotos bleiben der Normalfall.</p>
+
+  {% if not editable %}
+  <p class="mt-2 text-xs text-ink-subtle">Das Bild wird mit dem Beitrag freigegeben und lässt sich danach nicht mehr ändern.</p>
+  {% elif not st or not st.proposal %}
+  <form method="post" action="/social/drafts/{{ d.id }}/images/suggest" class="mt-3 flex flex-wrap items-center gap-2">
+    <label class="sr-only" for="fmt-{{ d.id }}">Format</label>
+    <select id="fmt-{{ d.id }}" name="image_format" class="input w-auto py-1.5">
+      {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == default_format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon("sparkles") }}Bild vorschlagen</button>
+  </form>
+  {% else %}
+  <form method="post" action="/social/drafts/{{ d.id }}/images/generate" class="mt-3 space-y-2">
+    <label class="label flex flex-wrap items-center gap-2" for="prompt-{{ d.id }}">Bild-Prompt
+      {% if st.proposal.prompt_from_ai %}{{ ui.ai_badge() }}{% else %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}</label>
+    <textarea id="prompt-{{ d.id }}" name="prompt" rows="3" maxlength="800" class="input text-sm {{ 'input-invalid' if st.violations else '' }}"
+              {% if st.violations %}aria-invalid="true" aria-describedby="violations-{{ d.id }}"{% endif %}>{{ st.proposal.prompt }}</textarea>
+    {% if st.violations %}
+    <ul class="list-disc pl-5 text-xs font-medium text-red-700" id="violations-{{ d.id }}" data-violations>
+      {% for v in st.violations %}<li>{{ v }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <p class="hint">Vor dem Erzeugen prüft das System den Prompt auf Personen, Text, echte Räume oder Ergebnisse und personenbezogene Daten.
+      Zusätzlich hängt es feste Ausschlüsse an (keine Menschen, kein Text).</p>
+    <div class="flex flex-wrap items-center gap-2">
+      <select name="image_format" class="input w-auto py-1.5" aria-label="Format">
+        {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == st.proposal.image_format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">{{ ui.icon("sparkles") }}{{ "Neu erzeugen" if st.candidates else "Varianten erzeugen" }}</button>
+    </div>
+  </form>
+  {% if st.candidates %}
+  <div class="mt-4">
+    <p class="text-sm font-medium">Variante wählen</p>
+    <div class="mt-2 grid grid-cols-3 gap-3">
+      {% for c in st.candidates %}
+      <form method="post" action="/social/drafts/{{ d.id }}/images/{{ c.id }}/choose" class="space-y-1.5" data-candidate="{{ c.id }}">
+        <img src="/social/images/candidates/{{ c.id }}" alt="KI-Variante {{ c.variant }}" class="aspect-square w-full rounded-lg object-cover ring-1 ring-violet-200">
+        <button type="submit" class="btn btn-secondary btn-sm w-full">Variante {{ c.variant }} wählen</button>
+      </form>
+      {% endfor %}
+    </div>
+    <form method="post" action="/social/drafts/{{ d.id }}/images/discard" class="mt-2">
+      <button type="submit" class="btn btn-ghost btn-sm text-red-700">Alle Varianten verwerfen</button>
+    </form>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>

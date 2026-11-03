@@ -47,12 +47,16 @@
   <div class="mt-2 flex flex-wrap items-center gap-2">
     <button type="button" class="btn btn-primary btn-sm" data-copy="{{ d.full_text }}">{{ ui.icon("copy") }}<span data-copy-label>Text kopieren</span></button>
     <a href="/social/drafts/{{ d.id }}/export" class="btn btn-secondary btn-sm">{{ ui.icon("doc") }}Als Textdatei</a>
-    {% for a in usable_assets %}
+    {% for a in draft_images[d.id] %}
     <a href="/social/drafts/{{ d.id }}/image.jpg?asset={{ a.id }}" class="btn btn-secondary btn-sm" download
-       data-jpeg-download>{{ ui.icon("download") }}Bild „{{ a.filename | truncate(18, true, "…") }}“ als JPEG ({{ channel_formats[d.channel].value }})</a>
+       data-jpeg-download>{{ ui.icon("download") }}{% if a.ai_generated %}KI-Bild{% else %}Bild „{{ a.filename | truncate(18, true, "…") }}“{% endif %} als JPEG ({{ channel_formats[d.channel].value }})</a>
     {% endfor %}
   </div>
-  {% if not usable_assets %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild zum Download: Bild hochladen (und ggf. Einwilligung bestätigen).</p>{% endif %}
+  {% if draft_images[d.id] | selectattr("ai_generated") | list %}
+  <div class="mt-2">{% call ui.alert("", "ai") %}<strong>Beim Posten als KI-generiert kennzeichnen:</strong> Das Bild wurde mit KI erzeugt.
+    Setzen Sie auf der Plattform die Kennzeichnung (z. B. „Mit KI erstellt“ bzw. „KI-Info“) oder erwähnen Sie es im Text.{% endcall %}</div>
+  {% endif %}
+  {% if not draft_images[d.id] %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild zum Download: Bild hochladen (und ggf. Einwilligung bestätigen).</p>{% endif %}
 </div>
 {% endif %}
 
