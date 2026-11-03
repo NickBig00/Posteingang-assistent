@@ -7,7 +7,7 @@
   </form>
   {% endif %}
   {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
-  <form method="post" action="/social/drafts/{{ d.id }}/recheck">
+  <form method="post" action="/social/drafts/{{ d.id }}/recheck" data-loading="Wird geprüft …">
     <button type="submit" class="btn btn-secondary">Erneut prüfen</button>
   </form>
   {% endif %}

@@ -275,3 +275,37 @@ def test_every_status_of_both_modules_has_a_design_tone() -> None:
     )
     assert STATUS_TONES[ItemStatus.APPROVED] == POST_STATUS_TONES[PostStatus.APPROVED]
     assert STATUS_TONES[ItemStatus.REJECTED] == POST_STATUS_TONES[PostStatus.REJECTED]
+
+
+# --- contrast of the design tokens (U5; the full page check is scripts/a11y.cjs) ---
+
+# Text and background colours of the tones (Tailwind palette values used in app.css).
+TONE_PAIRS = {
+    "badge-neutral": ("#334155", "#f1f5f9"),
+    "badge-info": ("#075985", "#f0f9ff"),
+    "badge-ok": ("#166534", "#f0fdf4"),
+    "badge-warning": ("#78350f", "#fffbeb"),
+    "badge-error": ("#991b1b", "#fef2f2"),
+    "badge-ai": ("#5b21b6", "#f5f3ff"),
+    "alert-warning": ("#451a03", "#fffbeb"),
+    "ink-subtle on surface": ("#64748b", "#ffffff"),
+    "ink-subtle on page": ("#64748b", "#f8fafc"),
+    "code": ("#475569", "#f1f5f9"),
+    "btn-success": ("#ffffff", "#15803d"),
+    "btn-danger": ("#b91c1c", "#ffffff"),
+}
+
+
+@pytest.mark.parametrize("name", list(TONE_PAIRS))
+def test_tone_colours_meet_wcag_aa(name: str) -> None:
+    text, background = TONE_PAIRS[name]
+
+    assert contrast_ratio(parse_hex(text), parse_hex(background)) >= MIN_CONTRAST
+
+
+def test_sidebar_list_contains_only_list_items(client: TestClient) -> None:
+    html = client.get("/settings").text
+    nav = html[html.index('id="sidebar"') : html.index("</nav>")]
+
+    assert 'role="separator"' not in nav
+    assert nav.count("<li") == nav.count("</li>")

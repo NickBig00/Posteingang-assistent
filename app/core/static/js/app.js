@@ -26,6 +26,28 @@
     });
   });
 
+  // Long-running form posts (AI steps): disable the button and show a loading state.
+  document.addEventListener("submit", function (event) {
+    const form = event.target;
+    if (!form.matches("form[data-loading]") || event.defaultPrevented) return;
+    const button = event.submitter || form.querySelector("button[type=submit], button:not([type])");
+    form.setAttribute("aria-busy", "true");
+    if (button) {
+      // Keep the clicked button's name/value in the request before disabling it.
+      if (button.name) {
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = button.name;
+        hidden.value = button.value;
+        form.appendChild(hidden);
+      }
+      setTimeout(function () {
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner" aria-hidden="true"></span>' + form.dataset.loading;
+      }, 0);
+    }
+  });
+
   // Dismissible toasts.
   document.addEventListener("click", function (event) {
     const close = event.target.closest("[data-dismiss]");

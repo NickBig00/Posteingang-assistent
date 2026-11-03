@@ -4,10 +4,10 @@
 {% block content %}
 {% call ui.page_header("Posteingang", "E-Mails und Dokumente: KI-Vorschläge prüfen, freigeben oder verwerfen") %}
   {% if imap_enabled %}
-  <button hx-post="/mail/fetch" hx-target="#inbox" hx-indicator="#inbox-loading" class="btn btn-secondary">Postfach abrufen</button>
+  <button hx-post="/mail/fetch" hx-target="#inbox" hx-indicator="#inbox-loading" hx-disabled-elt="this" class="btn btn-secondary">Postfach abrufen</button>
   {% endif %}
-  <button hx-post="/samples/import" hx-target="#inbox" hx-indicator="#inbox-loading" class="btn btn-secondary">Beispieldaten laden</button>
-  <button hx-post="/items/process" hx-target="#inbox" hx-indicator="#inbox-loading" class="btn btn-primary">{{ ui.icon("sparkles") }}Eingänge verarbeiten</button>
+  <button hx-post="/samples/import" hx-target="#inbox" hx-indicator="#inbox-loading" hx-disabled-elt="this" class="btn btn-secondary">Beispieldaten laden</button>
+  <button hx-post="/items/process" hx-target="#inbox" hx-indicator="#inbox-loading" hx-disabled-elt="this" class="btn btn-primary">{{ ui.icon("sparkles") }}Eingänge verarbeiten</button>
 {% endcall %}
 
 <div class="card mb-6">

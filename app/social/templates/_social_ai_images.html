@@ -13,7 +13,7 @@
   {% if not editable %}
   <p class="mt-2 text-xs text-ink-subtle">Das Bild wird mit dem Beitrag freigegeben und lässt sich danach nicht mehr ändern.</p>
   {% elif not st or not st.proposal %}
-  <form method="post" action="/social/drafts/{{ d.id }}/images/suggest" class="mt-3 flex flex-wrap items-center gap-2">
+  <form method="post" action="/social/drafts/{{ d.id }}/images/suggest" class="mt-3 flex flex-wrap items-center gap-2" data-loading="Prompt wird formuliert …">
     <label class="sr-only" for="fmt-{{ d.id }}">Format</label>
     <select id="fmt-{{ d.id }}" name="image_format" class="input w-auto py-1.5">
       {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == default_format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
@@ -21,7 +21,7 @@
     <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon("sparkles") }}Bild vorschlagen</button>
   </form>
   {% else %}
-  <form method="post" action="/social/drafts/{{ d.id }}/images/generate" class="mt-3 space-y-2">
+  <form method="post" action="/social/drafts/{{ d.id }}/images/generate" class="mt-3 space-y-2" data-loading="Bilder werden erzeugt …">
     <label class="label flex flex-wrap items-center gap-2" for="prompt-{{ d.id }}">Bild-Prompt
       {% if st.proposal.prompt_from_ai %}{{ ui.ai_badge() }}{% else %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}</label>
     <textarea id="prompt-{{ d.id }}" name="prompt" rows="3" maxlength="800" class="input text-sm {{ 'input-invalid' if st.violations else '' }}"

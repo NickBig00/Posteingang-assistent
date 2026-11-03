@@ -75,7 +75,7 @@
         {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
         <details class="mt-4" {% if not d.text %}open{% endif %}>
           <summary class="btn btn-secondary btn-sm cursor-pointer">Bearbeiten</summary>
-          <form method="post" action="/social/drafts/{{ d.id }}/edit" class="mt-3 space-y-2">
+          <form method="post" action="/social/drafts/{{ d.id }}/edit" class="mt-3 space-y-2" data-loading="Wird geprüft …">
             <textarea name="text" rows="8" class="input leading-relaxed" aria-label="Text">{{ d.text }}</textarea>
             <input type="text" name="hashtags" value="{{ d.hashtags | join(' ') }}" class="input" aria-label="Hashtags" placeholder="#Hashtag #Hashtag">
             <button type="submit" class="btn btn-primary">Speichern und neu prüfen</button>

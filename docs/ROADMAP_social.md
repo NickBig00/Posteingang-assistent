@@ -133,7 +133,7 @@ Vorlagen je Anlass-Typ, Rendering per Code, Faktenprüfung für Text in der Graf
 
 **Akzeptanz:** Tests für Faktentreue und Formate; Beispielgrafiken im PR.
 
-## [ ] U5 – Feinschliff
+## [x] U5 – Feinschliff
 
 Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 

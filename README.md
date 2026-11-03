@@ -48,6 +48,9 @@ aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`). CSS, HTMX und Schrift werd
 `/static` ausgeliefert, nicht per CDN. Nach Änderungen an Templates das CSS neu erzeugen:
 `npm install` (einmalig) und `uv run python scripts/build_css.py`.
 
+Barrierefreiheit: `node scripts/a11y.cjs` (axe-core und Tastatur-Durchlauf, Bericht unter
+`docs/accessibility/`).
+
 Screenshots für Pull Requests: `node scripts/screenshots.cjs U1` (Playwright mit Chromium nötig)
 startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs unter
 `docs/screenshots/<Meilenstein>/` ab.

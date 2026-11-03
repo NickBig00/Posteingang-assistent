@@ -81,7 +81,7 @@ Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
 | Hinweis | `alert alert-<ton>` | `ui.alert(message, tone, role)` (mit `{% call %}` für eigenen Inhalt) |
 | Toast | `toast` + `alert`, schließen mit `data-dismiss` | – |
 | Leerzustand | `empty-state` | `ui.empty_state(title, text, icon)` mit optionaler Aktion |
-| Ladeanzeige | `spinner`, `htmx-indicator` | `ui.spinner(text)` |
+| Ladeanzeige | `spinner`, `htmx-indicator`; Formulare mit `data-loading="Text …"` deaktivieren beim Absenden ihren Button | `ui.spinner(text)` |
 | Seitenkopf | `page-title`, `page-subtitle`, `back-link` | `ui.page_header(title, subtitle, back_href, back_label)` |
 | Kennzahl | – | `ui.stat(value, label, href, tone, hint)` |
 | Symbole | – | `ui.icon(name, cls)` (eigene einfache Linien-Symbole) |
@@ -92,4 +92,7 @@ Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
 - Jedes KI-Ergebnis trägt `ui.ai_badge()`; nie eine eigene Gestaltung für KI-Kennzeichen.
 - Jeder Button und Link ist per Tastatur erreichbar; der Fokus ist immer sichtbar (`:focus-visible`).
 - Tabellen-Kopfzellen mit `scope="col"`; Symbole sind `aria-hidden`, Bedeutung steht im Text.
+- Lang laufende Formular-Aktionen (KI-Aufrufe) bekommen `data-loading`, HTMX-Buttons `hx-disabled-elt="this"`.
+- Jede Liste ohne Inhalt zeigt einen Leerzustand mit nächstem Schritt.
 - Neue Komponenten zuerst hier und auf `/design` ergänzen.
+- Barrierefreiheit prüfen: `node scripts/a11y.cjs` (Bericht unter `docs/accessibility/`).
