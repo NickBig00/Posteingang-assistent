@@ -97,7 +97,7 @@ Design-Tokens, Komponenten, Seitenleiste, Kopfzeile, Markenfarbe aus Konfigurati
 
 **Akzeptanz:** Alle Tests grün; Komponenten zentral definiert und dokumentiert.
 
-## [ ] U2 – Startseite als Übersicht
+## [x] U2 – Startseite als Übersicht
 
 Tagesübersicht über beide Module gemäß `docs/SPEC.md` Abschnitt 10.2.
 

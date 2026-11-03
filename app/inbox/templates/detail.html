@@ -4,7 +4,7 @@
 {% set item = d.item %}
 <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
   <div>
-    <a href="/" class="text-sm text-blue-700 hover:underline">← Posteingang</a>
+    <a href="/inbox" class="text-sm text-blue-700 hover:underline">← Posteingang</a>
     <h2 class="text-lg font-semibold">Eingang {{ item.id }}: {{ item.filename or "–" }}</h2>
     <p class="text-sm text-slate-500">
       Status: <span class="rounded bg-slate-100 px-2 py-0.5" id="status">{{ status_labels[item.status] }}</span>

@@ -2,15 +2,22 @@
 
 import os
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
+from typing import Annotated
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from sqlmodel import Session
 
 from app.core.config import MODULES_VARIABLE, app_title
+from app.core.db import get_session
+from app.core.models import utcnow
+from app.core.overview import ModuleOverview, OverviewProvider
 from app.core.profiles import active_profile_key
 from app.core.retention import retention_days
 from app.core.theme import (
@@ -56,6 +63,7 @@ def active_entry(navigation: list[NavEntry], url_path: str) -> NavEntry | None:
     return max(scored, key=lambda item: item[0])[1] if scored else None
 
 
+OVERVIEW_ENTRY = NavEntry(module="core", label="Übersicht", path="/", icon="home")
 SETTINGS_ENTRY = NavEntry(module="core", label="Einstellungen", path="/settings", icon="settings")
 
 
@@ -98,6 +106,49 @@ class HealthResponse(BaseModel):
 def health() -> HealthResponse:
     """Liveness check used by tests, CI and deployment."""
     return HealthResponse(status="ok")
+
+
+# Local time zone of the demo operator (dates on the start page).
+LOCAL_TZ = ZoneInfo("Europe/Berlin")
+WEEKDAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+MONTHS = [
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
+]
+
+
+def german_date(day: date) -> str:
+    """E.g. "Dienstag, 3. November 2026"."""
+    return f"{WEEKDAYS[day.weekday()]}, {day.day}. {MONTHS[day.month - 1]} {day.year}"
+
+
+@router.get("/", response_class=HTMLResponse)
+def overview_page(
+    request: Request, session: Annotated[Session, Depends(get_session)]
+) -> HTMLResponse:
+    """Start page: what is to do today, figures per module (SPEC 10.2)."""
+    providers: list[OverviewProvider] = getattr(request.app.state, "overview_providers", [])
+    modules: list[ModuleOverview] = [provider(session) for provider in providers]
+    return templates.TemplateResponse(
+        request,
+        "overview.html",
+        {
+            "modules": modules,
+            "today": german_date(utcnow().astimezone(LOCAL_TZ).date()),
+            "open_total": sum(m.open_count for m in modules),
+            "todo_total": sum(len(m.todos) for m in modules),
+        },
+    )
 
 
 @dataclass(frozen=True)

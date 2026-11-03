@@ -32,6 +32,11 @@
   <p class="mb-3 text-xs text-slate-500">Abgeschlossene Eingänge werden nach {{ retention_days }} Tagen
     automatisch gelöscht (Befehl <code>purge</code>); offene Eingänge bleiben bis zur Erledigung erhalten.
     Der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
+  {% if status_filter %}
+  <p class="mb-3 flex flex-wrap items-center gap-2 text-sm" id="status-filter">Gefiltert nach Status:
+    {% for s in status_filter %}<span class="badge badge-neutral">{{ status_labels[s] }}</span>{% endfor %}
+    <a href="/inbox" class="text-sm">Filter entfernen</a></p>
+  {% endif %}
   <div id="inbox">
     {% include "_inbox.html" %}
   </div>

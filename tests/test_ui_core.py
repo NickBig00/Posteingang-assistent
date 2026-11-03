@@ -161,16 +161,18 @@ def test_components_are_in_the_compiled_css(component: str) -> None:
 
 # --- navigation ---
 
-INBOX = NavEntry("inbox", "Posteingang", "/", prefixes=("/items",))
+OVERVIEW = NavEntry("core", "Übersicht", "/")
+INBOX = NavEntry("inbox", "Posteingang", "/inbox", prefixes=("/items",))
 SOCIAL = NavEntry("social", "Social Media", "/social")
 CALENDAR = NavEntry("social", "Kalender", "/social/calendar")
-NAVIGATION = [INBOX, SOCIAL, CALENDAR, SETTINGS_ENTRY]
+NAVIGATION = [OVERVIEW, INBOX, SOCIAL, CALENDAR, SETTINGS_ENTRY]
 
 
 @pytest.mark.parametrize(
     ("path", "expected"),
     [
-        ("/", INBOX),
+        ("/", OVERVIEW),
+        ("/inbox", INBOX),
         ("/items/3", INBOX),
         ("/items/3/audit", INBOX),
         ("/social", SOCIAL),
@@ -191,6 +193,7 @@ def test_sidebar_lists_modules_calendar_and_settings(client: TestClient) -> None
 
     labels = re.findall(r'class="nav-icon".*?</svg>([^<]+)</a>', nav, flags=re.S)
     assert [label.strip() for label in labels] == [
+        "Übersicht",
         "Posteingang",
         "Social Media",
         "Kalender",

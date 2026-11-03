@@ -170,7 +170,7 @@ def test_status_is_shown_in_german(
     item_id = _create(engine, status)
 
     detail = client.get(f"/items/{item_id}").text
-    inbox = client.get("/").text
+    inbox = client.get("/inbox").text
 
     assert f'id="status">{label}</span>' in detail
     assert f">{label}</span>" in inbox

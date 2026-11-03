@@ -59,8 +59,10 @@ Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:
 MODULES=inbox uv run uvicorn app.main:app   # nur Posteingang (Seitenleiste ohne Social Media)
 ```
 
-Unbekannte Modulnamen oder eine leere Liste brechen den Start mit einer Fehlermeldung ab. Ist
-der Posteingang abgeschaltet, leitet `/` auf das erste aktive Modul weiter. Die Befehle der
+Unbekannte Modulnamen oder eine leere Liste brechen den Start mit einer Fehlermeldung ab. Die
+Startseite `/` ist die **Übersicht** („Was ist heute zu tun?“) mit Kennzahlen je aktivem Modul;
+jede Zahl führt in die passend gefilterte Liste (Posteingang unter `/inbox`, Social Media unter
+`/social`). Die Befehle der
 Kommandozeile betreffen den Posteingang und stehen unabhängig davon zur Verfügung.
 
 ## Lokaler Start

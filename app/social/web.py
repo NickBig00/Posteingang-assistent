@@ -147,11 +147,24 @@ def _drafts_by_briefing(session: Session) -> dict[int, list[PostDraft]]:
     return drafts
 
 
+def parse_status_filter(raw: str | None) -> list[PostStatus]:
+    """`?status=draft,in_review` → statuses; unknown values are ignored."""
+    values = {v.strip() for v in (raw or "").split(",") if v.strip()}
+    return [status for status in PostStatus if status.value in values]
+
+
 @router.get("/social", response_class=HTMLResponse)
-def social_index(request: Request, session: SessionDep, config: ConfigDep) -> HTMLResponse:
-    """Overview: briefings with their drafts and status."""
+def social_index(
+    request: Request, session: SessionDep, config: ConfigDep, status: str | None = None
+) -> HTMLResponse:
+    """Overview: briefings with their drafts and status, optionally filtered by status."""
     briefings = session.exec(select(Briefing).order_by(Briefing.id.desc())).all()  # type: ignore[union-attr]
     drafts = _drafts_by_briefing(session)
+    statuses = parse_status_filter(status)
+    if statuses:
+        drafts = {b: [d for d in ds if d.status in statuses] for b, ds in drafts.items()}
+        drafts = {b: ds for b, ds in drafts.items() if ds}
+        briefings = [b for b in briefings if b.id in drafts]
     results = _results_by_draft(session, [d.id for ds in drafts.values() for d in ds if d.id])
     return templates.TemplateResponse(
         request,
@@ -159,6 +172,7 @@ def social_index(request: Request, session: SessionDep, config: ConfigDep) -> HT
         {
             "briefings": briefings,
             "drafts": drafts,
+            "status_filter": statuses,
             "retention_days": retention_days(),
             "lights": {draft_id: _light(r) for draft_id, r in results.items()},
             "config": config,

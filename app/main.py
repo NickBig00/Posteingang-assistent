@@ -4,20 +4,26 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
-from fastapi.responses import RedirectResponse
 
 from app.core.config import app_title, enabled_modules
 from app.core.db import engine, init_db
 from app.core.logging_config import setup_logging
-from app.core.web import SETTINGS_ENTRY, NavEntry, mount_static
+from app.core.overview import OverviewProvider
+from app.core.web import OVERVIEW_ENTRY, SETTINGS_ENTRY, NavEntry, mount_static
 from app.core.web import router as core_router
 from app.inbox import web as inbox_web
+from app.inbox.overview import inbox_overview
 from app.social import web as social_web
+from app.social.overview import social_overview
 
-# Available modules in navigation order: key -> (routes, sidebar entries).
-MODULES: dict[str, tuple[APIRouter, list[NavEntry]]] = {
-    "inbox": (inbox_web.router, [inbox_web.NAV_ENTRY]),
-    "social": (social_web.router, [social_web.NAV_ENTRY, social_web.CALENDAR_NAV_ENTRY]),
+# Available modules in navigation order: key -> (routes, sidebar entries, start page figures).
+MODULES: dict[str, tuple[APIRouter, list[NavEntry], OverviewProvider]] = {
+    "inbox": (inbox_web.router, [inbox_web.NAV_ENTRY], inbox_overview),
+    "social": (
+        social_web.router,
+        [social_web.NAV_ENTRY, social_web.CALENDAR_NAV_ENTRY],
+        social_overview,
+    ),
 }
 
 
@@ -33,19 +39,15 @@ def create_app() -> FastAPI:
     application = FastAPI(title=app_title(), version="0.1.0", lifespan=lifespan)
     mount_static(application)
     application.include_router(core_router)
-    navigation: list[NavEntry] = []
+    navigation: list[NavEntry] = [OVERVIEW_ENTRY]
+    providers: list[OverviewProvider] = []
     for key in enabled_modules(list(MODULES)):
-        router, entries = MODULES[key]
+        router, entries, provider = MODULES[key]
         application.include_router(router)
         navigation.extend(entries)
+        providers.append(provider)
     application.state.navigation = [*navigation, SETTINGS_ENTRY]
-    if all(entry.path != "/" for entry in navigation):
-        start = navigation[0].path
-
-        @application.get("/", include_in_schema=False)
-        def start_page() -> RedirectResponse:
-            return RedirectResponse(start, status_code=307)
-
+    application.state.overview_providers = providers
     return application
 
 
