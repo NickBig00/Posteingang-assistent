@@ -32,6 +32,7 @@ from app.inbox.ingest.service import (
 from app.inbox.llm.client import LLMClient
 from app.inbox.models import (
     STATUS_LABELS,
+    STATUS_TONES,
     Classification,
     InboxItem,
     ItemSource,
@@ -65,6 +66,7 @@ NAV_ENTRY = NavEntry(
 router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)
 templates.env.globals["status_labels"] = STATUS_LABELS
+templates.env.globals["status_tones"] = STATUS_TONES
 templates.env.globals["decision_labels"] = DECISION_LABELS
 
 

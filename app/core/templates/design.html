@@ -23,8 +23,8 @@
         {{ ui.ai_badge() }}
       </div>
       <div class="flex flex-wrap gap-6">{{ ui.light("ok", "Regeln ok") }} {{ ui.light("warning") }} {{ ui.light("error") }} {{ ui.light(none) }}</div>
-      <p class="text-sm text-ink-muted">Jeder Status beider Module ist genau einem Ton zugeordnet (z. B. „zur Prüfung“ → warning,
-        „freigegeben“ → ok). KI-Ergebnisse tragen immer dasselbe violette Kennzeichen.</p>
+      <p class="text-sm text-ink-muted">Jeder Status beider Module ist genau einem Ton zugeordnet (z. B. „in Prüfung“ → warning,
+        „manuelle Prüfung“ → error, „freigegeben“ → ok). KI-Ergebnisse tragen immer dasselbe violette Kennzeichen.</p>
     </div>
   </section>
 
@@ -76,7 +76,7 @@
         <thead><tr><th scope="col">Nr.</th><th scope="col">Typ</th><th scope="col">Prüfung</th><th scope="col">Status</th></tr></thead>
         <tbody>
           <tr><td>12</td><td>kuendigung {{ ui.ai_badge("KI") }}</td><td>{{ ui.light("ok", "Regeln ok") }}</td><td>{{ ui.badge("verarbeitet", "info") }}</td></tr>
-          <tr><td>11</td><td>rechnung {{ ui.ai_badge("KI") }}</td><td>{{ ui.light("error") }}</td><td>{{ ui.badge("manuelle Prüfung", "warning") }}</td></tr>
+          <tr><td>11</td><td>rechnung {{ ui.ai_badge("KI") }}</td><td>{{ ui.light("error") }}</td><td>{{ ui.badge("manuelle Prüfung", "error") }}</td></tr>
         </tbody>
       </table>
     </div>

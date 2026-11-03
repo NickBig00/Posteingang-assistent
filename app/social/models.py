@@ -62,6 +62,18 @@ POST_STATUS_LABELS: dict[PostStatus, str] = {
 }
 
 
+# Tone of each status in the shared design system (docs/DESIGN.md, "Töne").
+POST_STATUS_TONES: dict[PostStatus, str] = {
+    PostStatus.DRAFT: "neutral",
+    PostStatus.IN_REVIEW: "warning",
+    PostStatus.NEEDS_MANUAL_REVIEW: "error",
+    PostStatus.APPROVED: "ok",
+    PostStatus.SCHEDULED: "info",
+    PostStatus.PUBLISHED: "ok",
+    PostStatus.REJECTED: "neutral",
+}
+
+
 class Campaign(SQLModel, table=True):
     """Plan over several weeks for one occasion; every post is approved on its own."""
 

@@ -53,16 +53,17 @@ Einstellungen markiert.
 
 ## Töne (einheitliche Status- und Ampelfarben)
 
-Jeder Status beider Module ist genau einem Ton zugeordnet; dieselbe Bedeutung sieht überall
-gleich aus.
+Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
+`app/inbox/models.py`, `POST_STATUS_TONES` in `app/social/models.py`); dieselbe Bedeutung sieht
+überall gleich aus.
 
 | Ton | Bedeutung | Beispiele |
 |---|---|---|
-| `neutral` | offen, ohne Handlungsbedarf | neu, Entwurf |
-| `info` | in Arbeit, informativ | verarbeitet, geplant |
-| `warning` | Mensch muss hinschauen | zur Prüfung, manuelle Prüfung, Hinweis |
-| `ok` | erledigt / freigegeben | freigegeben, erledigt, veröffentlicht, Regeln ok |
-| `error` | blockiert / abgelehnt | Fehler, verworfen |
+| `neutral` | ohne Handlungsbedarf oder abgeschlossen ohne Ergebnis | neu, Entwurf, verworfen |
+| `info` | in Arbeit, informativ | geplant, „eingeplant (extern)“ |
+| `warning` | Mensch muss hinschauen | verarbeitet (Vorschlag prüfen), in Prüfung, Hinweis |
+| `ok` | freigegeben / erledigt | freigegeben, erledigt, veröffentlicht, Regeln ok |
+| `error` | dringend oder blockiert | manuelle Prüfung/Bearbeitung, Fehler |
 | `ai` | KI-Ergebnis (immer violett, mit Funken-Symbol) | KI-Vorschlag, KI-Einschätzung, KI-generiert |
 | `brand` | neutrale Hervorhebung in Markenfarbe | Anlass-Typ |
 

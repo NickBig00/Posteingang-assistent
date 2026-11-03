@@ -251,3 +251,27 @@ def test_design_page_shows_all_components(client: TestClient) -> None:
         "dot-warning",
     ):
         assert marker in html, marker
+
+
+# --- uniform status tones (U3/U4) ---
+
+
+def test_every_status_of_both_modules_has_a_design_tone() -> None:
+    from typing import get_args
+
+    from app.core.overview import Tone
+    from app.inbox.models import STATUS_TONES, ItemStatus
+    from app.social.models import POST_STATUS_TONES, PostStatus
+
+    tones = set(get_args(Tone))
+    assert set(STATUS_TONES) == set(ItemStatus)
+    assert set(POST_STATUS_TONES) == set(PostStatus)
+    assert set(STATUS_TONES.values()) <= tones
+    assert set(POST_STATUS_TONES.values()) <= tones
+    # Same meaning, same tone in both modules.
+    assert (
+        STATUS_TONES[ItemStatus.NEEDS_MANUAL_REVIEW]
+        == POST_STATUS_TONES[PostStatus.NEEDS_MANUAL_REVIEW]
+    )
+    assert STATUS_TONES[ItemStatus.APPROVED] == POST_STATUS_TONES[PostStatus.APPROVED]
+    assert STATUS_TONES[ItemStatus.REJECTED] == POST_STATUS_TONES[PostStatus.REJECTED]

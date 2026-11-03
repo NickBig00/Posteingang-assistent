@@ -103,7 +103,7 @@ Tagesübersicht über beide Module gemäß `docs/SPEC.md` Abschnitt 10.2.
 
 **Akzeptanz:** Zahlen stimmen mit den Listen überein (Tests); Screenshots im PR.
 
-## [ ] U3 – Posteingang im neuen Design
+## [x] U3 – Posteingang im neuen Design
 
 Liste, Detailansicht, Audit-Ansicht umgestellt, ohne Funktionsänderung.
 
