@@ -372,11 +372,12 @@ def test_custom_provider_can_implement_interface(profile: Profile) -> None:
 
 
 def test_provider_sdks_are_only_imported_in_core_llm_package() -> None:
+    """LLM SDKs only in `app/core/llm/`, image SDKs also in `app/core/images/`."""
     pattern = re.compile(r"^\s*(import|from)\s+(anthropic|openai|mistralai|google\.genai)\b", re.M)
     offenders = [
         str(path.relative_to(APP_DIR))
         for path in APP_DIR.rglob("*.py")
-        if path.parent != APP_DIR / "core" / "llm"
+        if path.parent not in (APP_DIR / "core" / "llm", APP_DIR / "core" / "images")
         and pattern.search(path.read_text(encoding="utf-8"))
     ]
 

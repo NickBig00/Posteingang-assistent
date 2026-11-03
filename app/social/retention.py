@@ -21,6 +21,7 @@ from app.core.audit import write_human_audit_entry
 from app.core.models import AuditOutput, utcnow
 from app.core.retention import retention_days
 from app.social.audit import briefing_audit_trail
+from app.social.images import delete_image_data
 from app.social.models import (
     Asset,
     Briefing,
@@ -67,12 +68,13 @@ def delete_briefing(session: Session, briefing_id: int, user: str, reason: str =
         a.stored_path
         for a in session.exec(select(Asset).where(Asset.briefing_id == briefing_id)).all()
     }
+    files |= delete_image_data(session, [d for d in draft_ids if d is not None])
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id).in_(draft_ids)),
         delete(PostReview).where(col(PostReview.draft_id).in_(draft_ids)),
-        delete(PostDraft).where(col(PostDraft.briefing_id) == briefing_id),
         delete(Asset).where(col(Asset.briefing_id) == briefing_id),
+        delete(PostDraft).where(col(PostDraft.briefing_id) == briefing_id),
     ]
     for statement in statements:
         session.exec(statement)  # type: ignore[call-overload]
@@ -119,15 +121,21 @@ def delete_draft(session: Session, draft_id: int, user: str) -> bool:
         for e in briefing_audit_trail(session, briefing_id)
         if e.id is not None and e.model_params.get("draft_id") == draft_id
     ]
+    # AI images belong to the draft: proposals, open variants and the chosen image go too.
+    ai_assets = session.exec(select(Asset).where(Asset.draft_id == draft_id)).all()
+    files = delete_image_data(session, [draft_id]) | {a.stored_path for a in ai_assets}
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id) == draft_id),
         delete(PostReview).where(col(PostReview.draft_id) == draft_id),
+        delete(Asset).where(col(Asset.draft_id) == draft_id),
     ]
     for statement in statements:
         session.exec(statement)  # type: ignore[call-overload]
     session.delete(draft)
     session.commit()
+    session.expire_all()
+    _delete_files(files, session)
     write_human_audit_entry(
         session,
         item_id=None,

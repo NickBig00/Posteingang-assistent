@@ -45,11 +45,11 @@ CI Node.js braucht.
 | `line`, `line-strong` | Rahmen und Trennlinien |
 | `ink`, `ink-muted`, `ink-subtle` | Text, Nebentext, Hinweise |
 
-**Markenfarbe:** `BRAND_COLOR=#1e3a8a` (Hex, Standard `#0f766e`). `app/core/theme.py`
+**Markenfarbe:** `BRAND_COLOR=#1e3a8a` (Hex); ohne diese Variable gilt `design.primary_color` des aktiven Markenprofils (das Social-Modul liefert sie über `app.state.brand_color_providers`), sonst `#0f766e`. `app/core/theme.py`
 berechnet daraus alle `brand-*`-Töne so, dass Text auf Buttons und Links auf Weiß das
 WCAG-AA-Verhältnis 4,5 : 1 erreichen (helle Farben bekommen dunklen Text, mittlere werden
-abgedunkelt). Ein ungültiger Wert fällt auf die Standardfarbe zurück und wird unter
-Einstellungen markiert.
+abgedunkelt). Ein ungültiger Wert wird ignoriert (dann gilt das Markenprofil bzw. die
+Standardfarbe) und unter Einstellungen markiert.
 
 ## Töne (einheitliche Status- und Ampelfarben)
 
@@ -81,7 +81,7 @@ Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
 | Hinweis | `alert alert-<ton>` | `ui.alert(message, tone, role)` (mit `{% call %}` für eigenen Inhalt) |
 | Toast | `toast` + `alert`, schließen mit `data-dismiss` | – |
 | Leerzustand | `empty-state` | `ui.empty_state(title, text, icon)` mit optionaler Aktion |
-| Ladeanzeige | `spinner`, `htmx-indicator` | `ui.spinner(text)` |
+| Ladeanzeige | `spinner`, `htmx-indicator`; Formulare mit `data-loading="Text …"` deaktivieren beim Absenden ihren Button | `ui.spinner(text)` |
 | Seitenkopf | `page-title`, `page-subtitle`, `back-link` | `ui.page_header(title, subtitle, back_href, back_label)` |
 | Kennzahl | – | `ui.stat(value, label, href, tone, hint)` |
 | Symbole | – | `ui.icon(name, cls)` (eigene einfache Linien-Symbole) |
@@ -92,4 +92,7 @@ Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
 - Jedes KI-Ergebnis trägt `ui.ai_badge()`; nie eine eigene Gestaltung für KI-Kennzeichen.
 - Jeder Button und Link ist per Tastatur erreichbar; der Fokus ist immer sichtbar (`:focus-visible`).
 - Tabellen-Kopfzellen mit `scope="col"`; Symbole sind `aria-hidden`, Bedeutung steht im Text.
+- Lang laufende Formular-Aktionen (KI-Aufrufe) bekommen `data-loading`, HTMX-Buttons `hx-disabled-elt="this"`.
+- Jede Liste ohne Inhalt zeigt einen Leerzustand mit nächstem Schritt.
 - Neue Komponenten zuerst hier und auf `/design` ergänzen.
+- Barrierefreiheit prüfen: `node scripts/a11y.cjs` (Bericht unter `docs/accessibility/`).

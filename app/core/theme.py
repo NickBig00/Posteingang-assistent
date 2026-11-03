@@ -124,13 +124,41 @@ def build_theme(color: str) -> BrandTheme:
 
 
 def brand_color() -> str:
-    """Configured brand colour (env `BRAND_COLOR`, default teal)."""
+    """Colour from env `BRAND_COLOR` (default teal when unset)."""
     return (os.environ.get(BRAND_COLOR_VARIABLE) or "").strip() or DEFAULT_BRAND_COLOR
 
 
-def current_theme() -> BrandTheme:
-    """Theme for the configured brand colour; an invalid value falls back to the default."""
+@dataclass(frozen=True)
+class BrandColorChoice:
+    """The effective brand colour and where it comes from (shown under Einstellungen)."""
+
+    color: str
+    source: str  # "env", "profile" or "default"
+    # A configured value that is not a hex colour and was therefore skipped.
+    ignored: str | None = None
+
+
+def _valid(value: str | None) -> bool:
+    if not value:
+        return False
     try:
-        return build_theme(brand_color())
+        parse_hex(value)
     except ThemeConfigError:
-        return build_theme(DEFAULT_BRAND_COLOR)
+        return False
+    return True
+
+
+def resolve_brand_color(profile_color: str | None = None) -> BrandColorChoice:
+    """Precedence: env `BRAND_COLOR` > brand profile (`design.primary_color`) > default."""
+    env = (os.environ.get(BRAND_COLOR_VARIABLE) or "").strip()
+    ignored = env if env and not _valid(env) else None
+    if _valid(env):
+        return BrandColorChoice(env, "env")
+    if _valid(profile_color):
+        return BrandColorChoice(profile_color or "", "profile", ignored)
+    return BrandColorChoice(DEFAULT_BRAND_COLOR, "default", ignored)
+
+
+def current_theme(profile_color: str | None = None) -> BrandTheme:
+    """Theme for the effective brand colour (see `resolve_brand_color`)."""
+    return build_theme(resolve_brand_color(profile_color).color)

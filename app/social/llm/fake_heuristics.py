@@ -39,5 +39,19 @@ def _post_assess(user: str) -> str:
     return json.dumps({"health_claims": [], "persons": [], "address_form": "neutral"})
 
 
+def _image_prompt(user: str) -> str:
+    # Built from style and occasion only (not from the key points): no people, no text.
+    occasion = prompt_section(user, "anlass").strip()
+    colors = prompt_section(user, "farben").strip()
+    mood = prompt_section(user, "stimmung").strip()
+    motifs = prompt_section(user, "motive").strip()
+    prompt = (
+        f"Stimmungsbild zum Thema {occasion}: {motifs}. Farben: {colors}. "
+        f"Stimmung: {mood}. Weiches Tageslicht, ruhige Komposition mit Freiraum."
+    )
+    return json.dumps({"prompt": prompt}, ensure_ascii=False)
+
+
 register_heuristic("post_draft", _post_draft)
+register_heuristic("image_prompt", _image_prompt)
 register_heuristic("post_assess", _post_assess)

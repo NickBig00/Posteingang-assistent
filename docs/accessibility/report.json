@@ -1,0 +1,2244 @@
+[
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Übersicht",
+    "url": "/",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Zur Liste",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "24 Dringend Manuelle Prüfung nötig",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "3 Zur Prüfung KI-Vorschlag liegt vor",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "0 Neu Noch nicht verarbeitet",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "0 Freigegeben Noch auszuführen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Eingang 1: 001_kuendigung_standard.eml k",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Eingang 2: 002_kuendigung_naechstmoeglic",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Eingang 3: 003_kuendigung_ohne_mitglieds",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Eingang 4: 004_kuendigung_unklar.eml kue",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Eingang 5: 005_kuendigung_brief.pdf kuen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Zur Liste",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "0 Dringend Kein gültiger KI-Entwurf",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "8 Entwürfe zur Prüfung Prüfen und freige",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "1 Freigegeben, ungeplant Termin im Kalen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "1 Geplante Beiträge Von Hand veröffentli",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Posteingang",
+    "url": "/inbox",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Beispieldaten laden",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Eingänge verarbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Datei für den Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Eingang (Detail)",
+    "url": "/items/1",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Audit-Verlauf",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Originaldatei öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "[KI-Vorschlag – bitte vor dem Versand pr",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Neu verarbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Eingang löschen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Audit Eingang",
+    "url": "/items/1/audit",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Eingang 1",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Social Media",
+    "url": "/social",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kampagnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Neues Briefing",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Nr. 1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Nr. 1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Nr. 1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Neues Briefing",
+    "url": "/social/briefings/new",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Fitness Kurse Physiotherapie Rehasport F",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Kurs Aktion Probetraining Veranstaltung ",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "notes",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "datum",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "datum",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "datum",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "datum",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "uhrzeit",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "uhrzeit",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "uhrzeit",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "uhrzeit",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "preis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "ort",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_von",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_von",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_von",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_von",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_bis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_bis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_bis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum_bis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "telefon",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "instagram_post",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "instagram_story",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "facebook",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "linkedin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "desired_date",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "desired_date",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "desired_date",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "desired_date",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Entwürfe erstellen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Entwurf in Prüfung (mit KI-Bild)",
+    "url": "/social/briefings/1",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Audit-Verlauf",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Bild entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Bild hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "true",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "true",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Bild hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Farbfläche in Markenfarbe Foto „demo_hin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "graphic_headline",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Vorschau aktualisieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Stimmungsbild zum Thema Kurs: Kursraum m",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Format",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Neu erzeugen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Variante 1 wählen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Variante 2 wählen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Variante 3 wählen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Alle Varianten verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Erneut prüfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Entwurf löschen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Kurs! Neuer Rückenkurs am Abend, für Ein",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Bild vorschlagen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Erneut prüfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Entwurf löschen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Briefing löschen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Entwurf freigegeben",
+    "url": "/social/briefings/2",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Audit-Verlauf",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Bild entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Bild hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "true",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "true",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Bild hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Farbfläche in Markenfarbe Foto „demo_hin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "graphic_headline",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Vorschau aktualisieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Grafik als JPEG",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Als veröffentlicht markieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Aus Kalender nehmen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Entwurf löschen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Text kopieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Als Textdatei",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Bild „demo_hintergrund.jpg“ als JPEG (4:",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "zurücknehmen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verschieben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Aktion! Sommeraktion: zwei Wochen gratis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Entwurf löschen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Text kopieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Als Textdatei",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Bild „demo_hintergrund.jpg“ als JPEG (4:",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Planen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Briefing löschen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Kalender Woche",
+    "url": "/social/calendar?view=week&date=2026-11-09",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender als .ics",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "zurück",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "heute",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "weiter",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Woche",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Monat",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "09:00 Instagram-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verschieben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Entwurf 4 · Facebook-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Planen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Kalender Monat",
+    "url": "/social/calendar?view=month&date=2026-11-09",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender als .ics",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "zurück",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "heute",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "weiter",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Woche",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Monat",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "09:00 Instagram-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Entwurf 4 · Facebook-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Planen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Kampagnen",
+    "url": "/social/campaigns",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Demo-Kampagne anlegen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Neue Kampagne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Öffnen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Kampagne",
+    "url": "/social/campaigns/1",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kampagnen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Entwürfe prüfen und freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Entwürfe prüfen und freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Entwürfe prüfen und freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Kampagne löschen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Einstellungen",
+    "url": "/settings",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Design-System ansehen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Design-System",
+    "url": "/design",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Primär",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Sekundär",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Freigeben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Dezent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Link",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Klein",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "INPUT",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "31.02.",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Fitness Kurse",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "on",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Ersten Eintrag anlegen",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Übersicht",
+    "url": "/",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Posteingang",
+    "url": "/inbox",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Eingang (Detail)",
+    "url": "/items/1",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Audit Eingang",
+    "url": "/items/1/audit",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Social Media",
+    "url": "/social",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Neues Briefing",
+    "url": "/social/briefings/new",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Entwurf in Prüfung (mit KI-Bild)",
+    "url": "/social/briefings/1",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Entwurf freigegeben",
+    "url": "/social/briefings/2",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Kalender Woche",
+    "url": "/social/calendar?view=week&date=2026-11-09",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Kalender Monat",
+    "url": "/social/calendar?view=month&date=2026-11-09",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Kampagnen",
+    "url": "/social/campaigns",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Kampagne",
+    "url": "/social/campaigns/1",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Einstellungen",
+    "url": "/settings",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Design-System",
+    "url": "/design",
+    "violations": [],
+    "stops": [],
+    "overflow": false
+  }
+]

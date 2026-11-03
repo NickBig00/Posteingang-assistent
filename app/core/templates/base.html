@@ -37,8 +37,7 @@
          class="hidden border-b border-line px-3 py-4 lg:sticky lg:top-14 lg:block lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto lg:border-b-0">
       <ul class="space-y-1">
         {% for entry in navigation %}
-        {% if entry.module == "core" and entry.path == "/settings" %}<li class="my-3 border-t border-line" role="separator"></li>{% endif %}
-        <li>
+        <li {% if entry.module == "core" and entry.path == "/settings" %}class="mt-3 border-t border-line pt-3"{% endif %}>
           <a href="{{ entry.path }}" class="nav-link"
              {% if active_nav and entry == active_nav %}aria-current="page"{% endif %}>
             {{ ui.icon(entry.icon, "nav-icon") }}{{ entry.label }}</a>

@@ -1,6 +1,7 @@
 """Shared web building blocks: layout with sidebar, templates, static files, settings page."""
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -16,16 +17,15 @@ from sqlmodel import Session
 
 from app.core.config import MODULES_VARIABLE, app_title
 from app.core.db import get_session
+from app.core.images.service import image_generation_enabled, image_limits
 from app.core.models import utcnow
 from app.core.overview import ModuleOverview, OverviewProvider
 from app.core.profiles import active_profile_key
 from app.core.retention import retention_days
 from app.core.theme import (
     BRAND_COLOR_VARIABLE,
-    ThemeConfigError,
-    brand_color,
-    build_theme,
     current_theme,
+    resolve_brand_color,
 )
 
 CORE_TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -67,12 +67,28 @@ OVERVIEW_ENTRY = NavEntry(module="core", label="Übersicht", path="/", icon="hom
 SETTINGS_ENTRY = NavEntry(module="core", label="Einstellungen", path="/settings", icon="settings")
 
 
+# A module may supply the brand colour of its profile (registered in `app/main.py`).
+BrandColorProvider = Callable[[], str | None]
+
+
+def profile_brand_color(application: object) -> str | None:
+    """First brand colour offered by an enabled module, if any."""
+    providers: list[BrandColorProvider] = getattr(
+        getattr(application, "state", None), "brand_color_providers", []
+    )
+    for provider in providers:
+        color = provider()
+        if color:
+            return color
+    return None
+
+
 def _app_context(request: Request) -> dict[str, object]:
     # Read per request, so title and brand colour apply without code changes.
     navigation: list[NavEntry] = getattr(request.app.state, "navigation", [])
     return {
         "app_title": app_title(),
-        "theme": current_theme(),
+        "theme": current_theme(profile_brand_color(request.app)),
         "navigation": navigation,
         "active_nav": active_entry(navigation, request.url.path),
     }
@@ -161,15 +177,22 @@ class SettingRow:
     note: str = ""
 
 
-def settings_rows() -> list[SettingRow]:
+COLOR_SOURCES = {
+    "env": "aus BRAND_COLOR",
+    "profile": "aus dem Markenprofil (design.primary_color)",
+    "default": "Standardfarbe",
+}
+
+
+def settings_rows(profile_color: str | None = None) -> list[SettingRow]:
     """Effective configuration as shown on the settings page – never secrets."""
-    color = brand_color()
-    try:
-        build_theme(color)
-        color_note = ""
-    except ThemeConfigError:
-        color_note = "ungültig – Standardfarbe wird verwendet"
+    choice = resolve_brand_color(profile_color)
+    color = choice.color
+    color_note = COLOR_SOURCES[choice.source]
+    if choice.ignored:
+        color_note += f" (BRAND_COLOR „{choice.ignored}“ ungültig, ignoriert)"
     llm = (os.environ.get("LLM_PROVIDER") or "fake").strip().lower()
+    limits = image_limits()
     return [
         SettingRow("Anwendungstitel", app_title(), "APP_TITLE"),
         SettingRow("Markenfarbe", color, BRAND_COLOR_VARIABLE, color_note),
@@ -191,6 +214,17 @@ def settings_rows() -> list[SettingRow]:
             "„fake“ arbeitet offline und deterministisch" if llm == "fake" else "",
         ),
         SettingRow(
+            "KI-Bilder",
+            "an" if image_generation_enabled() else "aus",
+            "IMAGE_GENERATION_ENABLED",
+            (
+                f"Anbieter {os.environ.get('IMAGE_PROVIDER') or 'fake'} · höchstens "
+                f"{limits.per_scope} Erzeugungen je Beitrag, {limits.per_day} pro Tag"
+            )
+            if image_generation_enabled()
+            else "Standard: aus",
+        ),
+        SettingRow(
             "Aufbewahrung abgeschlossener Vorgänge", f"{retention_days()} Tage", "RETENTION_DAYS"
         ),
     ]
@@ -199,7 +233,8 @@ def settings_rows() -> list[SettingRow]:
 @router.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request) -> HTMLResponse:
     """Read-only overview of the configuration (changed via environment variables)."""
-    return templates.TemplateResponse(request, "settings.html", {"rows": settings_rows()})
+    rows = settings_rows(profile_brand_color(request.app))
+    return templates.TemplateResponse(request, "settings.html", {"rows": rows})
 
 
 @router.get("/design", response_class=HTMLResponse)

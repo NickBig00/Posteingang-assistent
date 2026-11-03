@@ -1,0 +1,48 @@
+{# Graphic from template (SPEC_social 14): rendered by code, text only from the briefing facts. #}
+{% import "_ui.html" as ui %}
+<section class="card mb-6" id="grafik" aria-labelledby="graphic-title">
+  <div class="card-header">
+    <h2 class="card-title" id="graphic-title">Grafik aus Vorlage</h2>
+    <div class="flex flex-wrap items-center gap-2">{{ ui.badge("Vorlage „" ~ graphic.layout ~ "“", "brand") }}{{ ui.badge("ohne KI, Fakten geprüft", "neutral") }}</div>
+  </div>
+  <div class="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_16rem]">
+    <div>
+      <form method="get" action="/social/briefings/{{ briefing.id }}#grafik" class="grid gap-3 sm:grid-cols-2">
+        <label class="field font-medium">Format
+          <select name="graphic_format" class="input mt-1">
+            {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == graphic.format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
+          </select></label>
+        <label class="field font-medium">Hintergrund
+          <select name="graphic_background" class="input mt-1">
+            <option value="color" {% if graphic.background == "color" %}selected{% endif %}>Farbfläche in Markenfarbe</option>
+            {% for a in usable_assets %}<option value="{{ a.id }}" {% if graphic.background == a.id | string %}selected{% endif %}>{{ "KI-Bild (KI-generiert)" if a.ai_generated else "Foto „" ~ a.filename ~ "“" }}</option>{% endfor %}
+          </select></label>
+        <label class="field font-medium sm:col-span-2">Überschrift <span class="font-normal text-ink-subtle">(optional, höchstens 40 Zeichen; sonst der Anlass)</span>
+          <input type="text" name="graphic_headline" maxlength="80" value="{{ graphic.headline }}" class="input mt-1" placeholder="z. B. Rücken-Fit für Einsteiger"></label>
+        <div class="sm:col-span-2"><button type="submit" class="btn btn-secondary btn-sm">Vorschau aktualisieren</button></div>
+      </form>
+      <h3 class="mt-4 text-sm font-semibold">Text in der Grafik</h3>
+      <ul class="mt-1 space-y-0.5 text-sm text-ink-muted" data-graphic-lines>
+        {% for line in graphic.lines %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+      {% if graphic.problems %}
+      <div class="mt-3" data-graphic-problems>{% call ui.alert("", "error", "alert") %}<p class="font-semibold">Faktenprüfung nicht bestanden – keine Grafik.</p>
+        <ul class="ml-4 list-disc">{% for p in graphic.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endcall %}</div>
+      {% else %}
+      <p class="mt-3 flex items-center gap-2 text-xs text-green-800">{{ ui.icon("check") }}Alle Fakten stehen unverändert und genau einmal in der Grafik.</p>
+      {% endif %}
+      <p class="mt-2 text-xs text-ink-subtle">Datum, Uhrzeit, Preis, Ort und Telefonnummer kommen nur aus dem Briefing, nie aus dem KI-Text.</p>
+    </div>
+    <div>
+      {% if not graphic.problems %}
+      <img src="{{ graphic.src }}" alt="Vorschau der Grafik" class="w-full rounded-lg ring-1 ring-line" loading="lazy" data-graphic-preview>
+      {% if graphic.downloadable %}
+      <a href="{{ graphic.src }}&amp;download=1" class="btn btn-primary btn-sm mt-3 w-full" data-graphic-download>{{ ui.icon("download") }}Grafik als JPEG</a>
+      {% else %}
+      <p class="mt-3 text-xs text-ink-subtle" data-graphic-locked>Download nach der Freigabe eines Beitrags dieses Briefings.</p>
+      {% endif %}
+      {% if graphic.ai_background %}<p class="mt-2 text-xs font-medium text-violet-800">Hintergrund ist KI-generiert: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+</section>

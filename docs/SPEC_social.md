@@ -152,8 +152,9 @@ Folgender Abschnitt soll in `CLAUDE.md` aufgenommen werden:
 ## 12. Entscheidung zur Veröffentlichung
 
 - Direktes Posten über Plattform-Schnittstellen ist **nicht geplant**.
-- Veröffentlicht wird manuell über die Meta Business Suite bzw. direkt in LinkedIn.
-- Das Tool unterstützt das mit: „Text kopieren“ je Kanal (inkl. Hashtags), Bild-Download als JPEG im passenden Format, Status „eingeplant (extern)“ im Kalender.
+- Veröffentlicht wird manuell direkt in Instagram, Facebook bzw. LinkedIn. Die Meta Business Suite ist vorerst nicht vorgesehen.
+- Das Tool unterstützt das mit: „Text kopieren“ je Kanal (inkl. Hashtags), Bild-Download als JPEG im passenden Format (Instagram-Beitrag und Facebook 4:5, Story 9:16, LinkedIn 1:1; Metadaten werden entfernt), Vermerk „eingeplant (extern)“ im Kalender.
+- „eingeplant (extern)“ ist **kein eigener Status**, sondern ein Vermerk auf geplanten Beiträgen (Status `scheduled`): Ein Mensch hält fest, dass der Beitrag in der Planungsfunktion der Plattform eingeplant ist. Der Vermerk steht im Audit-Log; Verschieben des Termins oder Herausnehmen aus dem Kalender setzt ihn zurück.
 
 ## 13. KI-Bilder (optional)
 
@@ -180,7 +181,7 @@ Zu einem Beitrag optional passende Bilder erzeugen: Stimmungs- und Hintergrundbi
 
 ### 13.4 Bildstil im Markenprofil
 
-Neues Feld `image_style` je Bereich, z. B. Farben, Stimmung („hell, freundlich, ruhig“), Motive („Trainingsgeräte, Natur, Wald“), Ausschlüsse.
+Neues Feld `image_style` je Bereich, z. B. Farben, Stimmung („hell, freundlich, ruhig“), Motive („Trainingsgeräte, Natur, Wald“), Ausschlüsse. Felder: `colors`, `mood`, `motifs`, `exclusions` (Liste).
 
 ### 13.5 Schutzregeln (nicht verhandelbar)
 
@@ -200,3 +201,5 @@ Neues Feld `image_style` je Bereich, z. B. Farben, Stimmung („hell, freundlich
 - Vorlagen je Anlass-Typ, Farben und Schrift aus dem Markenprofil
 - Text in der Grafik muss exakt den Fakten aus dem Briefing entsprechen (Prüfung analog zur Faktenprüfung)
 - Formate 1:1, 4:5, 9:16; Export als JPEG
+- Markenprofil, Abschnitt `design:`: `primary_color`, `accent_color` (Hex), `font` (mitgelieferte Schrift Inter) und optional `logo` (Dateiname einer PNG- oder JPG-Datei neben dem Markenprofil; ohne Logo erscheint der Markenname als Schriftzug)
+- Die Vorschau ist jederzeit sichtbar; der Download ist erst möglich, wenn mindestens ein Beitrag des Briefings freigegeben ist

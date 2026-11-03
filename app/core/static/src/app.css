@@ -65,7 +65,7 @@
     @apply text-brand-text;
   }
   code {
-    @apply rounded bg-surface-sunken px-1 py-0.5 text-[0.85em];
+    @apply rounded bg-surface-sunken px-1 py-0.5 text-[0.85em] text-ink-muted;
   }
 }
 
@@ -196,7 +196,7 @@
     @apply bg-surface-muted;
   }
   .table-wrap {
-    @apply overflow-x-auto;
+    @apply relative overflow-x-auto;
   }
 
   /* Forms */
@@ -213,7 +213,7 @@
     @apply mt-1 block text-xs font-medium text-red-700;
   }
   .input {
-    @apply block w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30;
+    @apply block w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30;
   }
   .input-invalid {
     @apply border-red-500;

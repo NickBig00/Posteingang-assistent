@@ -14,11 +14,21 @@ contact:
   email: info@haustechnik.example
   website: https://haustechnik.example
 forbidden_terms: [billig, Pfusch, Dumpingpreis, schwarz]
+# Farben und Schrift für Grafiken aus Vorlagen (fiktiv).
+design:
+  primary_color: "#334155"
+  accent_color: "#ea580c"
+  font: inter
 areas:
   - key: heizung
     label: Heizung
     address_form: sie
     tone: sachlich, kompetent, beratend
+    image_style:
+      colors: Anthrazit, Orange als Akzent, Weiß
+      mood: zuverlässig, aufgeräumt, technisch
+      motifs: moderne Heizungsanlage, Rohre, Werkzeug auf Werkbank, warmes Licht
+      exclusions: [Markenlogos von Herstellern]
     channels: [facebook, instagram_post]
     emojis: {allowed: false}
     hashtags: ["#Heizung"]
@@ -33,6 +43,11 @@ areas:
     label: Sanitär
     address_form: sie
     tone: freundlich, verlässlich, lösungsorientiert
+    image_style:
+      colors: Weiß, Grau, Blau als Akzent
+      mood: sauber, hell, modern
+      motifs: modernes Bad, Armaturen, Fliesen, Wassertropfen
+      exclusions: [Markenlogos von Herstellern]
     channels: [facebook, instagram_post]
     emojis: {allowed: true, max: 1}
     hashtags: ["#Badsanierung"]
@@ -46,6 +61,11 @@ areas:
     label: Notdienst
     address_form: sie
     tone: klar, ruhig, auf das Wesentliche
+    image_style:
+      colors: Anthrazit mit kräftigem Orange
+      mood: schnell, verlässlich, ruhig
+      motifs: Werkzeugkoffer, Servicewagen ohne Beschriftung, Uhr, Nacht
+      exclusions: [Wasserschäden, Unfälle]
     channels: [facebook, instagram_story]
     emojis: {allowed: false}
     examples:
@@ -57,6 +77,11 @@ areas:
     label: Karriere und Ausbildung
     address_form: du
     tone: locker, ehrlich, auf Augenhöhe
+    image_style:
+      colors: Anthrazit, Orange, helles Holz
+      mood: einladend, bodenständig, modern
+      motifs: Werkstatt, Werkzeug, Bauteile, Arbeitshandschuhe auf Werkbank
+      exclusions: [Gruppenfotos]
     channels: [instagram_post, linkedin]
     emojis: {allowed: true, max: 2}
     hashtags: ["#Ausbildung"]

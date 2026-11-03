@@ -4,7 +4,7 @@
 {% block content %}
 {% call ui.page_header("Neues Briefing", "Stichpunkte und harte Fakten – daraus entstehen KI-Entwürfe je Kanal", "/social", "Social Media") %}{% endcall %}
 {% if errors %}<div class="mb-4">{{ ui.alert("Bitte die markierten Angaben prüfen.", "error", "alert") }}</div>{% endif %}
-<form method="post" action="/social/briefings" class="card card-body max-w-4xl" hx-indicator="#briefing-loading">
+<form method="post" action="/social/briefings" class="card card-body max-w-4xl" hx-indicator="#briefing-loading" data-loading="Entwürfe werden erstellt …">
   <div id="briefing-fields">{% include "_social_briefing_fields.html" %}</div>
   <div class="mt-5">{% call ui.alert("", "warning") %}Bitte keine Namen oder Daten von Mitgliedern, Patientinnen
     oder Patienten eintragen. Die Stichpunkte werden zur Formulierung an das KI-Modell gesendet.{% endcall %}</div>
