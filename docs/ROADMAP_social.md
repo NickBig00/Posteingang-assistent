@@ -94,9 +94,18 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
 - [ ] **Begriffsliste Gesundheitsbezug für Handwerk:** In S9 vorläufig als kurze Liste in
   `profiles/handwerk.yaml` angelegt (SPEC Kapitel 4.1 sieht für Handwerk keine vor).
   Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert.
-- [ ] **Evaluation mit echtem Modell:** zunächst nur für Fitness; Handwerk wird vorerst nicht
-  mit einem echten Modell evaluiert. Ausstehend: erneuter Lauf mit OpenAI, um zu prüfen, ob der
-  Fakten-Retry (`post_draft_v2`, Fall b06) und `post_assess_v2` (Fälle n06, a04) wirken.
+- [x] **Evaluation mit echtem Modell (Fitness, OpenAI):** erneuter Lauf nach PR #22
+  (`docs/evaluation/social_fitness_openai.md`): Fakten 100 %, Längen 100 %,
+  Gesundheitsversprechen 15 von 15, Personen 8 von 8, keine Fehlalarme, Anrede 100 %.
+  Fakten-Retry (b06) und `post_assess_v2` (n06, a04) wirken. Handwerk wird vorerst nicht mit
+  einem echten Modell evaluiert.
+- [ ] **Weiche Gesundheitsaussagen in KI-Entwürfen:** In der OpenAI-Evaluation enthalten 7 von
+  26 Entwürfen Formulierungen wie „stärkt den Rücken“, „Wohlbefinden“ oder „Prävention“, die
+  die KI-Einschätzung als Warnung meldet (Bestätigung vor Freigabe nötig). Zu entscheiden:
+  Entwurfs-Prompt strenger fassen und/oder die Einschätzung bei „Wohlbefinden“ weniger streng.
+- [ ] **Handlungsaufforderung sprachlich einbauen:** Das Modell übernimmt die
+  Handlungsaufforderung des Markenprofils wörtlich in eigene Sätze („probiere 14 Tage kostenlos
+  probetrainieren aus“). Prompt oder Formulierung im Markenprofil anpassen.
 - [ ] **Statusablauf und Freigabe-Tabelle in `core` zusammenführen:** Posteingang und Social
   Media haben je eine eigene Statusmaschine und Review-Tabelle (`app/inbox/status.py`,
   `app/social/status.py`). Ein gemeinsamer Baustein in `core` wäre ein größerer Umbau am
