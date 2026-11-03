@@ -12,6 +12,7 @@ from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, SQLModel
 
 from app.core.approval import ReviewDecision
+from app.core.image_formats import ImageFormat
 from app.core.models import timestamp_column, utcnow
 from app.core.outcomes import Outcome
 
@@ -37,6 +38,15 @@ CHANNEL_LABELS: dict[Channel, str] = {
     Channel.INSTAGRAM_STORY: "Instagram-Story",
     Channel.FACEBOOK: "Facebook-Beitrag",
     Channel.LINKEDIN: "LinkedIn-Beitrag",
+}
+
+
+# Image format used for the JPEG download per channel (SPEC_social 12).
+CHANNEL_IMAGE_FORMATS: dict[Channel, ImageFormat] = {
+    Channel.INSTAGRAM_POST: ImageFormat.PORTRAIT,
+    Channel.INSTAGRAM_STORY: ImageFormat.STORY,
+    Channel.FACEBOOK: ImageFormat.PORTRAIT,
+    Channel.LINKEDIN: ImageFormat.SQUARE,
 }
 
 
@@ -117,12 +127,23 @@ class PostDraft(SQLModel, table=True):
     status: PostStatus = Field(default=PostStatus.DRAFT, index=True)
     scheduled_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     published_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+    # "eingeplant (extern)": a person scheduled the post in the platform's own planner (e.g.
+    # Meta Business Suite). A marker on status `scheduled`, not a status of its own.
+    external_scheduled_at: datetime | None = Field(
+        default=None, sa_column=_optional_timestamp_column()
+    )
+    external_scheduled_by: str | None = None
     # Transparency requirement: the text was produced by the LLM (kept after approval as
     # provenance; the label is shown in the UI, never inside the post text).
     is_ai_suggestion: bool = True
     # True once a person changed the text.
     edited_by_human: bool = False
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+    @property
+    def is_scheduled_externally(self) -> bool:
+        """Marker "eingeplant (extern)" – only meaningful while the post is scheduled."""
+        return self.status == PostStatus.SCHEDULED and self.external_scheduled_at is not None
 
     @property
     def full_text(self) -> str:

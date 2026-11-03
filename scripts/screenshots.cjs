@@ -146,6 +146,13 @@ async function seed(withImages) {
   approved.append("channels", "facebook");
   response = await fetch(`${BASE}/social/briefings`, { method: "POST", body: approved, redirect: "manual" });
   ids.approved_briefing = (response.headers.get("location") || "/2").split("/").pop();
+  // Synthetic demo image (abstract gradient, no people) for previews and the JPEG download.
+  const image = fs.readFileSync(path.join(ROOT, "samples", "social", "images", "demo_hintergrund.jpg"));
+  for (const briefingId of [ids.briefing, ids.approved_briefing]) {
+    const upload = new FormData();
+    upload.append("file", new Blob([image], { type: "image/jpeg" }), "demo_hintergrund.jpg");
+    await fetch(`${BASE}/social/briefings/${briefingId}/assets`, { method: "POST", body: upload, redirect: "manual" });
+  }
   const detail = await (await fetch(`${BASE}/social/briefings/${ids.approved_briefing}`)).text();
   const draftIds = [...new Set([...detail.matchAll(/id="draft-(\d+)"/g)].map((m) => m[1]))];
   const confirmIds = [...new Set([...detail.matchAll(/\/social\/checks\/(\d+)\/confirm/g)].map((m) => m[1]))];
@@ -181,7 +188,12 @@ async function shoot(browser, milestone, ids, empty) {
   fs.mkdirSync(dir, { recursive: true });
   for (const [name, urlPath, options] of SHOTS[milestone]) {
     if (Boolean(options.empty) !== empty) continue;
-    const context = await browser.newContext({ viewport: options.viewport || LAPTOP, deviceScaleFactor: 2 });
+    const context = await browser.newContext({
+      viewport: options.viewport || LAPTOP,
+      deviceScaleFactor: 2,
+      locale: "de-DE",
+      timezoneId: "Europe/Berlin",
+    });
     const page = await context.newPage();
     await page.goto(BASE + fill(urlPath, ids), { waitUntil: "networkidle" });
     if (options.click) await page.click(options.click);

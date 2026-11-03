@@ -51,6 +51,14 @@ Screenshots für Pull Requests: `node scripts/screenshots.cjs U1` (Playwright mi
 startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs unter
 `docs/screenshots/<Meilenstein>/` ab.
 
+### Veröffentlichen (Social Media)
+
+Das System postet nichts selbst; veröffentlicht wird von Hand über die Meta Business Suite bzw.
+direkt in LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (inkl. Hashtags), den
+Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Facebook 4:5, Story
+9:16, LinkedIn 1:1; Metadaten wie Standort werden entfernt) und die Markierung „eingeplant
+(extern)“ im Kalender. Die Entwurfsansicht zeigt eine ungefähre Vorschau je Kanal.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:

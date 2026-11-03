@@ -21,6 +21,8 @@ LOCAL_TZ = ZoneInfo("Europe/Berlin")
 SCHEDULE_STEP = "social.schedule"
 UNSCHEDULE_STEP = "social.unschedule"
 PUBLISH_STEP = "social.publish"
+EXTERNAL_STEP = "social.schedule_external"
+EXTERNAL_UNDO_STEP = "social.schedule_external_undo"
 CALENDAR_STATUSES = (PostStatus.SCHEDULED, PostStatus.PUBLISHED)
 EXPORTABLE = frozenset({PostStatus.APPROVED, PostStatus.SCHEDULED, PostStatus.PUBLISHED})
 
@@ -64,6 +66,13 @@ def schedule_draft(
     if when < (now or utcnow()):
         raise CalendarError("Der Termin liegt in der Vergangenheit.")
     previous = draft.scheduled_at
+    # A moved date makes a planning in the external tool stale: the marker is reset.
+    external_reset = draft.external_scheduled_at is not None and (
+        previous is None or as_utc(previous) != when
+    )
+    if external_reset:
+        draft.external_scheduled_at = None
+        draft.external_scheduled_by = None
     draft.scheduled_at = when
     transition(session, draft, PostStatus.SCHEDULED)
     _audit(
@@ -73,7 +82,39 @@ def schedule_draft(
         user,
         scheduled_at=when.isoformat(),
         previous=as_utc(previous).isoformat() if previous else None,
+        external_reset=external_reset,
     )
+    return draft
+
+
+def mark_scheduled_externally(
+    session: Session, draft: PostDraft, user: str, now: datetime | None = None
+) -> PostDraft:
+    """A person confirms: the post is planned in the platform's own tool ("eingeplant (extern)").
+
+    The system posts nothing itself; this only records what the person did elsewhere.
+    """
+    if draft.status is not PostStatus.SCHEDULED:
+        raise CalendarError("Nur geplante Beiträge können als extern eingeplant markiert werden.")
+    draft.external_scheduled_at = now or utcnow()
+    draft.external_scheduled_by = user
+    session.add(draft)
+    _audit(session, draft, EXTERNAL_STEP, user)
+    session.commit()
+    session.refresh(draft)
+    return draft
+
+
+def unmark_scheduled_externally(session: Session, draft: PostDraft, user: str) -> PostDraft:
+    """Remove the marker "eingeplant (extern)" (e.g. planned there by mistake)."""
+    if draft.external_scheduled_at is None:
+        raise CalendarError("Der Beitrag ist nicht als extern eingeplant markiert.")
+    draft.external_scheduled_at = None
+    draft.external_scheduled_by = None
+    session.add(draft)
+    _audit(session, draft, EXTERNAL_UNDO_STEP, user)
+    session.commit()
+    session.refresh(draft)
     return draft
 
 
@@ -82,6 +123,8 @@ def unschedule_draft(session: Session, draft: PostDraft, user: str) -> PostDraft
     if draft.status is not PostStatus.SCHEDULED:
         raise CalendarError("Nur geplante Beiträge können aus dem Kalender genommen werden.")
     draft.scheduled_at = None
+    draft.external_scheduled_at = None
+    draft.external_scheduled_by = None
     transition(session, draft, PostStatus.APPROVED)
     _audit(session, draft, UNSCHEDULE_STEP, user)
     return draft

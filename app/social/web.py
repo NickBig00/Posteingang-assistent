@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse,
 from sqlmodel import Session, col, select
 
 from app.core.db import get_session
+from app.core.image_formats import ImageExportError, export_jpeg
 from app.core.llm.factory import get_provider
 from app.core.models import utcnow
 from app.core.outcomes import worst_outcome
@@ -24,8 +25,10 @@ from app.social.assets import (
     briefing_assets,
     confirm_consent,
     delete_asset,
+    is_usable,
     revoke_consent,
     save_asset,
+    usable_assets,
 )
 from app.social.audit import briefing_audit_trail
 from app.social.briefings import BriefingFormError, create_briefing, parse_briefing_form
@@ -34,11 +37,13 @@ from app.social.calendar import (
     build_ics,
     calendar_entries,
     export_text,
+    mark_scheduled_externally,
     month_view,
     publish_draft,
     schedule_draft,
     summary_line,
     to_local,
+    unmark_scheduled_externally,
     unschedule_draft,
     week_start,
     week_view,
@@ -56,8 +61,10 @@ from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
 from app.social.highlight import highlight
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
+    CHANNEL_IMAGE_FORMATS,
     CHANNEL_LABELS,
     POST_STATUS_LABELS,
+    POST_STATUS_TONES,
     Asset,
     Briefing,
     Campaign,
@@ -92,6 +99,8 @@ router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)
 templates.env.globals["channel_labels"] = CHANNEL_LABELS
 templates.env.globals["post_status_labels"] = POST_STATUS_LABELS
+templates.env.globals["post_status_tones"] = POST_STATUS_TONES
+templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
@@ -275,6 +284,7 @@ def _render_briefing(
     ).all()
     facts = formatted_facts(BriefingFacts.from_json(briefing.facts))
     results = _results_by_draft(session, [d.id for d in drafts if d.id])
+    usable = usable_assets(session, briefing_id)
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -286,6 +296,8 @@ def _render_briefing(
             "blockers": {d.id: approval_blockers(session, d) for d in drafts},
             "reviews": {d.id: latest_review(session, d.id) for d in drafts if d.id},
             "assets": briefing_assets(session, briefing_id),
+            "usable_assets": usable,
+            "preview_image": usable[0] if usable else None,
             "facts": facts,
             "config": config,
             "error": error,
@@ -584,6 +596,55 @@ def draft_publish(
     return _respond(request, session, config, draft, lambda: publish_draft(session, draft, user))
 
 
+@router.post("/social/drafts/{draft_id}/external", response_model=None)
+def draft_mark_external(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    """Record that a person planned the post in the platform's tool ("eingeplant (extern)")."""
+    draft = _draft_or_404(session, draft_id)
+    return _respond(
+        request, session, config, draft, lambda: mark_scheduled_externally(session, draft, user)
+    )
+
+
+@router.post("/social/drafts/{draft_id}/external/undo", response_model=None)
+def draft_unmark_external(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    draft = _draft_or_404(session, draft_id)
+    return _respond(
+        request, session, config, draft, lambda: unmark_scheduled_externally(session, draft, user)
+    )
+
+
+@router.get("/social/drafts/{draft_id}/image.jpg", response_model=None)
+def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response:
+    """Image of an approved post as JPEG in the channel's format (metadata removed)."""
+    draft = _draft_or_404(session, draft_id)
+    if draft.status not in (PostStatus.APPROVED, PostStatus.SCHEDULED, PostStatus.PUBLISHED):
+        raise HTTPException(status_code=409, detail="Download erst nach der Freigabe")
+    image = session.get(Asset, asset)
+    if image is None or image.briefing_id != draft.briefing_id:
+        raise HTTPException(status_code=404, detail="Bild nicht gefunden")
+    path = Path(image.stored_path)
+    if not is_usable(image) or not path.is_file():
+        raise HTTPException(status_code=409, detail="Bild darf nicht verwendet werden")
+    fmt = CHANNEL_IMAGE_FORMATS[draft.channel]
+    try:
+        body = export_jpeg(path.read_bytes(), fmt)
+    except ImageExportError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    name = f"beitrag-{draft.id}-{draft.channel.value}-{fmt.value.replace(':', 'x')}.jpg"
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.get("/social/drafts/{draft_id}/export", response_class=PlainTextResponse)
 def draft_export(session: SessionDep, draft_id: int) -> PlainTextResponse:
     """The approved post as a text file."""
@@ -642,6 +703,7 @@ def calendar_page(
         {
             "view": view,
             "current": current,
+            "today": to_local(utcnow()).date(),
             "weeks": weeks,
             "previous": previous,
             "following": following,

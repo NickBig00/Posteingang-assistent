@@ -1,0 +1,58 @@
+{#
+  Approximate preview of a post as it would roughly look on the platform (SPEC 10.2).
+  Plain text only (no check highlighting); long texts are cut like on the platform, with "mehr".
+#}
+{% import "_ui.html" as ui %}
+{% set limits = {"instagram_post": 125, "instagram_story": 160, "facebook": 280, "linkedin": 210} %}
+{% set ratios = {"1:1": "aspect-square", "4:5": "aspect-[4/5]", "9:16": "aspect-[9/16]"} %}
+{% set fmt = channel_formats[d.channel].value %}
+{% set limit = limits.get(d.channel.value, 200) %}
+{% set text = d.full_text %}
+{% set image = preview_image %}
+{% set name = config.brand.name %}
+
+{% macro body_text(text, limit, more_label) -%}
+{% if text | length > limit %}
+<details class="group">
+  <summary class="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+    <span class="whitespace-pre-line group-open:hidden">{{ text[:limit] | trim }}… <span class="text-ink-subtle">{{ more_label }}</span></span>
+  </summary>
+  <span class="whitespace-pre-line">{{ text }}</span>
+</details>
+{% else %}<span class="whitespace-pre-line">{{ text }}</span>{% endif %}
+{%- endmacro %}
+
+<figure class="w-full" data-preview="{{ d.channel.value }}">
+  <figcaption class="mb-2 text-xs font-medium uppercase tracking-wide text-ink-subtle">Vorschau {{ channel_labels[d.channel] }} (ungefähr)</figcaption>
+  {% if not text %}
+  <div class="rounded-card border border-dashed border-line-strong p-6 text-center text-xs text-ink-subtle">Noch kein Text.</div>
+  {% elif d.channel.value == "instagram_story" %}
+  <div class="relative mx-auto w-48 overflow-hidden rounded-2xl bg-slate-800 {{ ratios[fmt] }}">
+    {% if image %}<img src="/social/assets/{{ image.id }}" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">{% endif %}
+    <div class="absolute inset-x-0 top-0 flex items-center gap-2 p-2 text-[10px] font-semibold text-white">
+      <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-on">{{ name[:1] }}</span>{{ name | truncate(22, true, "…") }}</div>
+    <div class="absolute inset-x-2 bottom-3 rounded-lg bg-black/60 p-2 text-[11px] leading-snug text-white">{{ text | truncate(limit, true, "…") }}</div>
+  </div>
+  {% else %}
+  <div class="overflow-hidden rounded-card border border-line bg-surface text-[13px] leading-snug text-ink shadow-card">
+    <div class="flex items-center gap-2 px-3 py-2">
+      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-on" aria-hidden="true">{{ name[:1] }}</span>
+      <span class="min-w-0">
+        <span class="block truncate font-semibold">{{ name }}</span>
+        <span class="block text-[11px] text-ink-subtle">Gerade eben</span>
+      </span>
+    </div>
+    {% if d.channel.value != "instagram_post" %}<div class="px-3 pb-2">{{ body_text(text, limit, "Mehr anzeigen" if d.channel.value == "facebook" else "…mehr") }}</div>{% endif %}
+    <div class="{{ ratios[fmt] }} w-full bg-surface-sunken">
+      {% if image %}<img src="/social/assets/{{ image.id }}" alt="Vorschaubild: {{ image.filename }}" class="h-full w-full object-cover">
+      {% else %}<div class="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}Kein Bild</div>{% endif %}
+    </div>
+    {% if d.channel.value == "instagram_post" %}
+    <div class="flex gap-3 px-3 pt-2 text-ink" aria-hidden="true">♡ <span>💬</span> <span>↗</span></div>
+    <div class="px-3 pb-3 pt-1"><span class="font-semibold">{{ name | lower | replace(" ", "") | truncate(24, true, "") }}</span> {{ body_text(text, limit, "mehr") }}</div>
+    {% else %}
+    <div class="flex justify-around border-t border-line px-3 py-2 text-xs text-ink-subtle" aria-hidden="true"><span>Gefällt mir</span><span>Kommentieren</span><span>Teilen</span></div>
+    {% endif %}
+  </div>
+  {% endif %}
+</figure>

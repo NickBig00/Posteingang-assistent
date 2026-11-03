@@ -109,7 +109,7 @@ Liste, Detailansicht, Audit-Ansicht umgestellt, ohne Funktionsänderung.
 
 **Akzeptanz:** Bestehende Tests grün; Screenshots im PR.
 
-## [ ] U4 – Social Media im neuen Design und Veröffentlichungshilfen
+## [x] U4 – Social Media im neuen Design und Veröffentlichungshilfen
 
 Übersicht, Briefing, Entwurf-Detail, Kalender umgestellt; Beitragsvorschau; „Text kopieren“, JPEG-Download, Status „eingeplant (extern)“.
 
