@@ -1008,12 +1008,6 @@
         "onScreen": true
       },
       {
-        "tag": "a",
-        "label": "Grafik als JPEG",
-        "visible": true,
-        "onScreen": true
-      },
-      {
         "tag": "summary",
         "label": "Bearbeiten",
         "visible": true,

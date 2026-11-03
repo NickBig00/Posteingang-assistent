@@ -70,14 +70,17 @@ class GraphicText:
     """Everything written on the graphic, line by line (what the fact check sees)."""
 
     layout: Layout
-    brand: str
+    brand: str  # brand name as text; empty when the logo is shown instead
     tag: str
     headline: str
     facts: list[tuple[str, str]]  # (label, value in display spelling)
 
+    logo: bool = False
+
     @property
     def lines(self) -> list[str]:
-        return [self.brand, self.tag, self.headline, *(f"{k}: {v}" for k, v in self.facts)]
+        head = [self.brand] if self.brand else []
+        return [*head, self.tag, self.headline, *(f"{k}: {v}" for k, v in self.facts)]
 
     @property
     def full_text(self) -> str:
@@ -94,9 +97,11 @@ def graphic_text(config: SocialConfig, briefing: Briefing, headline: str = "") -
     facts = formatted_facts(BriefingFacts.from_json(briefing.facts))
     ordered = [(FACT_LABELS[k], facts[k]) for k in FACT_ORDER[layout] if k in facts]
     occasion = config.industry.occasion_type(briefing.occasion_type).label
+    logo = config.logo_path is not None
     return GraphicText(
         layout=layout,
-        brand=config.brand.name,
+        brand="" if logo else config.brand.name,
+        logo=logo,
         tag=occasion,
         headline=" ".join(headline.split()) or occasion,
         facts=ordered,
@@ -237,15 +242,24 @@ def render_graphic(
     draw = ImageDraw.Draw(canvas)
     inner = width - 2 * margin
 
-    # Brand name (top) with accent bar.
-    brand_font = _font("semibold", round(width * 0.036))
-    draw.rectangle(
-        (margin, margin, margin + round(width * 0.012), margin + brand_font.size), fill=accent
-    )
-    brand_colour = colour if background is None else WHITE
-    draw.text(
-        (margin + round(width * 0.03), margin - 2), text.brand, font=brand_font, fill=brand_colour
-    )
+    # Top: the logo from the brand profile, otherwise the brand name with an accent bar.
+    if text.logo and config.logo_path is not None:
+        logo = open_image(config.logo_path.read_bytes()).convert("RGBA")
+        logo.thumbnail((round(inner * 0.5), round(width * 0.09)), Image.Resampling.LANCZOS)
+        canvas.alpha_composite(logo, (margin, margin))
+        draw = ImageDraw.Draw(canvas)
+    else:
+        brand_font = _font("semibold", round(width * 0.036))
+        draw.rectangle(
+            (margin, margin, margin + round(width * 0.012), margin + brand_font.size), fill=accent
+        )
+        brand_colour = colour if background is None else WHITE
+        draw.text(
+            (margin + round(width * 0.03), margin - 2),
+            text.brand,
+            font=brand_font,
+            fill=brand_colour,
+        )
 
     # Bottom block: tag, headline, facts – laid out from the bottom up.
     fact_font = _font("semibold", round(width * 0.042))

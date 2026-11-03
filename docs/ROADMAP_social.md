@@ -171,14 +171,20 @@ Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 - [ ] **Veralteter Pfad in `docs/ROADMAP.md`:** Meilenstein M0 nennt noch `app/llm/` (heute
   `app/core/llm/`). Bewusst nicht geändert, weil es die historische Beschreibung eines
   abgeschlossenen Meilensteins ist; bei Bedarf als Fußnote ergänzen.
-- [ ] **„eingeplant (extern)“:** als auditierter Vermerk auf Status `scheduled` umgesetzt, nicht
-  als eigener Status. Entscheidung offen, ob ein eigener Status gewünscht ist (dann SPEC §5).
-- [ ] **Seite „Einstellungen“:** zeigt die Konfiguration nur an. Offen, ob dort etwas
-  bearbeitbar sein soll (z. B. Markenfarbe, Bildschalter).
-- [ ] **Markenfarbe der Oberfläche aus dem Markenprofil:** bisher nur `BRAND_COLOR`; die
-  Grafiken nutzen bereits `design:` im Markenprofil.
-- [ ] **Logo in Grafiken:** Vorlagen zeigen den Markennamen als Schriftzug; ein Logo-Feld im
-  Markenprofil fehlt noch (Demo-Profile haben kein Logo).
-- [ ] **Migrationen:** `add_missing_columns` ergänzt nur Spalten in SQLite-Demo-Datenbanken;
-  vor PostgreSQL durch Alembic ersetzen.
-- [ ] **Screenreader-Test:** Barrierefreiheit bisher nur automatisch geprüft (axe, Tastatur).
+- [x] **„eingeplant (extern)“:** entschieden: Vermerk auf Status `scheduled`, kein eigener
+  Status (SPEC_social §12). Die Meta Business Suite ist vorerst nicht vorgesehen; veröffentlicht
+  wird direkt in Instagram, Facebook bzw. LinkedIn.
+- [x] **Seite „Einstellungen“:** entschieden: bleibt nur lesbar, bis es eine Benutzerverwaltung
+  mit Rollen und Audit für Konfigurationsänderungen gibt (SPEC §10.2).
+- [x] **Markenfarbe der Oberfläche aus dem Markenprofil:** umgesetzt; Vorrang `BRAND_COLOR` >
+  `design.primary_color` des aktiven Markenprofils > Standardfarbe.
+- [x] **Grafik-Download:** erst nach der Freigabe eines Beitrags des Briefings; die Vorschau
+  bleibt jederzeit sichtbar (SPEC_social §14).
+- [x] **Logo in Grafiken:** optionales Feld `design.logo` (Dateiname neben dem Markenprofil);
+  ohne Logo bleibt der Markenname als Schriftzug. Demo-Profile haben bewusst kein Logo.
+- [ ] **Migrationen:** `add_missing_columns` reicht für SQLite-Demo-Datenbanken; Alembic erst
+  beim Wechsel auf PostgreSQL einführen.
+- [ ] **Screenreader-Test:** Barrierefreiheit bisher nur automatisch geprüft (axe, Tastatur);
+  ein Test mit NVDA oder VoiceOver durch einen Menschen steht aus.
+- [ ] **Kostenschätzung KI-Bilder:** Standardwert `IMAGE_COST_PER_IMAGE_EUR=0.05` ist eine
+  Annahme; vor echtem Einsatz mit der aktuellen Preisliste des Anbieters abgleichen.

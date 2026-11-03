@@ -17,7 +17,7 @@
   </form>
   {% if not d.is_scheduled_externally %}
   <form method="post" action="/social/drafts/{{ d.id }}/external">
-    <button type="submit" class="btn btn-secondary" title="Halten Sie fest, dass der Beitrag im Planer der Plattform (z. B. Meta Business Suite) eingeplant ist.">Als „eingeplant (extern)“ markieren</button>
+    <button type="submit" class="btn btn-secondary" title="Halten Sie fest, dass der Beitrag in der Planungsfunktion der Plattform (z. B. LinkedIn) eingeplant ist.">Als „eingeplant (extern)“ markieren</button>
   </form>
   {% endif %}
   <form method="post" action="/social/drafts/{{ d.id }}/unschedule">
@@ -43,7 +43,7 @@
 {% if d.status.value in ("approved", "scheduled", "published") %}
 <div class="mt-4 rounded-lg border border-line bg-surface-muted p-3" id="publish-aids-{{ d.id }}">
   <p class="text-sm font-semibold">Zum Veröffentlichen</p>
-  <p class="mt-0.5 text-xs text-ink-subtle">Das System postet nichts selbst. Text und Bild übernehmen Sie von Hand in die Meta Business Suite bzw. in LinkedIn.</p>
+  <p class="mt-0.5 text-xs text-ink-subtle">Das System postet nichts selbst. Text und Bild übernehmen Sie von Hand direkt in Instagram, Facebook bzw. LinkedIn.</p>
   <div class="mt-2 flex flex-wrap items-center gap-2">
     <button type="button" class="btn btn-primary btn-sm" data-copy="{{ d.full_text }}">{{ ui.icon("copy") }}<span data-copy-label>Text kopieren</span></button>
     <a href="/social/drafts/{{ d.id }}/export" class="btn btn-secondary btn-sm">{{ ui.icon("doc") }}Als Textdatei</a>

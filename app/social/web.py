@@ -300,8 +300,25 @@ async def briefing_create(
     return RedirectResponse(f"/social/briefings/{briefing.id}", status_code=303)
 
 
+RELEASED_STATUSES = (PostStatus.APPROVED, PostStatus.SCHEDULED, PostStatus.PUBLISHED)
+
+
+def _has_approved_post(session: Session, briefing_id: int) -> bool:
+    """The graphic is publishing material: downloadable once a post of the briefing is released."""
+    statement = (
+        select(PostDraft.id)
+        .where(PostDraft.briefing_id == briefing_id)
+        .where(col(PostDraft.status).in_(RELEASED_STATUSES))
+    )
+    return session.exec(statement).first() is not None
+
+
 def _graphic_context(
-    request: Request, config: SocialConfig, briefing: Briefing, usable: list[Asset]
+    request: Request,
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    usable: list[Asset],
 ) -> dict[str, object]:
     """Form values, layout and fact check result of the graphic from a template."""
     params = request.query_params
@@ -329,6 +346,7 @@ def _graphic_context(
         "problems": problems,
         "src": f"/social/briefings/{briefing.id}/graphic.jpg?{query}",
         "ai_background": ai_background,
+        "downloadable": _has_approved_post(session, briefing.id or 0),
     }
 
 
@@ -359,7 +377,7 @@ def _render_briefing(
         for d in drafts
     }
     images_enabled = image_generation_enabled()
-    graphic = _graphic_context(request, config, briefing, usable)
+    graphic = _graphic_context(request, session, config, briefing, usable)
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -859,6 +877,10 @@ def briefing_graphic(
 ) -> Response:
     """Graphic from the template of the occasion type: rendered by code, facts checked."""
     briefing = _briefing_or_404(session, briefing_id)
+    if download and not _has_approved_post(session, briefing_id):
+        raise HTTPException(
+            status_code=409, detail="Download erst nach der Freigabe eines Beitrags"
+        )
     try:
         fmt = ImageFormat(format)
     except ValueError as error:

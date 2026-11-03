@@ -128,7 +128,7 @@ class PostDraft(SQLModel, table=True):
     scheduled_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     published_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     # "eingeplant (extern)": a person scheduled the post in the platform's own planner (e.g.
-    # Meta Business Suite). A marker on status `scheduled`, not a status of its own.
+    # LinkedIn). A marker on status `scheduled`, not a status of its own.
     external_scheduled_at: datetime | None = Field(
         default=None, sa_column=_optional_timestamp_column()
     )

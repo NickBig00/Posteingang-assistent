@@ -13,11 +13,12 @@ from PIL import Image
 from sqlmodel import Session
 
 from app.core.image_formats import FORMAT_SPECS, ImageFormat
-from app.core.profiles import PROFILES_DIR
+from app.core.profiles import PROFILES_DIR, ProfileError
 from app.core.theme import WHITE, contrast_ratio, parse_hex
 from app.main import app
 from app.social.assets import save_asset
 from app.social.briefings import create_briefing
+from app.social.drafts import generate_drafts
 from app.social.facts import BriefingFacts, formatted_facts
 from app.social.graphics import (
     GraphicError,
@@ -29,6 +30,7 @@ from app.social.graphics import (
 from app.social.llm.client import SocialLLMClient
 from app.social.models import Briefing, Channel
 from app.social.profiles import DEFAULT_BRAND_PROFILES_DIR, SocialConfig, load_social_config
+from app.social.review import approve_draft
 from app.social.web import get_social_client, get_social_config
 from tests.social_helpers import course_input, demo_config, scripted
 
@@ -264,6 +266,12 @@ def test_graphic_route_and_page(
     url = (
         f"/social/briefings/{briefing.id}/graphic.jpg?format=9:16&background={asset.id}&download=1"
     )
+    # Publishing material: the download needs a released post of the briefing.
+    assert graphic_client.get(url).status_code == 409
+    assert "data-graphic-locked" in page
+    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(scripted()), briefing)
+    approve_draft(session, draft, "demo")
+    assert "data-graphic-download" in graphic_client.get(f"/social/briefings/{briefing.id}").text
     response = graphic_client.get(url)
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/jpeg"
@@ -313,3 +321,44 @@ def test_background_of_another_briefing_or_without_consent_is_refused(
     for asset in (foreign, persons):
         url = f"/social/briefings/{briefing.id}/graphic.jpg?background={asset.id}"
         assert graphic_client.get(url).status_code == 404
+
+
+# --- logo from the brand profile ---
+
+
+def _brand_with_logo(tmp_path: Path, logo: str | None = "logo.png", create: bool = True) -> Path:
+    source = (DEFAULT_BRAND_PROFILES_DIR / "demo.yaml").read_text(encoding="utf-8")
+    if logo is not None:
+        source = source.replace("  font: inter\n", f"  font: inter\n  logo: {logo}\n", 1)
+    path = tmp_path / "demo.yaml"
+    path.write_text(source, encoding="utf-8")
+    if create and logo is not None and "/" not in logo:
+        image = Image.new("RGBA", (400, 120), (0, 0, 0, 0))
+        image.paste((250, 250, 250, 255), (0, 30, 400, 90))
+        image.save(tmp_path / logo)
+    return path
+
+
+def test_logo_replaces_the_brand_name(tmp_path: Path) -> None:
+    config = load_social_config(PROFILES_DIR / "fitness.yaml", _brand_with_logo(tmp_path))
+
+    text = graphic_text(config, _briefing())
+    with_logo, _ = render_graphic(config, _briefing(), ImageFormat.SQUARE)
+    without_logo, _ = render_graphic(CONFIG, _briefing(), ImageFormat.SQUARE)
+
+    assert text.logo and text.brand == ""
+    assert CONFIG.brand.name not in text.lines
+    assert with_logo != without_logo
+
+
+def test_missing_logo_file_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ProfileError, match="Logo-Datei"):
+        load_social_config(PROFILES_DIR / "fitness.yaml", _brand_with_logo(tmp_path, create=False))
+
+
+@pytest.mark.parametrize("logo", ["../logo.png", "/etc/logo.png", "logo.svg"])
+def test_logo_must_be_a_plain_image_file_name(tmp_path: Path, logo: str) -> None:
+    with pytest.raises(ProfileError):
+        load_social_config(
+            PROFILES_DIR / "fitness.yaml", _brand_with_logo(tmp_path, f'"{logo}"', create=False)
+        )

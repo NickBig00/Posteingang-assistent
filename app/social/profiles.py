@@ -202,6 +202,9 @@ class BrandDesign(_Strict):
     primary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
     accent_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
     font: Literal["inter"] = "inter"
+    # Optional logo (PNG with transparency or JPG): file name next to the brand profile.
+    # Only a file name, no path, so a profile can never point outside its directory.
+    logo: str | None = Field(default=None, pattern=r"^[\w-]+(?:\.[\w-]+)*\.(?:png|jpg|jpeg)$")
 
 
 class BrandProfile(_Strict):
@@ -264,6 +267,15 @@ class SocialConfig:
     industry_key: str
     industry: IndustrySocial
     brand: BrandProfile
+    # Directory of the brand profile (logo files live next to it).
+    brand_dir: Path | None = None
+
+    @property
+    def logo_path(self) -> Path | None:
+        design = self.brand.design
+        if design is None or design.logo is None or self.brand_dir is None:
+            return None
+        return self.brand_dir / design.logo
 
     def is_sensitive(self, area_key: str) -> bool:
         return self.brand.area(area_key).rule_category in self.industry.sensitive_areas
@@ -292,6 +304,28 @@ def active_brand_path() -> Path:
     return brand_profiles_dir() / f"{key}.yaml"
 
 
+_COLOR_CACHE: dict[tuple[str, int], str | None] = {}
+
+
+def profile_brand_color() -> str | None:
+    """Primary colour of the active brand profile for the interface (None if unavailable).
+
+    Cached per file and modification time, because it is read on every page.
+    """
+    try:
+        path = active_brand_path()
+        key = (str(path), path.stat().st_mtime_ns)
+    except (ProfileError, OSError):
+        return None
+    if key not in _COLOR_CACHE:
+        try:
+            design = load_brand_profile(path).design
+        except ProfileError:
+            design = None
+        _COLOR_CACHE[key] = design.primary_color if design else None
+    return _COLOR_CACHE[key]
+
+
 def load_social_config(
     industry_path: Path | None = None, brand_path: Path | None = None
 ) -> SocialConfig:
@@ -306,4 +340,12 @@ def load_social_config(
             f"Markenprofil '{brand_path}' gehört zur Branche '{brand.industry}', "
             f"aktiv ist das Branchenprofil '{industry_key}'"
         )
-    return SocialConfig(industry_key=industry_key, industry=industry, brand=brand)
+    config = SocialConfig(
+        industry_key=industry_key, industry=industry, brand=brand, brand_dir=brand_path.parent
+    )
+    if config.logo_path is not None and not config.logo_path.is_file():
+        raise ProfileError(
+            f"Markenprofil '{brand_path}': Logo-Datei '{config.logo_path.name}' fehlt "
+            "(erwartet neben dem Markenprofil)"
+        )
+    return config

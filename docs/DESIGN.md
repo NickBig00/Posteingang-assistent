@@ -45,11 +45,11 @@ CI Node.js braucht.
 | `line`, `line-strong` | Rahmen und Trennlinien |
 | `ink`, `ink-muted`, `ink-subtle` | Text, Nebentext, Hinweise |
 
-**Markenfarbe:** `BRAND_COLOR=#1e3a8a` (Hex, Standard `#0f766e`). `app/core/theme.py`
+**Markenfarbe:** `BRAND_COLOR=#1e3a8a` (Hex); ohne diese Variable gilt `design.primary_color` des aktiven Markenprofils (das Social-Modul liefert sie über `app.state.brand_color_providers`), sonst `#0f766e`. `app/core/theme.py`
 berechnet daraus alle `brand-*`-Töne so, dass Text auf Buttons und Links auf Weiß das
 WCAG-AA-Verhältnis 4,5 : 1 erreichen (helle Farben bekommen dunklen Text, mittlere werden
-abgedunkelt). Ein ungültiger Wert fällt auf die Standardfarbe zurück und wird unter
-Einstellungen markiert.
+abgedunkelt). Ein ungültiger Wert wird ignoriert (dann gilt das Markenprofil bzw. die
+Standardfarbe) und unter Einstellungen markiert.
 
 ## Töne (einheitliche Status- und Ampelfarben)
 

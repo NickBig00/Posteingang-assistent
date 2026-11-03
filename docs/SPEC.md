@@ -103,9 +103,9 @@ Ruhig, modern und übersichtlich, damit die Mitarbeitenden im Büro im Alltag ge
 ### 10.2 Grundsätze
 
 - **Design-System:** Farben, Abstände, Schrift und Komponenten zentral definiert (Karte, Badge, Button, Tabelle, Formular, Hinweis/Toast, Leerzustand, Ladeanzeige)
-- **Markenfarbe konfigurierbar** (aus Konfiguration bzw. Markenprofil), damit die Oberfläche zum Kunden passt
+- **Markenfarbe konfigurierbar** (aus Konfiguration bzw. Markenprofil), damit die Oberfläche zum Kunden passt. Vorrang: Umgebungsvariable `BRAND_COLOR`, dann `design.primary_color` des aktiven Markenprofils, sonst die Standardfarbe
 - **Einheitliche Status- und Ampelfarben** in allen Modulen
-- **Layout:** Seitenleiste mit Modulen (Übersicht, Posteingang, Social Media, Kalender, Einstellungen), Kopfzeile mit konfigurierbarem Titel
+- **Layout:** Seitenleiste mit Modulen (Übersicht, Posteingang, Social Media, Kalender, Einstellungen), Kopfzeile mit konfigurierbarem Titel. „Einstellungen“ zeigt die wirksame Konfiguration nur an (nie Zugangsdaten); bearbeitbar wird sie erst mit einer Benutzerverwaltung
 - **Startseite als Übersicht:** Was ist heute zu tun? Zahlen je Modul (dringend, zur Prüfung, Entwürfe, geplante Beiträge), Klick führt in die Liste
 - **Beitragsvorschau:** Entwürfe zusätzlich so anzeigen, wie sie auf Instagram bzw. Facebook ungefähr aussehen würden (Bild, Text, gekürzt mit „mehr“)
 - **Responsiv:** gut nutzbar auf Laptop und Tablet

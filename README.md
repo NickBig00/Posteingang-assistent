@@ -44,7 +44,8 @@ Der Titel in Kopfzeile und Browser-Tab kommt aus der Konfiguration: `APP_TITLE` 
 
 Gemeinsames Design-System mit Seitenleiste, Kopfzeile und zentral definierten Komponenten:
 [`docs/DESIGN.md`](docs/DESIGN.md), lebende Übersicht unter `/design`. Die Markenfarbe kommt
-aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`). CSS, HTMX und Schrift werden lokal unter
+aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`), sonst aus `design.primary_color` des
+aktiven Markenprofils, sonst gilt die Standardfarbe. CSS, HTMX und Schrift werden lokal unter
 `/static` ausgeliefert, nicht per CDN. Nach Änderungen an Templates das CSS neu erzeugen:
 `npm install` (einmalig) und `uv run python scripts/build_css.py`.
 
@@ -57,8 +58,8 @@ startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs 
 
 ### Veröffentlichen (Social Media)
 
-Das System postet nichts selbst; veröffentlicht wird von Hand über die Meta Business Suite bzw.
-direkt in LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (inkl. Hashtags), den
+Das System postet nichts selbst; veröffentlicht wird von Hand direkt in Instagram, Facebook bzw.
+LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (inkl. Hashtags), den
 Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Facebook 4:5, Story
 9:16, LinkedIn 1:1; Metadaten wie Standort werden entfernt) und die Markierung „eingeplant
 (extern)“ im Kalender. Die Entwurfsansicht zeigt eine ungefähre Vorschau je Kanal.

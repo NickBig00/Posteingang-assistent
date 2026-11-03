@@ -12,11 +12,13 @@ from app.core.theme import (
     DEFAULT_BRAND_COLOR,
     MIN_CONTRAST,
     WHITE,
+    BrandColorChoice,
     ThemeConfigError,
     build_theme,
     contrast_ratio,
     current_theme,
     parse_hex,
+    resolve_brand_color,
 )
 from app.core.web import SETTINGS_ENTRY, NavEntry, active_entry
 
@@ -233,7 +235,7 @@ def test_settings_flag_an_invalid_brand_colour(
 ) -> None:
     monkeypatch.setenv("BRAND_COLOR", "lila")
 
-    assert "ungültig – Standardfarbe wird verwendet" in client.get("/settings").text
+    assert "„lila“ ungültig, ignoriert" in client.get("/settings").text
 
 
 def test_design_page_shows_all_components(client: TestClient) -> None:
@@ -309,3 +311,40 @@ def test_sidebar_list_contains_only_list_items(client: TestClient) -> None:
 
     assert 'role="separator"' not in nav
     assert nav.count("<li") == nav.count("</li>")
+
+
+# --- brand colour from the brand profile (follow-up to U1) ---
+
+
+def test_brand_colour_precedence(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BRAND_COLOR", raising=False)
+    assert resolve_brand_color(None) == BrandColorChoice(DEFAULT_BRAND_COLOR, "default")
+    assert resolve_brand_color("#334155") == BrandColorChoice("#334155", "profile")
+    monkeypatch.setenv("BRAND_COLOR", "#1e3a8a")
+    assert resolve_brand_color("#334155") == BrandColorChoice("#1e3a8a", "env")
+    monkeypatch.setenv("BRAND_COLOR", "lila")
+    assert resolve_brand_color("#334155") == BrandColorChoice("#334155", "profile", "lila")
+
+
+def test_interface_uses_the_colour_of_the_brand_profile(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("BRAND_COLOR", raising=False)
+    monkeypatch.setenv("BRAND_PROFILE", "handwerk_demo")
+
+    assert "--brand: 51 65 85;" in client.get("/").text  # #334155 from handwerk_demo.yaml
+    assert "aus dem Markenprofil" in client.get("/settings").text
+    monkeypatch.setenv("BRAND_COLOR", "#1e3a8a")
+    assert "--brand: 30 58 138;" in client.get("/").text
+
+
+def test_without_social_module_the_profile_colour_is_not_used(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.main import create_app
+
+    monkeypatch.delenv("BRAND_COLOR", raising=False)
+    monkeypatch.setenv("BRAND_PROFILE", "handwerk_demo")
+    monkeypatch.setenv("MODULES", "inbox")
+
+    assert create_app().state.brand_color_providers == []
