@@ -95,4 +95,14 @@ Gleiche Arbeitsweise wie in `docs/ROADMAP.md`: ein Meilenstein pro Session, eige
   `profiles/handwerk.yaml` angelegt (SPEC Kapitel 4.1 sieht für Handwerk keine vor).
   Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert.
 - [ ] **Evaluation mit echtem Modell:** zunächst nur für Fitness; Handwerk wird vorerst nicht
-  mit einem echten Modell evaluiert.
+  mit einem echten Modell evaluiert. Ausstehend: erneuter Lauf mit OpenAI, um zu prüfen, ob der
+  Fakten-Retry (`post_draft_v2`, Fall b06) und `post_assess_v2` (Fälle n06, a04) wirken.
+- [ ] **Statusablauf und Freigabe-Tabelle in `core` zusammenführen:** Posteingang und Social
+  Media haben je eine eigene Statusmaschine und Review-Tabelle (`app/inbox/status.py`,
+  `app/social/status.py`). Ein gemeinsamer Baustein in `core` wäre ein größerer Umbau am
+  Posteingang.
+- [ ] **Kalender per Drag-and-drop:** Termine lassen sich bisher nur über das Datumsfeld setzen
+  und verschieben.
+- [ ] **Veralteter Pfad in `docs/ROADMAP.md`:** Meilenstein M0 nennt noch `app/llm/` (heute
+  `app/core/llm/`). Bewusst nicht geändert, weil es die historische Beschreibung eines
+  abgeschlossenen Meilensteins ist; bei Bedarf als Fußnote ergänzen.
