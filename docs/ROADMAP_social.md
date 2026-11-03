@@ -171,3 +171,14 @@ Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 - [ ] **Veralteter Pfad in `docs/ROADMAP.md`:** Meilenstein M0 nennt noch `app/llm/` (heute
   `app/core/llm/`). Bewusst nicht geändert, weil es die historische Beschreibung eines
   abgeschlossenen Meilensteins ist; bei Bedarf als Fußnote ergänzen.
+- [ ] **„eingeplant (extern)“:** als auditierter Vermerk auf Status `scheduled` umgesetzt, nicht
+  als eigener Status. Entscheidung offen, ob ein eigener Status gewünscht ist (dann SPEC §5).
+- [ ] **Seite „Einstellungen“:** zeigt die Konfiguration nur an. Offen, ob dort etwas
+  bearbeitbar sein soll (z. B. Markenfarbe, Bildschalter).
+- [ ] **Markenfarbe der Oberfläche aus dem Markenprofil:** bisher nur `BRAND_COLOR`; die
+  Grafiken nutzen bereits `design:` im Markenprofil.
+- [ ] **Logo in Grafiken:** Vorlagen zeigen den Markennamen als Schriftzug; ein Logo-Feld im
+  Markenprofil fehlt noch (Demo-Profile haben kein Logo).
+- [ ] **Migrationen:** `add_missing_columns` ergänzt nur Spalten in SQLite-Demo-Datenbanken;
+  vor PostgreSQL durch Alembic ersetzen.
+- [ ] **Screenreader-Test:** Barrierefreiheit bisher nur automatisch geprüft (axe, Tastatur).
