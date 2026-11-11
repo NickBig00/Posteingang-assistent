@@ -66,8 +66,15 @@ const SHOTS = {
     ["grafik-faktenauswahl", "/social/briefings/{approved_briefing}?graphic_format=9:16&graphic_headline=Zwei%20Wochen%20gratis&graphic_facts=zeitraum#grafik", { selector: "#grafik" }],
   ],
   B5: [
-    ["bild-hinweise", "/social/briefings/{briefing}#images-{hint_draft}", { selector: "#images-{hint_draft}" }],
-    ["bild-hinweise-freigabe", "/social/briefings/{briefing}#draft-{hint_draft}", { selector: "#draft-{hint_draft}" }],
+    ["bild-hinweise-bestaetigt", "/social/briefings/{briefing}#images-{hint_draft}", { selector: "#images-{hint_draft}" }],
+    ["bild-hinweise-vor-dem-erzeugen", "/social/briefings/{briefing}#images-{image_draft}", {
+      selector: "#images-{image_draft}",
+      before: async (page, ids) => {
+        // A changed prompt with a person and text: the hints come first, nothing is generated.
+        await page.fill(`#prompt-${ids.image_draft}`, "Mann beim Dehnen am Fenster, Schriftzug „Pause“ an der Wand");
+        await Promise.all([page.waitForLoadState("networkidle"), page.click(`#images-${ids.image_draft} form[action$="/images/generate"] button[type=submit]`)]);
+      },
+    }],
   ],
   B6: [
     ["text-ueberarbeiten", "/social/briefings/{briefing}", {
@@ -237,6 +244,10 @@ async function seed(withImages) {
     ids.hint_draft = drafts[1] || drafts[0];
     if (ids.hint_draft) {
       const prompt = "Frau beim Rückentraining auf einer Matte, heller Raum, Schriftzug „Rückenfit“ an der Wand";
+      // First confirm, then generate: the first attempt only records the hints.
+      await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
+      const pending = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      for (const m of pending.matchAll(/\/social\/image-hints\/(\d+)\/confirm/g)) await post(m[0]);
       await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
       const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
       const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];

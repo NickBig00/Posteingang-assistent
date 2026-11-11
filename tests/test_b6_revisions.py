@@ -198,11 +198,32 @@ def test_image_prompt_revision_creates_a_new_version(session: Session) -> None:
 def test_image_revision_generates_new_variants_through_the_checks(
     session: Session, raw_dir: Path
 ) -> None:
+    from app.social.images import ImageHintsPendingError, confirm_prompt_hint, prompt_hints
+
     draft = _with_prompt(session)
     provider = FakeImageProvider()
 
-    revise_image(
-        session, CONFIG, CLIENT, provider, draft, "Frau beim Dehnen zeigen", "demo", raw_dir
+    # The new prompt shows a person: first confirm the hint, then generate.
+    with pytest.raises(ImageHintsPendingError):
+        revise_image(
+            session, CONFIG, CLIENT, provider, draft, "Frau beim Dehnen zeigen", "demo", raw_dir
+        )
+    assert provider.calls == []
+    for hint in prompt_hints(session, draft.id or 0):
+        confirm_prompt_hint(session, hint, "demo")
+    proposal = latest_proposal(session, draft.id or 0)
+    assert proposal is not None
+    from app.social.images import generate_variants
+
+    generate_variants(
+        session,
+        CONFIG,
+        provider,
+        draft,
+        prompt=proposal.prompt,
+        fmt=ImageFormat.PORTRAIT,
+        user="demo",
+        storage=raw_dir,
     )
 
     assert len(candidates(session, draft.id or 0)) == 3
