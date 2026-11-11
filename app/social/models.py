@@ -214,6 +214,23 @@ class ImageProposal(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
 
 
+class PromptHint(SQLModel, table=True):
+    """Hint on the image prompt of a generation (people, text, real places …), SPEC_social 13.5.
+
+    Must be confirmed by a person before the post with the chosen AI image is approved.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    proposal_id: int = Field(foreign_key="imageproposal.id", index=True)
+    key: str
+    reason: str
+    # Hash of the prompt the hint belongs to (a changed prompt needs a new confirmation).
+    prompt_hash: str
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+
+
 class ImageCandidate(SQLModel, table=True):
     """One generated variant waiting for a person's choice (deleted after choice/discard)."""
 

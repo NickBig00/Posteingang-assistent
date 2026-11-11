@@ -154,7 +154,7 @@ Echte Fehlermeldungen des Anbieters, Abfangen ungültiger API-Schlüssel, Modell
 
 **Akzeptanz:** Tests für Fehlerabbildung (Fake/Stub, keine echte API) und Vorlagen; Screenshots.
 
-## [ ] B5 – Prüfungen als Hinweise
+## [x] B5 – Prüfungen als Hinweise
 
 Bild-Prompt-Prüfungen gemäß Tabelle in SPEC_social 13.5 von Ablehnung auf bestätigungspflichtige
 Hinweise umstellen; Fehler nur für Fakten und Mitgliedernamen (bzw. sensible Bereiche laut SPEC).

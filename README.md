@@ -82,8 +82,10 @@ Tests rufen nie eine echte Bild-API auf.
 
 Im Entwurf (vor der Freigabe) schlägt „Bild vorschlagen“ einen Bild-Prompt aus Briefing und
 `image_style` des Bereichs im Markenprofil vor. Der Prompt ist sichtbar und bearbeitbar; vor
-jeder Erzeugung lehnt ein Code-Check Personen, Namen, Text im Bild, echte Räume oder
-Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten ab. Die gewählte Variante
+jeder Erzeugung prüft ein Code-Check auf Personen, Namen, Text im Bild, echte Räume oder
+Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten. Das sind **Hinweise**,
+die ein Mensch vor der Freigabe des Beitrags bestätigt (Bestätigung im Audit); nur Namen aus der
+Mitgliederliste verhindern die Erzeugung. Die gewählte Variante
 ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
 hochgeladenes Bild gelöscht.
 

@@ -8,7 +8,7 @@
     <h4 class="flex items-center gap-2 text-sm font-semibold">{{ ui.icon("image") }}KI-Bild {{ ui.ai_badge(ai_image_label) }}</h4>
     {% if st and st.chosen %}<span class="badge badge-ok">Variante gewählt</span>{% endif %}
   </div>
-  <p class="mt-1 text-xs text-ink-muted">Optional: ein Stimmungsbild ohne Menschen und ohne Text. Eigene Fotos bleiben der Normalfall.</p>
+  <p class="mt-1 text-xs text-ink-muted">Optional: ein Stimmungs- oder Hintergrundbild. Eigene Fotos bleiben der Normalfall. Fakten (Datum, Uhrzeit, Preis, Ort) gehören besser in die geprüfte Grafik.</p>
 
   {% if not editable %}
   <p class="mt-2 text-xs text-ink-subtle">Das Bild wird mit dem Beitrag freigegeben und lässt sich danach nicht mehr ändern.</p>
@@ -31,8 +31,14 @@
       {% for v in st.violations %}<li>{{ v }}</li>{% endfor %}
     </ul>
     {% endif %}
-    <p class="hint">Vor dem Erzeugen prüft das System den Prompt auf Personen, Text, echte Räume oder Ergebnisse und personenbezogene Daten.
-      Zusätzlich hängt es feste Ausschlüsse an (keine Menschen, kein Text).</p>
+    {% if st.hints and not st.stored_hints %}
+    <ul class="list-disc pl-5 text-xs text-amber-900" data-prompt-hints>
+      {% for h in st.hints %}<li><span class="font-medium">Hinweis – {{ hint_labels[h.key] }}:</span> {{ h.reason }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <p class="hint">Vor dem Erzeugen prüft das System den Prompt auf Personen, Text im Bild, echte Räume oder Ergebnisse und Kontaktdaten.
+      Das sind Hinweise, die Sie vor der Freigabe bestätigen; nur Namen aus der Mitgliederliste verhindern die Erzeugung.
+      Zusätzlich hängt das System feste Ausschlüsse an (keine echten, erkennbaren Personen, keine Logos).</p>
     <div class="flex flex-wrap items-center gap-2">
       <select name="image_format" class="input w-auto py-1.5" aria-label="Format">
         {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == st.proposal.image_format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
@@ -40,6 +46,21 @@
       <button type="submit" class="btn btn-primary btn-sm">{{ ui.icon("sparkles") }}{{ "Neu erzeugen" if st.candidates else "Varianten erzeugen" }}</button>
     </div>
   </form>
+  {% if st.stored_hints %}
+  <div class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3" id="image-hints-{{ d.id }}" data-image-hints>
+    <p class="text-sm font-semibold">Hinweise zum Bild – vor der Freigabe bestätigen</p>
+    <ul class="mt-1 space-y-1.5 text-sm">
+      {% for h in st.stored_hints %}
+      <li><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}
+        {% if h.confirmed_at %}<span class="badge badge-ok">✓ bestätigt von {{ h.confirmed_by }} am {{ h.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+        {% else %}<form method="post" action="/social/image-hints/{{ h.id }}/confirm" class="ml-1 inline">
+          <button type="submit" class="btn btn-secondary btn-sm border-amber-400">Geprüft – bestätigen</button></form>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="mt-1 text-xs text-ink-subtle">Diese Hinweise erscheinen nur hier, nie im Bild. Ein geänderter Prompt muss neu bestätigt werden.</p>
+  </div>
+  {% endif %}
   {% if st.candidates %}
   <div class="mt-4">
     <p class="text-sm font-medium">Variante wählen</p>

@@ -79,8 +79,10 @@ from app.social.graphics import (
 from app.social.highlight import highlight
 from app.social.images import (
     AI_IMAGE_LABEL,
+    HINT_LABELS,
     ImageSuggestionError,
     choose_candidate,
+    confirm_prompt_hint,
     discard_candidates,
     generate_variants,
     image_state,
@@ -100,6 +102,7 @@ from app.social.models import (
     ImageCandidate,
     PostDraft,
     PostStatus,
+    PromptHint,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
 from app.social.retention import delete_briefing, delete_campaign, delete_draft
@@ -131,6 +134,7 @@ templates.env.globals["post_status_tones"] = POST_STATUS_TONES
 templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
 templates.env.globals["format_specs"] = FORMAT_SPECS
 templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
+templates.env.globals["hint_labels"] = HINT_LABELS
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
@@ -738,6 +742,22 @@ def image_discard(
     draft = _images_draft(session, draft_id)
     try:
         discard_candidates(session, draft, user)
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.post("/social/image-hints/{hint_id}/confirm", response_model=None)
+def image_hint_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, hint_id: int
+) -> HTMLResponse | RedirectResponse:
+    """A person confirms a hint on the image prompt – recorded in the audit trail."""
+    hint = session.get(PromptHint, hint_id)
+    if hint is None:
+        raise HTTPException(status_code=404, detail="Hinweis nicht gefunden")
+    draft = _images_draft(session, hint.draft_id)
+    try:
+        confirm_prompt_hint(session, hint, user)
     except ImageSuggestionError as error:
         return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
     return _images_back(draft)

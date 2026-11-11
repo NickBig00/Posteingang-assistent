@@ -65,6 +65,10 @@ const SHOTS = {
     ["grafik-farbflaeche-hochformat", "/social/briefings/{briefing}#grafik", { selector: "#grafik" }],
     ["grafik-faktenauswahl", "/social/briefings/{approved_briefing}?graphic_format=9:16&graphic_headline=Zwei%20Wochen%20gratis&graphic_facts=zeitraum#grafik", { selector: "#grafik" }],
   ],
+  B5: [
+    ["bild-hinweise", "/social/briefings/{briefing}#images-{hint_draft}", { selector: "#images-{hint_draft}" }],
+    ["bild-hinweise-freigabe", "/social/briefings/{briefing}#draft-{hint_draft}", { selector: "#draft-{hint_draft}" }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
@@ -192,6 +196,16 @@ async function seed(withImages) {
       const prompt = match ? match[1].replace(/&amp;/g, "&").replace(/&#34;/g, '"').replace(/&#39;/g, "'") : "";
       if (prompt) await post(`/social/drafts/${draft}/images/generate`, { prompt, image_format: "4:5" });
     }
+    // Second draft: a prompt with people and text in the image → hints to confirm (B5).
+    const drafts = [...new Set([...first.matchAll(/id="draft-(\d+)"/g)].map((m) => m[1]))];
+    ids.hint_draft = drafts[1] || drafts[0];
+    if (ids.hint_draft) {
+      const prompt = "Frau beim Rückentraining auf einer Matte, heller Raum, Schriftzug „Rückenfit“ an der Wand";
+      await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
+      const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];
+      if (candidate) await post(`/social/drafts/${ids.hint_draft}/images/${candidate}/choose`);
+    }
   }
   return ids;
 }
@@ -217,7 +231,9 @@ async function shoot(browser, milestone, ids, empty) {
     if (options.before) await options.before(page, ids);
     const file = path.join(dir, `${name}.png`);
     if (options.selector && !options.fullPage) {
-      await page.locator(options.selector).first().screenshot({ path: file });
+      // Element shots: the sticky page header would cover the top of the element.
+      await page.addStyleTag({ content: "header { position: static !important; }" });
+      await page.locator(fill(options.selector, ids)).first().screenshot({ path: file });
     } else {
       await page.screenshot({ path: file, fullPage: Boolean(options.fullPage) });
     }
