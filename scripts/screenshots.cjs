@@ -81,6 +81,10 @@ const SHOTS = {
     }],
     ["audit-anweisung", "/social/briefings/{briefing}/audit", { fullPage: true }],
   ],
+  B7: [
+    ["info-grafik", "/social/briefings/{approved_briefing}?info_background={background_asset}#info-grafik", { selector: "#info-grafik" }],
+    ["info-grafik-leer", "/social/briefings/{briefing}#info-grafik", { selector: "#info-grafik" }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
@@ -194,6 +198,19 @@ async function seed(withImages) {
       await post(`/social/drafts/${id}/external`);
     }
   }
+
+  // Info graphic texts for the approved briefing (B7).
+  await post(`/social/briefings/${ids.approved_briefing}/info-graphic`, {
+    headline: "Winter-Schnupperwochen",
+    subline: "Zwei Wochen alle Kurse ausprobieren",
+    intro: "Neugierig auf unsere Kurse? In den Schnupperwochen kannst du alles testen.",
+    points: "Alle Kurse inklusive\nOhne Vertragsbindung\nPersönliche Einweisung",
+    closing: "Melde dich einfach am Empfang!",
+    variant: "farbfeld",
+  });
+  const infoPage = await (await fetch(`${BASE}/social/briefings/${ids.approved_briefing}`)).text();
+  for (const m of infoPage.matchAll(/\/social\/info-graphic-checks\/(\d+)\/confirm/g)) await post(m[0]);
+  ids.background_asset = (infoPage.match(/name="info_background"[\s\S]*?<option value="(\d+)"/) || [])[1] || "color";
 
   const campaign = await post("/social/campaigns/demo");
   ids.campaign = campaign.split("/").pop() || "1";

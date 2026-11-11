@@ -90,6 +90,23 @@ from app.social.images import (
     image_state,
     suggest_prompt,
 )
+from app.social.infographic import (
+    VARIANT_LABELS,
+    InfoGraphicError,
+    InfoTexts,
+    check_blockers,
+    confirm_check,
+    get_info_graphic,
+    graphic_checks,
+    parse_points,
+    render_info_graphic,
+    revise_texts,
+    save_texts,
+    story_texts,
+    suggest_texts,
+    text_errors,
+    texts_for_format,
+)
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
     CHANNEL_IMAGE_FORMATS,
@@ -102,6 +119,8 @@ from app.social.models import (
     Channel,
     CheckResult,
     ImageCandidate,
+    InfoGraphic,
+    InfoGraphicCheck,
     PostDraft,
     PostStatus,
     PromptHint,
@@ -376,6 +395,71 @@ def _graphic_context(
     }
 
 
+def _info_context(
+    request: Request,
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    usable: list[Asset],
+) -> dict[str, object]:
+    """Info graphic (SPEC_social 14.1): texts, checks, preview parameters."""
+    params = request.query_params
+    graphic = get_info_graphic(session, briefing.id or 0)
+    fmt = params.get("info_format") or ImageFormat.PORTRAIT.value
+    if fmt not in {f.value for f in ImageFormat}:
+        fmt = ImageFormat.PORTRAIT.value
+    background = params.get("info_background") or "color"
+    if background != "color" and background not in {str(a.id) for a in usable}:
+        background = "color"
+    facts = BriefingFacts.from_json(briefing.facts)
+    chosen = params.getlist("info_facts")
+    keys = parse_fact_keys(chosen, facts) if chosen else tuple(facts.present_keys())
+    variant = (graphic.variant if graphic else None) or "zentriert"
+    query = urlencode(
+        [("format", fmt), ("background", background), ("variant", variant)]
+        + [("facts", key) for key in keys]
+    )
+    results = graphic_checks(session, graphic.id or 0) if graphic else []
+    errors = text_errors(session, graphic) if graphic else []
+    problems: list[str] = []
+    if graphic is not None:
+        try:
+            # Preflight of facts and layout, so the page shows the reason instead of a
+            # broken image.
+            render_info_graphic(
+                config,
+                briefing,
+                texts_for_format(graphic, ImageFormat(fmt)),
+                ImageFormat(fmt),
+                variant=variant,
+                background=None,
+                fact_keys=keys,
+            )
+        except InfoGraphicError as error:
+            problems = error.problems
+        except GraphicLayoutError as error:
+            problems = [str(error)]
+    return {
+        "graphic": graphic,
+        "texts": InfoTexts.of(graphic) if graphic else InfoTexts(),
+        "story": story_texts(graphic) if graphic else None,
+        "format": fmt,
+        "background": background,
+        "fact_keys": keys,
+        "available_facts": [(k, FACT_LABELS[k]) for k in facts.present_keys()],
+        "variant": variant,
+        "variants": VARIANT_LABELS,
+        "results": results,
+        "light": _light(results) if results else None,
+        "errors": errors,
+        "problems": problems,
+        "blockers": check_blockers(session, graphic) if graphic else [],
+        "src": f"/social/briefings/{briefing.id}/info-graphic.jpg?{query}",
+        "ai_background": any(str(a.id) == background and a.ai_generated for a in usable),
+        "downloadable": _has_approved_post(session, briefing.id or 0),
+    }
+
+
 def _render_briefing(
     request: Request,
     session: Session,
@@ -404,6 +488,7 @@ def _render_briefing(
     }
     images_enabled = image_generation_enabled()
     graphic = _graphic_context(request, session, config, briefing, usable)
+    info = _info_context(request, session, config, briefing, usable)
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -423,6 +508,7 @@ def _render_briefing(
             else {},
             "image_formats": list(ImageFormat),
             "graphic": graphic,
+            "info": info,
             "facts": facts,
             "config": config,
             "error": error,
@@ -1009,6 +1095,186 @@ def briefing_graphic(
         media_type="image/jpeg",
         headers={
             "Content-Disposition": f'{disposition}; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+# --- info graphic ---
+
+
+def _info_back(briefing_id: int) -> RedirectResponse:
+    return RedirectResponse(f"/social/briefings/{briefing_id}#info-grafik", status_code=303)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic", response_model=None)
+def info_graphic_save(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    briefing_id: int,
+    headline: Annotated[str, Form()] = "",
+    subline: Annotated[str, Form()] = "",
+    intro: Annotated[str, Form()] = "",
+    points: Annotated[str, Form()] = "",
+    closing: Annotated[str, Form()] = "",
+    story_headline: Annotated[str, Form()] = "",
+    story_intro: Annotated[str, Form()] = "",
+    story_points: Annotated[str, Form()] = "",
+    story_closing: Annotated[str, Form()] = "",
+    variant: Annotated[str, Form()] = "zentriert",
+) -> HTMLResponse | RedirectResponse:
+    """Texts written or edited by a person; all checks run again when they changed."""
+    briefing = _briefing_or_404(session, briefing_id)
+    texts = InfoTexts(headline, subline, intro, parse_points(points), closing)
+    story = InfoTexts(story_headline, "", story_intro, parse_points(story_points), story_closing)
+    try:
+        save_texts(
+            session, config, client, briefing, texts, story=story, variant=variant, user=user
+        )
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _info_back(briefing_id)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic/suggest", response_model=None)
+def info_graphic_suggest(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    briefing_id: int,
+) -> HTMLResponse | RedirectResponse:
+    """ "Text für Grafik vorschlagen" – AI suggestion, labelled and freely editable."""
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        suggest_texts(session, config, client, briefing, user)
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _info_back(briefing_id)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic/revise", response_model=None)
+def info_graphic_revise(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    briefing_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        revise_texts(session, config, client, briefing, quick or instruction, user)
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _info_back(briefing_id)
+
+
+@router.post("/social/info-graphic-checks/{result_id}/confirm", response_model=None)
+def info_graphic_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, result_id: int
+) -> HTMLResponse | RedirectResponse:
+    result = session.get(InfoGraphicCheck, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Prüfergebnis nicht gefunden")
+    graphic = session.get(InfoGraphic, result.graphic_id)
+    if graphic is None:
+        raise HTTPException(status_code=404, detail="Grafik nicht gefunden")
+    try:
+        confirm_check(session, result, user)
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, graphic.briefing_id, str(error), 409)
+    return _info_back(graphic.briefing_id)
+
+
+def info_graphic_jpeg(
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    fmt: ImageFormat,
+    *,
+    variant: str,
+    background: str,
+    fact_keys: list[str],
+) -> tuple[bytes, Asset | None]:
+    """Rendered info graphic (raises HTTPException with the reason)."""
+    graphic = get_info_graphic(session, briefing.id or 0)
+    if graphic is None:
+        raise HTTPException(status_code=404, detail="Noch kein Grafiktext")
+    errors = text_errors(session, graphic)
+    if errors:
+        raise HTTPException(status_code=422, detail=" ".join(errors))
+    image: Asset | None = None
+    if background != "color":
+        image = session.get(Asset, int(background)) if background.isdigit() else None
+        if image is None or image.briefing_id != briefing.id or not is_usable(image):
+            raise HTTPException(status_code=404, detail="Hintergrundbild nicht verfügbar")
+    content = Path(image.stored_path).read_bytes() if image else None
+    keys = parse_fact_keys(fact_keys, BriefingFacts.from_json(briefing.facts))
+    try:
+        body = render_info_graphic(
+            config,
+            briefing,
+            texts_for_format(graphic, fmt),
+            fmt,
+            variant=variant,
+            background=content,
+            fact_keys=keys,
+        )
+    except InfoGraphicError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except (GraphicLayoutError, ImageExportError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return body, image
+
+
+@router.get("/social/briefings/{briefing_id}/info-graphic.jpg", response_model=None)
+def info_graphic_file(
+    session: SessionDep,
+    config: ConfigDep,
+    briefing_id: int,
+    format: str = ImageFormat.PORTRAIT.value,  # noqa: A002 - query parameter name
+    background: str = "color",
+    variant: str = "zentriert",
+    download: bool = False,
+    facts: Annotated[list[str] | None, Query()] = None,
+) -> Response:
+    """Info graphic as JPEG; download only after a released post and confirmed checks."""
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        fmt = ImageFormat(format)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Unbekanntes Format") from error
+    if download:
+        if not _has_approved_post(session, briefing_id):
+            raise HTTPException(
+                status_code=409, detail="Download erst nach der Freigabe eines Beitrags"
+            )
+        graphic = get_info_graphic(session, briefing_id)
+        if graphic is not None and check_blockers(session, graphic):
+            raise HTTPException(status_code=409, detail="Prüfungen des Grafiktexts offen")
+    body, image = info_graphic_jpeg(
+        session,
+        config,
+        briefing,
+        fmt,
+        variant=variant,
+        background=background,
+        fact_keys=facts or [],
+    )
+    label = "-ki-generiert" if image is not None and image.ai_generated else ""
+    name = f"info-grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'{"attachment" if download else "inline"}; filename="{name}"',
             "X-Content-Type-Options": "nosniff",
         },
     )

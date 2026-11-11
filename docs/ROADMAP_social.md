@@ -169,7 +169,7 @@ versionierter Prompt, ein Retry, Audit je Überarbeitung.
 
 **Akzeptanz:** Tests nur mit Fake-Anbieter; neue Version läuft durch alle Prüfungen.
 
-## [ ] B7 – Info-Grafik mit Texten
+## [x] B7 – Info-Grafik mit Texten
 
 Vorlage „Info-Grafik“ (SPEC_social 14.1) mit eigenen oder KI-vorgeschlagenen Texten, Prüfungen,
 Gestaltungsvarianten, Formaten und JPEG-Export.

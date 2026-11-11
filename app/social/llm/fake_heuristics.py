@@ -80,6 +80,55 @@ def _image_prompt_revise(user: str) -> str:
     return json.dumps({"prompt": revised[:800]}, ensure_ascii=False)
 
 
+def _graphic_text(user: str) -> str:
+    # Built from occasion and key points; no facts (the code adds them below the text).
+    occasion = prompt_section(user, "anlass").strip()
+    notes = [n.strip(" -•") for n in re.split(r"[,;\n]", prompt_section(user, "stichpunkte"))]
+    notes = [n for n in notes if n and not re.search(r"\d", n)]
+    points = [n[:80] for n in notes[:6]]
+    defaults = ["Für Einsteiger geeignet", "Kleine Gruppe", "Mit Zeit für Fragen"]
+    points += defaults[: max(0, 3 - len(points))]
+    return json.dumps(
+        {
+            "headline": occasion or "Neu bei uns",
+            "subline": "Alle Infos auf einen Blick",
+            "intro": notes[0][:200] + "." if notes else "Wir freuen uns auf euren Besuch.",
+            "points": points,
+            "closing": "Wir freuen uns auf euch!",
+        },
+        ensure_ascii=False,
+    )
+
+
+def _graphic_text_revise(user: str) -> str:
+    words = _removed_words(prompt_section(user, "anweisung"))
+
+    def keep(text: str) -> bool:
+        return not any(w in text.lower() for w in words)
+
+    points = [
+        p.strip()[2:].strip()
+        for p in prompt_section(user, "punkte").splitlines()
+        if p.strip().startswith("- ")
+    ]
+    kept = [p for p in points if keep(p)] or points
+    while len(kept) < 3:
+        kept.append(["Für Einsteiger geeignet", "Kleine Gruppe", "Mit Zeit für Fragen"][len(kept)])
+    intro = prompt_section(user, "einleitung").strip()
+    return json.dumps(
+        {
+            "headline": prompt_section(user, "ueberschrift").strip() or "Neu bei uns",
+            "subline": prompt_section(user, "unterzeile").strip(),
+            "intro": intro if keep(intro) else "",
+            "points": kept[:6],
+            "closing": prompt_section(user, "schluss").strip(),
+        },
+        ensure_ascii=False,
+    )
+
+
+register_heuristic("graphic_text", _graphic_text)
+register_heuristic("graphic_text_revise", _graphic_text_revise)
 register_heuristic("post_draft", _post_draft)
 register_heuristic("post_revise", _post_revise)
 register_heuristic("image_prompt_revise", _image_prompt_revise)

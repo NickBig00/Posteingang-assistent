@@ -1,0 +1,120 @@
+{# Info graphic (SPEC_social 14.1): own or AI-suggested texts, facts added and checked by code. #}
+{% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
+{% set g = info.graphic %}
+<section class="card mb-6 {{ 'card-ai' if g and g.is_ai_suggestion and not g.edited_by_human else '' }}" id="info-grafik" aria-labelledby="info-title">
+  <div class="card-header">
+    <h2 class="card-title flex flex-wrap items-center gap-2" id="info-title">Info-Grafik {% if info.light %}{% set light = info.light %}{% include "_light.html" %}{% endif %}</h2>
+    <div class="flex flex-wrap items-center gap-2">
+      {% if g and g.is_ai_suggestion %}{{ ui.ai_badge() }}{% endif %}
+      {% if g and g.edited_by_human %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}
+      {{ ui.badge("Fakten geprüft", "neutral") }}
+    </div>
+  </div>
+  <div class="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_17rem]">
+    <div class="min-w-0">
+      <p class="text-sm text-ink-muted">Überschrift, Unterzeile, Einleitung, ✓-Liste und Schlusssatz über einem Bild oder einer Farbfläche.
+        Datum, Uhrzeit, Ort, Preis und Telefonnummer setzt das System darunter – geprüft, nie aus dem KI-Text.</p>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic/suggest" data-loading="Text wird vorgeschlagen …">
+          <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon("sparkles") }}Text für Grafik vorschlagen</button>
+        </form>
+        {% if g %}<span class="text-xs text-ink-subtle">Ersetzt den bisherigen Text durch einen KI-Vorschlag.</span>{% endif %}
+      </div>
+
+      <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="mt-4 grid gap-3 sm:grid-cols-2" data-loading="Wird geprüft …">
+        <label class="field font-medium sm:col-span-2">Überschrift
+          <input type="text" name="headline" maxlength="60" value="{{ info.texts.headline }}" class="input mt-1" required placeholder="z. B. Vortrag: Bewegung im Büroalltag"></label>
+        <label class="field font-medium sm:col-span-2">Unterzeile <span class="font-normal text-ink-subtle">(optional)</span>
+          <input type="text" name="subline" maxlength="90" value="{{ info.texts.subline }}" class="input mt-1"></label>
+        <label class="field font-medium sm:col-span-2">Einleitung <span class="font-normal text-ink-subtle">(1–2 Sätze, optional)</span>
+          <textarea name="intro" rows="2" maxlength="260" class="input mt-1">{{ info.texts.intro }}</textarea></label>
+        <label class="field font-medium">Aufzählung <span class="font-normal text-ink-subtle">(3–6 Punkte, einer je Zeile)</span>
+          <textarea name="points" rows="5" class="input mt-1">{{ info.texts.points | join("\n") }}</textarea></label>
+        <div class="space-y-3">
+          <label class="field font-medium">Schlusssatz <span class="font-normal text-ink-subtle">(optional)</span>
+            <input type="text" name="closing" maxlength="140" value="{{ info.texts.closing }}" class="input mt-1"></label>
+          <label class="field font-medium">Gestaltung
+            <select name="variant" class="input mt-1">
+              {% for key, label in info.variants.items() %}<option value="{{ key }}" {% if key == info.variant %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></label>
+        </div>
+        <details class="sm:col-span-2" {% if info.story %}open{% endif %}>
+          <summary class="cursor-pointer text-sm font-medium">Kürzerer Text für die Story (9:16, optional)</summary>
+          <div class="mt-2 grid gap-3 sm:grid-cols-2">
+            <label class="field">Überschrift <input type="text" name="story_headline" maxlength="60" value="{{ info.story.headline if info.story else '' }}" class="input mt-1"></label>
+            <label class="field">Schlusssatz <input type="text" name="story_closing" maxlength="140" value="{{ info.story.closing if info.story else '' }}" class="input mt-1"></label>
+            <label class="field">Einleitung <textarea name="story_intro" rows="2" maxlength="260" class="input mt-1">{{ info.story.intro if info.story else '' }}</textarea></label>
+            <label class="field">Punkte (0–6) <textarea name="story_points" rows="3" class="input mt-1">{{ info.story.points | join("\n") if info.story else '' }}</textarea></label>
+          </div>
+          <p class="hint">Leer lassen: Die Story nutzt den Text oben. Passt er nicht ins 9:16-Format, erscheint eine Meldung – abgeschnitten wird nie.</p>
+        </details>
+        <div class="sm:col-span-2"><button type="submit" class="btn btn-primary btn-sm">Speichern und prüfen</button></div>
+      </form>
+
+      {% if g %}
+      <details class="mt-3" id="info-revise">
+        <summary class="btn btn-ghost btn-sm cursor-pointer">{{ ui.icon("sparkles") }}Grafiktext von KI überarbeiten lassen</summary>
+        {{ revise_form("/social/briefings/" ~ briefing.id ~ "/info-graphic/revise", "info-instruction", ["Kürzer fassen", "Neutraler formulieren, ohne Gesundheitsversprechen", "Weniger Punkte"], "Grafiktext überarbeiten") }}
+      </details>
+
+      <div class="mt-4 border-t border-line pt-3" id="info-checks">
+        <h3 class="text-sm font-semibold">Prüfungen des Grafiktexts</h3>
+        <ul class="mt-2 space-y-1.5 text-sm">
+          {% for r in info.results %}{% set light = r.outcome.value %}
+          <li class="{{ 'text-ink-subtle' if light == 'ok' else '' }}">
+            <span class="inline-flex flex-wrap items-baseline gap-x-2">{% with light_ok_label = "ok" %}{% include "_light.html" %}{% endwith %}
+              <span class="text-ink-subtle">{{ check_labels.get(r.check_key, r.check_key) }}:</span> <span>{{ r.reason }}</span>
+              {% if r.is_ai_assessment %}{{ ui.ai_badge("KI-Einschätzung") }}{% endif %}</span>
+            {% if (r.requires_confirmation or r.consent_required) %}
+              {% if r.confirmed_at %}<span class="badge badge-ok">✓ bestätigt von {{ r.confirmed_by }} am {{ r.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+              {% else %}<form method="post" action="/social/info-graphic-checks/{{ r.id }}/confirm" class="ml-1 inline">
+                <button type="submit" class="btn {{ 'btn-danger' if r.consent_required else 'btn-secondary border-amber-400' }} btn-sm">{{ "Einwilligung der Person liegt vor" if r.consent_required else "Geprüft – bestätigen" }}</button></form>{% endif %}
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <div>
+      {% if g %}
+      <form method="get" action="/social/briefings/{{ briefing.id }}#info-grafik" class="space-y-2 text-sm">
+        <label class="field font-medium">Format
+          <select name="info_format" class="input mt-1">
+            {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == info.format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
+          </select></label>
+        <label class="field font-medium">Hintergrund
+          <select name="info_background" class="input mt-1">
+            <option value="color" {% if info.background == "color" %}selected{% endif %}>Farbfläche in Markenfarbe</option>
+            {% for a in usable_assets %}<option value="{{ a.id }}" {% if info.background == a.id | string %}selected{% endif %}>{{ ("KI-Bild" if a.ai_generated else "Foto") ~ " „" ~ a.filename | truncate(24, true, "…") ~ "“" }}</option>{% endfor %}
+          </select></label>
+        {% if info.available_facts %}
+        <fieldset><legend class="font-medium">Fakten</legend>
+          <div class="mt-1 flex flex-wrap gap-x-3">{% for key, label in info.available_facts %}
+            <label class="flex items-center gap-1.5"><input type="checkbox" class="checkbox" name="info_facts" value="{{ key }}" {% if key in info.fact_keys %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+        </fieldset>
+        {% endif %}
+        <button type="submit" class="btn btn-secondary btn-sm">Vorschau aktualisieren</button>
+      </form>
+      {% if info.errors or info.problems %}
+      <div class="mt-3" data-info-problems>{% call ui.alert("", "error", "alert") %}<p class="font-semibold">Keine Grafik:</p>
+        <ul class="ml-4 list-disc">{% for p in info.errors + info.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endcall %}</div>
+      {% else %}
+      <img src="{{ info.src }}" alt="Vorschau der Info-Grafik: {{ info.texts.headline }}" class="mt-3 w-full rounded-lg ring-1 ring-line" loading="lazy" data-info-preview>
+      {% if info.downloadable and not info.blockers %}
+      <a href="{{ info.src }}&amp;download=1" class="btn btn-primary btn-sm mt-3 w-full" data-info-download>{{ ui.icon("download") }}Info-Grafik als JPEG</a>
+      {% elif not info.downloadable %}
+      <p class="mt-3 text-xs text-ink-subtle">Download nach der Freigabe eines Beitrags dieses Briefings.</p>
+      {% else %}
+      <ul class="mt-3 list-disc pl-4 text-xs text-ink-muted" data-info-blockers>{% for b in info.blockers %}<li>{{ b }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if info.ai_background %}<p class="mt-2 text-xs font-medium text-violet-800">Hintergrund mit KI erstellt: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
+      {% endif %}
+      {% else %}
+      {{ ui.empty_state("Noch kein Grafiktext.", "Text selbst schreiben oder von der KI vorschlagen lassen.", "image") }}
+      {% endif %}
+    </div>
+  </div>
+</section>

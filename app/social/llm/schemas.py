@@ -44,3 +44,18 @@ class ImagePromptOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     prompt: str = Field(min_length=10, max_length=800)
+
+
+ShortLine = Annotated[str, StringConstraints(min_length=1, max_length=120)]
+
+
+class GraphicTextOutput(BaseModel):
+    """Texts for an info graphic (checked by code; facts are added by code, not by the AI)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    headline: str = Field(min_length=1, max_length=80)
+    subline: str = Field(default="", max_length=120)
+    intro: str = Field(default="", max_length=300)
+    points: list[ShortLine] = Field(min_length=3, max_length=6)
+    closing: str = Field(default="", max_length=160)

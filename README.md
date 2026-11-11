@@ -107,6 +107,19 @@ Markenprofil und die Fakten aus dem Briefing. Vor dem Rendern prüft der Code: j
 einmal in Anzeige-Schreibweise, kein anderes Datum, keine andere Uhrzeit, kein anderer Preis,
 keine andere Telefonnummer, keine verbotenen Begriffe. Formate 1:1, 4:5, 9:16; Export als JPEG.
 
+### Info-Grafik (Social Media)
+
+Je Briefing eine **Info-Grafik**: Überschrift, Unterzeile, Einleitung, ✓-Liste (3–6 Punkte) und
+Schlusssatz über einem Foto, KI-Bild oder einer Farbfläche; darunter setzt der Code die
+ausgewählten Fakten des Briefings. Die Texte schreibt ein Mensch oder die KI schlägt sie vor
+(„Text für Grafik vorschlagen“, `prompts/social/graphic_text_v1.md`; Fakten werden vor dem Senden
+maskiert); sie laufen durch dieselben Prüfungen wie Beiträge. Fremde Daten, Uhrzeiten, Preise oder
+Telefonnummern im Text sind Fehler, Warnungen müssen vor dem Download bestätigt werden.
+Gestaltung „Text zentriert“, „Text in Farbfeld unten“ oder „Foto oben, Text unten“; Formate 1:1,
+4:5, 9:16 (optional mit kürzerem Story-Text). Die Schrift wird bei viel Text kleiner; was
+trotzdem nicht passt, wird mit Meldung abgelehnt, nie abgeschnitten. Beispielgrafiken:
+`uv run python scripts/example_graphics.py`.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:

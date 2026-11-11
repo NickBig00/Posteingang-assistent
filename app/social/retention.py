@@ -22,6 +22,7 @@ from app.core.models import AuditOutput, utcnow
 from app.core.retention import retention_days
 from app.social.audit import briefing_audit_trail
 from app.social.images import delete_image_data
+from app.social.infographic import delete_info_graphic
 from app.social.models import (
     Asset,
     Briefing,
@@ -71,6 +72,7 @@ def delete_briefing(session: Session, briefing_id: int, user: str, reason: str =
     }
     files |= delete_image_data(session, [d for d in draft_ids if d is not None])
     delete_revisions(session, briefing_id=briefing_id)
+    delete_info_graphic(session, briefing_id)
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id).in_(draft_ids)),

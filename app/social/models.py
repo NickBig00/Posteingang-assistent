@@ -246,6 +246,45 @@ class ImageCandidate(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
 
 
+class InfoGraphic(SQLModel, table=True):
+    """Texts of the info graphic of a briefing (SPEC_social 14.1), one per briefing.
+
+    Written by a person or suggested by the AI (then labelled until a person edits them). The
+    facts are not stored here: they always come from the briefing. `story` optionally holds a
+    shorter set of the same fields for the 9:16 story format.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True, unique=True)
+    headline: str = ""
+    subline: str = ""
+    intro: str = ""
+    points: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    closing: str = ""
+    story: dict[str, JsonValue] | None = Field(default=None, sa_column=Column(JSON))
+    variant: str = "zentriert"
+    is_ai_suggestion: bool = False
+    edited_by_human: bool = False
+    updated_by: str = ""
+    updated_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+
+class InfoGraphicCheck(SQLModel, table=True):
+    """Check result on the texts of an info graphic (like `CheckResult` for posts)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    graphic_id: int = Field(foreign_key="infographic.id", index=True)
+    check_key: str
+    outcome: Outcome
+    reason: str
+    excerpt: str | None = None
+    is_ai_assessment: bool = False
+    requires_confirmation: bool = False
+    consent_required: bool = False
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+
+
 class RevisionTarget(StrEnum):
     POST_TEXT = "post_text"
     GRAPHIC_TEXT = "graphic_text"
