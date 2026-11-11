@@ -22,11 +22,16 @@ from app.social.images import (
     CHOOSE_STEP,
     DISCARD_STEP,
     GENERATE_STEP,
+    HINT_CONTACT,
+    HINT_PERSONS,
+    HINT_REAL,
+    HINT_TEXT,
     PROMPT_STEP,
     SAFETY_SUFFIX,
     ImagePromptRejectedError,
     ImageSuggestionError,
     candidates,
+    check_prompt,
     choose_candidate,
     chosen_image,
     discard_candidates,
@@ -82,7 +87,11 @@ def _steps(session: Session) -> list[str]:
     return [e.step for e in session.exec(select(AuditEntry).order_by(AuditEntry.id)).all()]  # type: ignore[arg-type]
 
 
-# --- protection rules (code check of the prompt) ---
+# --- protection rules (code check of the prompt): hints instead of rejection (B5) ---
+
+
+def _hint_keys(prompt: str) -> list[str]:
+    return [h.key for h in check_prompt(prompt, [], BRAND).hints]
 
 
 @pytest.mark.parametrize(
@@ -96,18 +105,18 @@ def _steps(session: Session) -> list[str]:
         "Smiling woman on a yoga mat",
     ],
 )
-def test_people_in_the_prompt_are_rejected(prompt: str) -> None:
-    violations = prompt_violations(prompt, [], BRAND)
+def test_people_in_the_prompt_are_a_hint_not_a_rejection(prompt: str) -> None:
+    assert prompt_violations(prompt, [], BRAND) == []
+    assert HINT_PERSONS in _hint_keys(prompt)
 
-    assert any(v.startswith("Personenbezug") for v in violations), violations
 
-
-def test_member_names_in_the_prompt_are_rejected() -> None:
-    violations = prompt_violations(
+def test_member_names_in_the_prompt_need_the_consent_of_the_person() -> None:
+    check = check_prompt(
         "Hantelbank, darauf ein Zettel für Erika Beispiel", ["Erika Beispiel"], BRAND
     )
 
-    assert any("Erika Beispiel" in v for v in violations)
+    (member,) = [h for h in check.hints if h.consent_required]
+    assert "Erika Beispiel" in member.reason and "Einwilligung" in member.reason
 
 
 @pytest.mark.parametrize(
@@ -118,8 +127,9 @@ def test_member_names_in_the_prompt_are_rejected() -> None:
         "Logo des Studios auf der Wand",
     ],
 )
-def test_text_in_the_image_is_rejected(prompt: str) -> None:
-    assert any(v.startswith("Kein Text") for v in prompt_violations(prompt, [], BRAND))
+def test_text_in_the_image_is_a_hint(prompt: str) -> None:
+    assert prompt_violations(prompt, [], BRAND) == []
+    assert HINT_TEXT in _hint_keys(prompt)
 
 
 @pytest.mark.parametrize(
@@ -131,14 +141,13 @@ def test_text_in_the_image_is_rejected(prompt: str) -> None:
         f"Eingangsbereich vom {BRAND}",
     ],
 )
-def test_real_places_results_and_medical_motifs_are_rejected(prompt: str) -> None:
-    assert any(v.startswith("Keine Darstellung") for v in prompt_violations(prompt, [], BRAND))
+def test_real_places_results_and_medical_motifs_are_a_hint(prompt: str) -> None:
+    assert prompt_violations(prompt, [], BRAND) == []
+    assert HINT_REAL in _hint_keys(prompt)
 
 
-def test_contact_data_is_rejected() -> None:
-    violations = prompt_violations("Matten, Kontakt info@beispiel.example, 01234 567890", [], BRAND)
-
-    assert any("personenbezogenen Daten" in v for v in violations)
+def test_contact_data_is_a_hint() -> None:
+    assert HINT_CONTACT in _hint_keys("Matten, Kontakt info@beispiel.example, 01234 567890")
 
 
 @pytest.mark.parametrize(
@@ -151,6 +160,7 @@ def test_contact_data_is_rejected() -> None:
 )
 def test_clean_and_negated_prompts_pass(prompt: str) -> None:
     assert prompt_violations(prompt, [], BRAND) == []
+    assert _hint_keys(prompt) == []
 
 
 @pytest.mark.parametrize("brand", ["demo.yaml", "handwerk_demo.yaml"])
@@ -221,8 +231,8 @@ def test_rejected_prompt_generates_nothing(session: Session, raw_dir: Path) -> N
     draft = _draft(session)
     provider = FakeImageProvider()
 
-    with pytest.raises(ImagePromptRejectedError, match="Personenbezug"):
-        _generate(session, draft, raw_dir, "Trainer mit Kundin an der Beinpresse", provider)
+    with pytest.raises(ImagePromptRejectedError, match="zu lang"):
+        _generate(session, draft, raw_dir, "Matten " * 200, provider)
 
     assert provider.calls == []
     assert GENERATE_STEP not in _steps(session)
@@ -362,10 +372,10 @@ def test_full_flow_in_the_ui(image_client: TestClient, session: Session) -> None
 
     rejected = image_client.post(
         f"/social/drafts/{draft.id}/images/generate",
-        data={"prompt": "Lächelnde Frau mit Hantel", "image_format": "4:5"},
+        data={"prompt": "", "image_format": "4:5"},
     )
     assert rejected.status_code == 422
-    assert "Personenbezug" in rejected.text
+    assert "Bild-Prompt eingeben" in rejected.text
 
     page = image_client.post(
         f"/social/drafts/{draft.id}/images/generate",
@@ -437,5 +447,7 @@ def test_member_from_the_member_table_blocks_generation(session: Session, raw_di
     )
     session.commit()
 
-    with pytest.raises(ImagePromptRejectedError, match="Erika Beispiel"):
+    from app.social.images import ImageHintsPendingError
+
+    with pytest.raises(ImageHintsPendingError, match="Mitglied genannt"):
         _generate(session, _draft(session), raw_dir, "Hantelbank, Widmung für Erika Beispiel")

@@ -143,9 +143,55 @@ Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 
 ## Nächste Ausbaustufe: Bilder bearbeiten, Texte auf Bildern, Überarbeiten per Anweisung
 
-Entwurf und Meilensteine B4–B9 stehen in `docs/SPEC_bilder_text.md` (Entscheidungen nach dem
-ersten Praxistest). Die nächste Session übernimmt sie wie beschrieben in `docs/SPEC_social.md`
-und in diese Roadmap und löscht danach die Entwurfsdatei.
+Spezifikation: `docs/SPEC_social.md` Abschnitte 13.5–13.9 und 14.1–14.2 (Entscheidungen nach dem
+ersten Praxistest). Reihenfolge: erst die Grundlagen (Fehler, Prüflogik), dann die neuen
+Funktionen.
+
+## [x] B4 – Feinschliff Bildanbieter und Vorlagen
+
+Echte Fehlermeldungen des Anbieters, Abfangen ungültiger API-Schlüssel, Modell-Hinweise in
+`.env.example`/README, Vorlagen-Verbesserungen und Bedien-Links (SPEC_social 13.9 und 14).
+
+**Akzeptanz:** Tests für Fehlerabbildung (Fake/Stub, keine echte API) und Vorlagen; Screenshots.
+
+## [x] B5 – Prüfungen als Hinweise
+
+Bild-Prompt-Prüfungen gemäß Tabelle in SPEC_social 13.5 von Ablehnung auf bestätigungspflichtige
+Hinweise umstellen; Fehler nur für Fakten und Mitgliedernamen (bzw. sensible Bereiche laut SPEC).
+
+**Akzeptanz:** Tests, dass Hinweise die Freigabe bis zur Bestätigung blockieren und die
+Bestätigung im Audit steht; Fehler weiterhin blockieren.
+
+## [x] B6 – Überarbeiten per Anweisung
+
+Feld „Was soll anders werden?“ für Beitragstexte, Bild-Prompts und Bilder (SPEC_social 13.8);
+versionierter Prompt, ein Retry, Audit je Überarbeitung.
+
+**Akzeptanz:** Tests nur mit Fake-Anbieter; neue Version läuft durch alle Prüfungen.
+
+## [ ] B7 – Info-Grafik mit Texten
+
+Vorlage „Info-Grafik“ (SPEC_social 14.1) mit eigenen oder KI-vorgeschlagenen Texten, Prüfungen,
+Gestaltungsvarianten, Formaten und JPEG-Export.
+
+**Akzeptanz:** Tests für Faktentreue, Prüfungen, Layout (nichts abgeschnitten); Beispielgrafiken
+im PR (u. a. eine Vortragsankündigung mit ✓-Liste).
+
+## [ ] B8 – Eigene Fotos mit KI bearbeiten
+
+`edit` im Bild-Interface, Bearbeitung per Anweisung und Schnellauswahl, Kennzeichnung
+„KI-bearbeitet“, Original bleibt, Einwilligung bei Personen, Kostenbremse, Audit, Löschkonzept
+(SPEC_social 13.6).
+
+**Akzeptanz:** Tests nur mit Fake; Kennzeichnung und Löschen getestet; Screenshots.
+
+## [ ] B9 – Karussell-Beiträge für Instagram
+
+Mehrseitige Beiträge gemäß SPEC_social 14.2: Seiten aus Info-Grafiken und Bildern, Reihenfolge,
+Vorschau, KI-Vorschlag für die Seitenaufteilung, Prüfungen je Seite, Download als ZIP.
+
+**Akzeptanz:** Tests für Faktentreue über alle Seiten, Reihenfolge und Export; Beispiel-Karussell
+im PR.
 
 ---
 

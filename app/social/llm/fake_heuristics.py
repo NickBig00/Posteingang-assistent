@@ -6,6 +6,7 @@ The assessment reports no findings (no hidden detection logic in the fake).
 """
 
 import json
+import re
 
 from app.core.llm.fake import prompt_section, register_heuristic
 
@@ -52,6 +53,35 @@ def _image_prompt(user: str) -> str:
     return json.dumps({"prompt": prompt}, ensure_ascii=False)
 
 
+_WITHOUT = re.compile(r"\bohne\s+(?:den |die |das |dem |der )?([\wäöüÄÖÜß-]{3,})", re.IGNORECASE)
+
+
+def _removed_words(instruction: str) -> list[str]:
+    """Words the instruction asks to leave out ("ohne Gemüse" → "Gemüse")."""
+    return [m.group(1).lower() for m in _WITHOUT.finditer(instruction)]
+
+
+def _post_revise(user: str) -> str:
+    # Deterministic stand-in for a revision: drop the lines that contain a word the
+    # instruction asks to leave out ("ohne …"); everything else stays as it is.
+    text = prompt_section(user, "beitrag").strip()
+    hashtags = prompt_section(user, "hashtags").split()
+    words = _removed_words(prompt_section(user, "anweisung"))
+    lines = [line for line in text.splitlines() if not any(w in line.lower() for w in words)]
+    return json.dumps({"text": "\n".join(lines).strip() or text, "hashtags": hashtags})
+
+
+def _image_prompt_revise(user: str) -> str:
+    prompt = " ".join(prompt_section(user, "prompt").split())
+    instruction = " ".join(prompt_section(user, "anweisung").split())
+    words = _removed_words(instruction)
+    parts = [p for p in re.split(r"(?<=[,.])\s+", prompt) if not any(w in p.lower() for w in words)]
+    revised = f"{' '.join(parts).rstrip(',')} Änderung: {instruction}".strip()
+    return json.dumps({"prompt": revised[:800]}, ensure_ascii=False)
+
+
 register_heuristic("post_draft", _post_draft)
+register_heuristic("post_revise", _post_revise)
+register_heuristic("image_prompt_revise", _image_prompt_revise)
 register_heuristic("image_prompt", _image_prompt)
 register_heuristic("post_assess", _post_assess)

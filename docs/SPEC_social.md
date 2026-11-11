@@ -114,7 +114,10 @@ Regeln:
 - `Campaign` (optional): Name, Zeitraum, zugehörige Briefings
 - `PostDraft`: Briefing-Bezug, Kanal, Text, Hashtags, Status, geplanter Termin, als KI-Vorschlag gekennzeichnet
 - `CheckResult`: Entwurf-Bezug, Prüfung, Ergebnis (`ok`/`warning`/`error`), Begründung, Textstelle
-- `Asset`: hochgeladenes Bild, Einwilligung bestätigt ja/nein, durch wen, wann
+- `Asset`: hochgeladenes Bild, Einwilligung bestätigt ja/nein, durch wen, wann; Kennzeichen `ai_generated` bzw. `ai_edited` und bei KI-Bearbeitung `source_asset_id` (Original, Abschnitt 13.6)
+- `GraphicText` (Abschnitt 14.1): Texte der Info-Grafik je Briefing, optional kürzerer Story-Text; KI-Vorschlag ja/nein, von Mensch bearbeitet; Prüfergebnisse wie `CheckResult`
+- `RevisionRequest` (Abschnitt 13.8): Ziel (Entwurf, Grafiktext, Bild-Prompt, Bild), Anweisung, Ersteller, Zeitpunkt
+- `CarouselPage` (Abschnitt 14.2): Entwurf, Position, Art (Info-Grafik oder Bild), Verweis auf `GraphicText` bzw. `Asset`
 - Freigaben und Audit-Einträge über die bestehenden Strukturen in `core`
 
 ## 8. Oberfläche
@@ -135,7 +138,7 @@ Regeln:
 ## 10. Später (nicht V1)
 
 - Auswertung von Reichweite und Interaktionen
-- Bearbeitung eigener Fotos (Zuschneiden, Filter)
+- Klassische Bildbearbeitung eigener Fotos ohne KI (Zuschneiden, Filter); die KI-Bearbeitung per Anweisung steht in Abschnitt 13.6
 - Weitere Bildanbieter neben dem ersten (Abschnitt 13.2)
 - Vorschläge für Bildbeschreibungen (Alt-Text)
 
@@ -168,6 +171,7 @@ Zu einem Beitrag optional passende Bilder erzeugen: Stimmungs- und Hintergrundbi
 
 - Anbieterunabhängiges Bild-Interface in `app/core/images/`, analog zum LLM-Interface
 - Implementierungen: `FakeImageProvider` (Tests, liefert Platzhalterbild), ein echter Anbieter (zuerst OpenAI, Modell per `IMAGE_MODEL`), weitere später
+- Methoden `generate` (neues Bild aus Prompt) und `edit` (eigenes Foto per Anweisung bearbeiten, Abschnitt 13.6)
 - Per `IMAGE_GENERATION_ENABLED` schaltbar, Standard: aus
 - Tests rufen nie echte Bild-APIs auf
 
@@ -204,7 +208,51 @@ Prüfungen helfen dabei; sie blockieren nur, wo es unten ausdrücklich steht.
 - **Darstellungen, die echte Räume, das echte Studio oder echte Ergebnisse vorgeben könnten**, Vorher-nachher- und medizinische Motive: Hinweis mit Begründung.
 - **Andere Namen und Kontaktdaten** im Bild-Prompt: Hinweis.
 
-Umsetzung der Hinweise im Code: Meilenstein B5 (`docs/SPEC_bilder_text.md`). Bis dahin lehnt die App solche Prompts noch ab.
+Umsetzung der Hinweise im Code: Meilenstein B5 (`docs/ROADMAP_social.md`).
+
+**Übersicht: Hinweis statt Blockade, der Mensch entscheidet.** Fehler bleiben nur dort, wo `CLAUDE.md` sie verlangt (Fakten, Mitgliedernamen) oder wo diese SPEC sie für sensible Bereiche vorsieht. Alles andere ist ein Hinweis, der vor der Freigabe bestätigt werden muss; die Bestätigung steht im Audit-Log.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Bild-Prompt: Personen, Körperteile, Team | Hinweis; Mensch bestätigt oder ändert per Anweisung (13.8) |
+| Bild-Prompt: Text im Bild | Hinweis in der Oberfläche (nicht im Bild), bestätigungspflichtig; Fakten bevorzugt über die Info-Grafik (14.1) |
+| Bild-Prompt: echte Räume, Vorher-nachher, medizinische Motive | Hinweis mit Begründung |
+| Bild-Prompt: Kontaktdaten, andere Namen | Hinweis |
+| Bild-Prompt und Texte: Namen aus der Mitgliederliste | Fehler, aufhebbar nur durch bestätigte Einwilligung der Person |
+| Fakten im Grafiktext verändert oder fremd | Fehler (deterministisch) |
+| Gesundheitsversprechen in Texten | wie Abschnitt 6 (Hinweis, in Physio/Reha Fehler bei eindeutigen Heilversprechen); Fehler lassen sich per Anweisung („neutraler formulieren“) beheben |
+
+Reihenfolge bei Bild-Prompts: **erst bestätigen, dann erzeugen, dann freigeben.** Bevor ein Prompt an den Bildanbieter geht, muss ein Mensch alle Hinweise dazu bestätigt haben; ein Mitgliedername braucht die bestätigte Einwilligung der Person (danach ist die Erzeugung möglich). Ein geänderter Prompt setzt die Bestätigungen zurück.
+
+### 13.6 Eigene Fotos mit KI bearbeiten
+
+- Hochgeladene Fotos können mit KI bearbeitet werden: Anweisung in eigenen Worten (z. B. „Hintergrund heller“, „auf 9:16 erweitern“, „Kabel am Boden entfernen“, „wärmeres Licht“) plus Vorschläge als Schnellauswahl.
+- Ergebnis ist ein **neues Bild**; das Original bleibt erhalten. Kennzeichen **„KI-bearbeitet“** (analog zu „KI-generiert“) in Oberfläche und Speicherung, Hinweis beim Download, Audit wie bei KI-Bildern (Anweisung als Hash, Modell, Parameter, Kosten).
+- Technisch über das Bild-Interface in `app/core/images/` (Methode `edit`); beim OpenAI-Anbieter `images.edit` mit dem konfigurierten Bildmodell; Fake-Anbieter für Tests.
+- Kostenbremse und Schalter wie bei der Bilderzeugung (`IMAGE_GENERATION_ENABLED`).
+- **Personen:** Fotos mit Personen nur mit bestätigter Einwilligung der abgebildeten Personen, auch für die Bearbeitung (das Foto geht dann an den Anbieter). Die Bearbeitung darf Personen nicht verfälschend verändern (z. B. Körperform, Vorher-nachher); Anweisungen in diese Richtung sind ein Hinweis, den der Mensch bestätigt.
+- Löschkonzept wie bei hochgeladenen Bildern; wird das Original gelöscht, bleiben bearbeitete Versionen als eigene Bilder bestehen, bis sie selbst gelöscht werden. Widerruft eine abgebildete Person ihre Einwilligung, werden Original und alle daraus bearbeiteten Bilder unbrauchbar.
+
+### 13.7 Personen und Text in KI-Bildern
+
+- **Personen:** KI-Bilder dürfen realistische Menschen zeigen (z. B. „Frau beim Rückentraining“). Der Prompt-Check gibt dazu einen Hinweis, den der Mensch vor der Freigabe bestätigt. Nicht erlaubt bleibt, echte, erkennbare Personen nachzubilden (Mitarbeitende, Mitglieder, Prominente); Namen im Prompt sind ein Hinweis, Mitgliedernamen ein Fehler. Die Oberfläche weist darauf hin, dass gezeigte Personen keine echten Mitglieder sind; das Bild ist immer als „KI-generiert“ gekennzeichnet (EU AI Act, synthetische Inhalte).
+- **Text im Bild:** Der Bild-Prompt darf Text im Bild verlangen (z. B. Schriftzug „Rückenfit“); das Bildmodell zeichnet ihn selbst. Die App zeigt dazu einen Hinweis **in der Oberfläche, nicht im Bild**: Bildmodelle verändern oft Buchstaben und Zahlen; Daten, Uhrzeiten, Preise und Orte im Bild bitte genau prüfen oder über die Info-Grafik einfügen. Der Hinweis muss vor der Freigabe bestätigt werden; die Bestätigung steht im Audit.
+- In das Bild selbst kommt kein Hinweis und kein zusätzlicher Vermerk außer dem, was der Prompt verlangt.
+- Empfehlung in der Oberfläche: Fakten lieber über die Info-Grafik (geprüft), Schmuckschrift und Überschriften dürfen vom Bildmodell kommen.
+
+### 13.8 Überarbeiten per Anweisung („Was soll anders werden?“)
+
+- Für Beitragstexte, Grafiktexte, Bild-Prompts und Bilder (erzeugt oder bearbeitet) gibt es ein Feld **„Was soll anders werden?“** (z. B. „Bitte ohne Gemüse, mehr Bewegung zeigen“, „Satz 2 klingt wie ein Heilversprechen, neutraler formulieren“). Die KI überarbeitet auf Basis der Anweisung; das Ergebnis ist wieder ein KI-Vorschlag und läuft durch alle Prüfungen.
+- Versionierter Prompt, ein Retry wie bei allen LLM-Aufrufen; ungültige Ausgabe zweimal → der bisherige Stand bleibt, Meldung an den Menschen.
+- Die Anweisung wird im Audit protokolliert (wer, wann, Hash der Anweisung; Klartext in der löschbaren Audit-Ausgabe), ebenso jede neue Version.
+- Die Kostenbremse gilt auch für Überarbeitungen von Bildern.
+
+### 13.9 Bildanbieter im Betrieb
+
+- **Fehlermeldungen:** Die Oberfläche und das Audit zeigen den echten Grund einer Ablehnung durch den Anbieter (z. B. unbekanntes Modell, Abrechnungslimit, Inhaltsfilter); „nicht erreichbar“ nur bei Verbindungsfehlern. API-Schlüssel erscheinen nie in Meldungen.
+- **Ungültiger API-Schlüssel** (z. B. Nicht-ASCII-Zeichen aus einem Platzhalter) führt nicht zu einem Serverfehler, sondern zu einer klaren Meldung.
+- **Modellname:** `.env.example` und README nennen kein festes Modell, sondern beschreiben, wie man die verfügbaren Modelle abfragt. Die Parameter der Anfrage (Qualität, Größe, Anzahl) werden gegen das aktuelle Modell geprüft.
+- **Bedienung:** Unter „Hintergrund“ der Grafik führt ein Link „KI-Bild erzeugen“ bzw. „Foto mit KI bearbeiten“ zur passenden Stelle. Der Wunschtermin im Briefing-Formular ist kurz erklärt (nur Orientierung, kein Kalendertermin).
 
 ## 14. Grafiken aus Vorlagen
 
@@ -215,3 +263,21 @@ Umsetzung der Hinweise im Code: Meilenstein B5 (`docs/SPEC_bilder_text.md`). Bis
 - Formate 1:1, 4:5, 9:16; Export als JPEG
 - Markenprofil, Abschnitt `design:`: `primary_color`, `accent_color` (Hex), `font` (mitgelieferte Schrift Inter) und optional `logo` (Dateiname einer PNG- oder JPG-Datei neben dem Markenprofil; ohne Logo erscheint der Markenname als Schriftzug)
 - Die Vorschau ist jederzeit sichtbar; der Download ist erst möglich, wenn mindestens ein Beitrag des Briefings freigegeben ist
+- Vorlagen ohne Überschrift zeigen den Anlass nur einmal; welche Fakten in die Grafik kommen, ist auswählbar (mindestens einer, sofern das Briefing Fakten hat); im Hochformat mit Farbfläche nutzt der Textblock den Raum besser
+
+### 14.1 Info-Grafik
+
+- Vorlage **„Info-Grafik“** neben den bestehenden Vorlagen: Überschrift, Unterzeile, Einleitung (1–2 Sätze), Aufzählung (3–6 Punkte, als ✓-Liste), Schlusssatz, darunter automatisch die Fakten aus dem Briefing (Datum, Uhrzeit, Ort, Preis …).
+- Die Texte können **vom Menschen geschrieben** oder **von der KI vorgeschlagen** werden (Knopf „Text für Grafik vorschlagen“, Grundlage: Briefing und Beitragsentwurf). KI-Vorschläge sind als KI-Vorschlag gekennzeichnet und frei bearbeitbar; per Anweisung überarbeitbar (13.8).
+- Gezeichnet wird **per Code** über dem Hintergrund (eigenes Foto, KI-bearbeitetes Foto, KI-Bild oder Farbfläche), mit halbtransparenter Fläche für Lesbarkeit. Bei viel Text wird die Schrift kleiner; zu viel Text wird mit Meldung abgelehnt statt abgeschnitten.
+- Formate 1:1, 4:5, 9:16. Gestaltungsvarianten als Auswahl: Text zentriert, Text in Farbfeld unten, Foto oben/Text unten.
+- Die **Fakten** bleiben deterministisch und werden exakt geprüft (keine anderen Daten, Uhrzeiten, Preise, Telefonnummern im Grafiktext).
+- Die übrigen Texte laufen durch dieselben Prüfungen wie Beiträge (Gesundheitsversprechen, verbotene Begriffe, Personen, Anrede); Ergebnis als Hinweise, die der Mensch vor dem Download bestätigt; Fehler (Fakten, Mitgliedernamen ohne Einwilligung, Heilversprechen in sensiblen Bereichen) verhindern die Grafik.
+- **Pflege der Texte:** ein Grafiktext **je Briefing** für alle Kanäle; für die **Story** kann optional ein kürzerer eigener Text hinterlegt werden (sonst gilt der Briefing-Text; passt er nicht ins 9:16-Format, kommt eine Meldung – nie abschneiden).
+
+### 14.2 Karussell-Beiträge für Instagram
+
+- Ein Instagram-Beitrag kann aus **mehreren Seiten** bestehen (2–10), z. B. Seite 1 Titel mit Bild, Seite 2 Themen als ✓-Liste, Seite 3 Termin und Anmeldung.
+- Jede Seite ist eine Info-Grafik oder ein Bild (eigenes Foto, KI-Bild, KI-bearbeitetes Foto); gleiche Prüfungen und Kennzeichnung je Seite; Fakten werden auf allen Seiten exakt geprüft.
+- Reihenfolge per Oberfläche änderbar; Vorschau als Karussell; Download als ZIP mit nummerierten JPEGs (`01.jpg`, `02.jpg`, …) im Format 4:5 oder 1:1, wie alle Downloads erst nach der Freigabe des Beitrags.
+- Die KI kann eine Seitenaufteilung aus Briefing und Beitragstext vorschlagen (KI-Vorschlag, bearbeitbar).

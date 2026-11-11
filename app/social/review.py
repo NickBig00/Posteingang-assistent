@@ -15,6 +15,7 @@ from app.core.models import utcnow
 from app.core.outcomes import Outcome
 from app.social.assets import consent_blockers
 from app.social.checking import run_checks
+from app.social.images import image_hint_blockers
 from app.social.llm.client import SocialLLMClient
 from app.social.models import POST_STATUS_LABELS, CheckResult, PostDraft, PostReview, PostStatus
 from app.social.profiles import HASHTAG_PATTERN, SocialConfig
@@ -58,6 +59,7 @@ def approval_blockers(session: Session, draft: PostDraft) -> list[str]:
         elif result.requires_confirmation and result.confirmed_at is None:
             blockers.append(f"Warnung noch nicht bestätigt: {result.reason}")
     blockers += consent_blockers(session, draft.briefing_id)
+    blockers += image_hint_blockers(session, draft)
     return blockers
 
 

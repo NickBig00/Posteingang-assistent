@@ -19,6 +19,9 @@ from app.core.llm.base import (
     LLMTask,
     VisualInput,
 )
+from app.core.provider_errors import describe_provider_error, require_valid_api_key
+
+KEY_VARIABLE = "ANTHROPIC_API_KEY"
 
 DEFAULT_MODEL = "claude-opus-5-5"
 DEFAULT_EFFORT = "medium"
@@ -32,6 +35,11 @@ MAX_TOKENS: dict[LLMTask, int] = {
     "post_draft": 4000,
     "post_assess": 4000,
     "image_prompt": 2000,
+    "post_revise": 4000,
+    "image_prompt_revise": 2000,
+    "graphic_text": 3000,
+    "graphic_text_revise": 3000,
+    "carousel_plan": 3000,
 }
 
 
@@ -67,7 +75,10 @@ class AnthropicProvider(LLMProvider):
         self.model = model or os.environ.get("LLM_MODEL", DEFAULT_MODEL)
         self.effort = effort or os.environ.get("LLM_EFFORT", DEFAULT_EFFORT)
         self.fallback = fallback_enabled_from_env() if fallback is None else fallback
-        self._messages = messages_api or anthropic.Anthropic().beta.messages
+        if messages_api is None:
+            require_valid_api_key(KEY_VARIABLE)
+            messages_api = anthropic.Anthropic().beta.messages
+        self._messages = messages_api
 
     def complete(
         self,
@@ -97,7 +108,14 @@ class AnthropicProvider(LLMProvider):
         except anthropic.APIConnectionError as error:
             raise LLMProviderError("Anthropic API not reachable") from error
         except anthropic.APIStatusError as error:
-            raise LLMProviderError(f"Anthropic API error (HTTP {error.status_code})") from error
+            detail = describe_provider_error(error, "Anthropic", KEY_VARIABLE)
+            raise LLMProviderError(
+                f"Anthropic API error (HTTP {error.status_code}): {detail}"
+            ) from error
+        except UnicodeEncodeError as error:
+            raise LLMProviderError(
+                describe_provider_error(error, "Anthropic", KEY_VARIABLE)
+            ) from error
 
         if response.stop_reason == "refusal":
             raise LLMRefusalError("model declined the request")

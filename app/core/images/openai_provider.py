@@ -6,12 +6,21 @@ environment (`OPENAI_API_KEY`). The model is a deliberate choice: `IMAGE_MODEL` 
 
 import base64
 import os
+from collections.abc import Iterable
 from typing import Protocol
 
 import openai
 
 from app.core.image_formats import ImageFormat
 from app.core.images.base import GeneratedImage, ImageBatch, ImageProvider, ImageProviderError
+from app.core.provider_errors import (
+    ProviderConfigError,
+    describe_provider_error,
+    require_valid_api_key,
+)
+
+SERVICE = "Bildanbieter (OpenAI)"
+KEY_VARIABLE = "OPENAI_API_KEY"
 
 # Closest supported sizes; the JPEG export crops to the exact format afterwards.
 SIZES: dict[ImageFormat, str] = {
@@ -22,7 +31,7 @@ SIZES: dict[ImageFormat, str] = {
 QUALITY = "medium"
 
 
-class OpenAIImageConfigError(ValueError):
+class OpenAIImageConfigError(ProviderConfigError):
     """The OpenAI image provider is not configured completely."""
 
 
@@ -47,7 +56,15 @@ class OpenAIImageProvider(ImageProvider):
         if not model:
             raise OpenAIImageConfigError("IMAGE_MODEL muss für IMAGE_PROVIDER=openai gesetzt sein")
         self.model = model
-        self._images = images_api or openai.OpenAI().images
+        if images_api is None:
+            require_valid_api_key(KEY_VARIABLE)
+            try:
+                images_api = openai.OpenAI().images
+            except openai.OpenAIError as error:
+                raise OpenAIImageConfigError(
+                    f"{KEY_VARIABLE} fehlt: für IMAGE_PROVIDER=openai einen API-Schlüssel setzen"
+                ) from error
+        self._images = images_api
 
     def generate(self, *, prompt: str, fmt: ImageFormat, count: int) -> ImageBatch:
         size = SIZES[fmt]
@@ -55,9 +72,11 @@ class OpenAIImageProvider(ImageProvider):
             response = self._images.generate(
                 model=self.model, prompt=prompt, n=count, size=size, quality=QUALITY
             )
-        except openai.OpenAIError as error:
+        except (openai.OpenAIError, UnicodeEncodeError) as error:
+            # The real reason (unknown model, billing limit, content filter …), not just
+            # "not reachable" – shown in the UI and stored in the audit trail.
             raise ImageProviderError(
-                f"Bildanbieter nicht erreichbar: {type(error).__name__}"
+                describe_provider_error(error, SERVICE, KEY_VARIABLE)
             ) from error
         images = []
         for item in getattr(response, "data", None) or []:
@@ -72,3 +91,22 @@ class OpenAIImageProvider(ImageProvider):
             params={"provider": "openai", "size": size, "quality": QUALITY, "count": count},
             cost_estimate_eur=round(cost_per_image_eur() * len(images), 4),
         )
+
+
+class _ModelsAPI(Protocol):
+    def list(self) -> Iterable[object]: ...
+
+
+def list_image_models(models_api: _ModelsAPI | None = None) -> list[str]:
+    """Image models the configured OpenAI account can use (names change over time)."""
+    if models_api is None:
+        require_valid_api_key(KEY_VARIABLE)
+        try:
+            models_api = openai.OpenAI().models
+        except openai.OpenAIError as error:
+            raise OpenAIImageConfigError(f"{KEY_VARIABLE} fehlt") from error
+    try:
+        ids = [str(getattr(model, "id", "")) for model in models_api.list()]
+    except (openai.OpenAIError, UnicodeEncodeError) as error:
+        raise ImageProviderError(describe_provider_error(error, SERVICE, KEY_VARIABLE)) from error
+    return sorted(i for i in ids if "image" in i.lower())

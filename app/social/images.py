@@ -1,7 +1,8 @@
 """AI image suggestions for a draft (SPEC_social 13.3–13.5).
 
 Flow: the LLM suggests a prompt from briefing and image style → a person sees and edits it →
-a code check rejects people, text, real places/results and personal data → 2–3 variants are
+a code check gives hints on people, text in the image, real places/results and contact data
+(confirmed by a person before approval) and only blocks member names → 2–3 variants are
 generated through `app.core.images` (switch, cost brake, audit) → a person chooses one (it
 becomes an `Asset` labelled "KI-generiert" and is approved with the post) or discards them.
 """
@@ -19,6 +20,7 @@ from app.core.image_formats import ImageFormat
 from app.core.images.base import ImageProvider
 from app.core.images.service import generate_images, image_generation_enabled
 from app.core.llm.calls import audit_llm_call, call_with_retry
+from app.core.models import utcnow
 from app.social.checking import member_names
 from app.social.llm.client import SocialLLMClient
 from app.social.llm.schemas import ImagePromptOutput
@@ -29,6 +31,7 @@ from app.social.models import (
     ImageProposal,
     PostDraft,
     PostStatus,
+    PromptHint,
 )
 from app.social.profiles import SocialConfig
 from app.social.sensitive import check_persons
@@ -38,14 +41,17 @@ PROMPT_STEP = "social.image_prompt"
 GENERATE_STEP = "social.image_generate"
 CHOOSE_STEP = "social.image_choose"
 DISCARD_STEP = "social.image_discard"
+HINT_CONFIRM_STEP = "social.image_hint_confirm"
+MEMBER_CONSENT_STEP = "social.image_member_consent"
 MAX_PROMPT_LENGTH = 800
 AI_IMAGE_LABEL = "KI-generiert"
 
-# Appended by code to every prompt sent to the image model (not editable).
+# Appended by code to every prompt sent to the image model (not editable). People and text
+# are allowed with a confirmed hint (SPEC_social 13.7); real, recognisable persons never.
 SAFETY_SUFFIX = (
-    "Ohne Menschen, ohne Körperteile, ohne Gesichter. Ohne Text, Buchstaben, Zahlen, Schilder "
-    "oder Logos. Keine fotorealistische Darstellung echter Räume oder Ergebnisse, keine "
-    "medizinischen Darstellungen."
+    "Keine echten, erkennbaren Personen nachbilden (keine Prominenten, keine bestimmten "
+    "Personen). Keine Logos, keine Wasserzeichen und kein Text außer dem, der oben "
+    "ausdrücklich verlangt wird."
 )
 
 # Statuses in which the image can still change: it is approved together with the post.
@@ -59,11 +65,50 @@ class ImageSuggestionError(ValueError):
 
 
 class ImagePromptRejectedError(ImageSuggestionError):
-    """The code check found people, text, real places/results or personal data."""
+    """The code check found an error that blocks generation (member names, empty, too long)."""
 
     def __init__(self, violations: list[str]) -> None:
         super().__init__("Bild-Prompt abgelehnt: " + " ".join(violations))
         self.violations = violations
+
+
+class ImageHintsPendingError(ImageSuggestionError):
+    """Hints on the prompt must be confirmed before anything is generated."""
+
+
+# Keys of the hints on an image prompt (SPEC_social 13.5, table).
+HINT_MEMBER = "mitglied"
+HINT_PERSONS = "personen"
+HINT_NAMES = "namen"
+HINT_TEXT = "text"
+HINT_REAL = "echt"
+HINT_CONTACT = "kontakt"
+HINT_LABELS: dict[str, str] = {
+    HINT_MEMBER: "Mitglied genannt",
+    HINT_PERSONS: "Personen im Bild",
+    HINT_NAMES: "Name im Prompt",
+    HINT_TEXT: "Text im Bild",
+    HINT_REAL: "Echte Räume, Ergebnisse, Medizin",
+    HINT_CONTACT: "Kontaktdaten",
+}
+
+
+@dataclass(frozen=True)
+class PromptFinding:
+    """A hint on an image prompt that a person confirms before the post is approved."""
+
+    key: str
+    reason: str
+    # Member from the member list: only the confirmed consent of that person lifts it.
+    consent_required: bool = False
+
+
+@dataclass(frozen=True)
+class PromptCheck:
+    """Result of the code check: errors block generation, hints need a confirmation."""
+
+    errors: list[str]
+    hints: list[PromptFinding]
 
 
 def _terms(*words: str) -> re.Pattern[str]:
@@ -169,38 +214,87 @@ def _hits(pattern: re.Pattern[str], text: str) -> list[str]:
     return [m.group(0) for m in pattern.finditer(text) if not _negated(text, m.start())]
 
 
-def prompt_violations(prompt: str, member_list: list[str], brand_name: str) -> list[str]:
-    """Code check of an image prompt (SPEC_social 13.5); empty list = allowed."""
-    violations: list[str] = []
+def check_prompt(prompt: str, member_list: list[str], brand_name: str) -> PromptCheck:
+    """Code check of an image prompt (SPEC_social 13.5): hint instead of blockade.
+
+    Errors only for unusable input (empty, too long). A member named in the prompt needs the
+    confirmed consent of that person (`CLAUDE.md`); all other findings are hints that a
+    person confirms before generating.
+    """
+    errors: list[str] = []
+    hints: list[PromptFinding] = []
     if not prompt.strip():
-        return ["Bitte einen Bild-Prompt eingeben."]
+        return PromptCheck(["Bitte einen Bild-Prompt eingeben."], [])
     if len(prompt) > MAX_PROMPT_LENGTH:
-        violations.append(f"Der Prompt ist zu lang (höchstens {MAX_PROMPT_LENGTH} Zeichen).")
-    persons = _hits(_PERSON, prompt)
+        errors.append(f"Der Prompt ist zu lang (höchstens {MAX_PROMPT_LENGTH} Zeichen).")
     named = [f for f in check_persons(prompt, member_list) if f.span]
-    if persons or named:
-        found = persons + [prompt[f.span[0] : f.span[1]] for f in named if f.span]
-        violations.append(
-            "Personenbezug: KI-Bilder dürfen keine Menschen, Gesichter oder Namen zeigen "
-            f"(gefunden: {', '.join(dict.fromkeys(found))})."
+    members = [prompt[f.span[0] : f.span[1]] for f in named if f.consent_required and f.span]
+    others = [prompt[f.span[0] : f.span[1]] for f in named if not f.consent_required and f.span]
+    if members:
+        hints.append(
+            PromptFinding(
+                HINT_MEMBER,
+                f"„{', '.join(dict.fromkeys(members))}“ steht in der Mitgliederliste. Der Name "
+                "geht an den Bildanbieter – nur mit der dokumentierten Einwilligung der Person, "
+                "sonst den Namen entfernen.",
+                consent_required=True,
+            )
+        )
+    persons = _hits(_PERSON, prompt)
+    if persons:
+        hints.append(
+            PromptFinding(
+                HINT_PERSONS,
+                f"Das Bild soll Menschen zeigen ({', '.join(dict.fromkeys(persons))}). Erlaubt – "
+                "bitte prüfen, dass niemand Echtes nachgebildet wird. Gezeigte Personen sind "
+                "keine echten Mitglieder; das Bild bleibt als „KI-generiert“ gekennzeichnet.",
+            )
+        )
+    if others:
+        hints.append(
+            PromptFinding(
+                HINT_NAMES,
+                f"Name im Prompt ({', '.join(dict.fromkeys(others))}): keine echten, erkennbaren "
+                "Personen (Mitarbeitende, Prominente) nachbilden lassen.",
+            )
         )
     text = _hits(_TEXT, prompt) + [m.group(0) for m in _QUOTED.finditer(prompt)]
     if text:
-        violations.append(
-            "Kein Text im KI-Bild: Schrift kommt nur über Vorlagen "
-            f"(gefunden: {', '.join(dict.fromkeys(text))})."
+        hints.append(
+            PromptFinding(
+                HINT_TEXT,
+                f"Text im Bild ({', '.join(dict.fromkeys(text))}): Bildmodelle verändern oft "
+                "Buchstaben und Zahlen. Daten, Uhrzeiten, Preise und Orte im Bild genau prüfen "
+                "oder besser über die Info-Grafik einfügen (dort geprüft).",
+            )
         )
     real = _hits(_REAL, prompt)
     if brand_name and brand_name.lower() in prompt.lower():
         real.append(brand_name)
     if real:
-        violations.append(
-            "Keine Darstellung echter Räume oder Ergebnisse, keine Vorher-nachher- oder "
-            f"medizinischen Darstellungen (gefunden: {', '.join(dict.fromkeys(real))})."
+        hints.append(
+            PromptFinding(
+                HINT_REAL,
+                f"Das Bild könnte echte Räume, echte Ergebnisse oder medizinische Inhalte "
+                f"vorgeben ({', '.join(dict.fromkeys(real))}). Ein KI-Bild darf nicht als "
+                "Foto des eigenen Betriebs oder als echtes Ergebnis wirken; Vorher-nachher- und "
+                "medizinische Darstellungen sind in der Gesundheitswerbung besonders heikel.",
+            )
         )
     if _EMAIL.search(prompt) or find_phones(prompt):
-        violations.append("Keine personenbezogenen Daten (E-Mail-Adressen, Telefonnummern).")
-    return violations
+        hints.append(
+            PromptFinding(
+                HINT_CONTACT,
+                "Kontaktdaten im Prompt (E-Mail-Adresse oder Telefonnummer): sie gehen an den "
+                "Bildanbieter und können verfälscht im Bild erscheinen.",
+            )
+        )
+    return PromptCheck(errors, hints)
+
+
+def prompt_violations(prompt: str, member_list: list[str], brand_name: str) -> list[str]:
+    """Only the blocking errors of `check_prompt` (empty list = generation allowed)."""
+    return check_prompt(prompt, member_list, brand_name).errors
 
 
 def provider_prompt(prompt: str, config: SocialConfig, area_key: str) -> str:
@@ -223,6 +317,10 @@ class ImageState:
     candidates: list[ImageCandidate]
     chosen: Asset | None
     violations: list[str]
+    # Live hints of the prompt in the text field (before generating).
+    hints: list[PromptFinding]
+    # Stored hints of the last generation, with their confirmations.
+    stored_hints: list[PromptHint]
 
 
 def _briefing(session: Session, draft: PostDraft) -> Briefing:
@@ -257,15 +355,92 @@ def chosen_image(session: Session, draft_id: int) -> Asset | None:
 
 def image_state(session: Session, config: SocialConfig, draft: PostDraft) -> ImageState:
     proposal = latest_proposal(session, draft.id or 0)
-    violations: list[str] = []
+    check = PromptCheck([], [])
     if proposal and proposal.prompt:
-        violations = prompt_violations(proposal.prompt, member_names(session), config.brand.name)
+        check = check_prompt(proposal.prompt, member_names(session), config.brand.name)
     return ImageState(
         proposal=proposal,
         candidates=candidates(session, draft.id or 0),
         chosen=chosen_image(session, draft.id or 0),
-        violations=violations,
+        violations=check.errors,
+        hints=check.hints,
+        stored_hints=prompt_hints(session, draft.id or 0),
     )
+
+
+def prompt_hints(session: Session, draft_id: int) -> list[PromptHint]:
+    statement = (
+        select(PromptHint).where(PromptHint.draft_id == draft_id).order_by(col(PromptHint.id))
+    )
+    return list(session.exec(statement).all())
+
+
+def _store_hints(
+    session: Session, draft: PostDraft, proposal: ImageProposal, hints: list[PromptFinding]
+) -> None:
+    """Hints of the prompt to generate from. A confirmation stays only while the prompt is
+    unchanged; a changed prompt starts over (like edited post texts)."""
+    previous = prompt_hints(session, draft.id or 0)
+    confirmed = {
+        h.key: h
+        for h in previous
+        if h.confirmed_at is not None and h.prompt_hash == _hash(proposal.prompt)
+    }
+    for old in previous:
+        session.delete(old)
+    session.flush()
+    for hint in hints:
+        kept = confirmed.get(hint.key)
+        session.add(
+            PromptHint(
+                draft_id=draft.id or 0,
+                proposal_id=proposal.id or 0,
+                key=hint.key,
+                reason=hint.reason,
+                prompt_hash=_hash(proposal.prompt),
+                consent_required=hint.consent_required,
+                confirmed_by=kept.confirmed_by if kept else None,
+                confirmed_at=kept.confirmed_at if kept else None,
+            )
+        )
+    session.commit()
+
+
+def _hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def confirm_prompt_hint(session: Session, hint: PromptHint, user: str) -> PromptHint:
+    """A person confirms a hint on the image prompt (recorded in the audit trail)."""
+    draft = session.get(PostDraft, hint.draft_id)
+    if draft is None or draft.status not in EDITABLE_STATUSES:
+        raise ImageSuggestionError("Hinweise können nur vor der Freigabe bestätigt werden.")
+    if hint.confirmed_at is not None:
+        raise ImageSuggestionError("Der Hinweis ist bereits bestätigt.")
+    hint.confirmed_by, hint.confirmed_at = user, utcnow()
+    session.add(hint)
+    session.commit()
+    session.refresh(hint)
+    # Which hint, not the prompt or the name itself (data minimisation).
+    write_human_audit_entry(
+        session,
+        item_id=None,
+        step=MEMBER_CONSENT_STEP if hint.consent_required else HINT_CONFIRM_STEP,
+        actor=user,
+        details=_context(draft) | {"hint_id": hint.id, "hint": hint.key},
+    )
+    return hint
+
+
+def image_hint_blockers(session: Session, draft: PostDraft) -> list[str]:
+    """Unconfirmed hints of the prompt behind the post's AI image block its approval."""
+    if draft.id is None or chosen_image(session, draft.id) is None:
+        return []
+    return [
+        f"Hinweis zum KI-Bild noch nicht bestätigt: {HINT_LABELS.get(h.key, h.key)}"
+        for h in prompt_hints(session, draft.id)
+        if h.confirmed_at is None
+    ]
 
 
 def _require_editable(draft: PostDraft) -> None:
@@ -354,7 +529,8 @@ def generate_variants(
     _require_editable(draft)
     briefing = _briefing(session, draft)
     prompt = prompt.strip()
-    violations = prompt_violations(prompt, member_names(session), config.brand.name)
+    check = check_prompt(prompt, member_names(session), config.brand.name)
+    violations = check.errors
     proposal = latest_proposal(session, draft.id or 0)
     if proposal is None:
         proposal = ImageProposal(
@@ -369,6 +545,16 @@ def generate_variants(
     session.refresh(proposal)
     if violations:
         raise ImagePromptRejectedError(violations)
+    # First confirm, then generate (then approve): nothing goes to the provider before a
+    # person has read the hints on this exact prompt.
+    _store_hints(session, draft, proposal, check.hints)
+    pending = [h for h in prompt_hints(session, draft.id or 0) if h.confirmed_at is None]
+    if pending:
+        raise ImageHintsPendingError(
+            "Bitte zuerst die Hinweise zum Bild-Prompt prüfen und bestätigen, dann erzeugen: "
+            + ", ".join(HINT_LABELS.get(h.key, h.key) for h in pending)
+            + "."
+        )
     batch = generate_images(
         session,
         provider,
@@ -377,7 +563,11 @@ def generate_variants(
         step=GENERATE_STEP,
         scope=f"draft:{draft.id}",
         user=user,
-        details=_context(draft) | {"prompt_edited": not proposal.prompt_from_ai},
+        details=_context(draft)
+        | {
+            "prompt_edited": not proposal.prompt_from_ai,
+            "hints": [h.key for h in check.hints],
+        },
     )
     _remove_candidates(session, draft.id or 0)
     target_dir = storage / "social" / "ki"
@@ -472,5 +662,6 @@ def delete_image_data(session: Session, draft_ids: list[int]) -> set[str]:
     ).all()
     files = {row.stored_path for row in rows}
     session.exec(delete(ImageCandidate).where(col(ImageCandidate.draft_id).in_(draft_ids)))  # type: ignore[call-overload]
+    session.exec(delete(PromptHint).where(col(PromptHint.draft_id).in_(draft_ids)))  # type: ignore[call-overload]
     session.exec(delete(ImageProposal).where(col(ImageProposal.draft_id).in_(draft_ids)))  # type: ignore[call-overload]
     return files

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}{{ title }} – {{ app_title }}{% endblock %}
+{% block content %}
+{% call ui.page_header(title, "Die Aktion wurde nicht ausgeführt.") %}{% endcall %}
+<div class="max-w-2xl space-y-4" data-config-error>
+  {{ ui.alert(message, "error", "alert") }}
+  <p class="text-sm text-ink-muted">{{ hint }}</p>
+  <p><a class="btn btn-secondary" href="/settings">Einstellungen ansehen</a></p>
+</div>
+{% endblock %}

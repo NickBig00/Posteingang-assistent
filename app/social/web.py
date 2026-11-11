@@ -1,5 +1,6 @@
 """Web routes of the social media module (SPEC_social section 8)."""
 
+import json
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -10,6 +11,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Upl
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from sqlmodel import Session, col, select
 
+from app.core.audit import audit_outputs
 from app.core.db import get_session
 from app.core.image_formats import (
     FORMAT_SPECS,
@@ -72,14 +74,17 @@ from app.social.graphics import (
     GraphicLayoutError,
     graphic_text,
     layout_for,
+    parse_fact_keys,
     render_graphic,
     verify_graphic_text,
 )
 from app.social.highlight import highlight
 from app.social.images import (
     AI_IMAGE_LABEL,
+    HINT_LABELS,
     ImageSuggestionError,
     choose_candidate,
+    confirm_prompt_hint,
     discard_candidates,
     generate_variants,
     image_state,
@@ -99,6 +104,7 @@ from app.social.models import (
     ImageCandidate,
     PostDraft,
     PostStatus,
+    PromptHint,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
 from app.social.retention import delete_briefing, delete_campaign, delete_draft
@@ -112,6 +118,15 @@ from app.social.review import (
     recheck_draft,
     reject_draft,
     reopen_draft,
+)
+from app.social.revisions import (
+    IMAGE_QUICK_PICKS,
+    POST_QUICK_PICKS,
+    REQUEST_STEP,
+    RevisionError,
+    revise_image,
+    revise_image_prompt,
+    revise_post,
 )
 from app.social.sensitive import SENSITIVE_CHECK_LABELS
 from app.social.status import latest_review
@@ -130,6 +145,9 @@ templates.env.globals["post_status_tones"] = POST_STATUS_TONES
 templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
 templates.env.globals["format_specs"] = FORMAT_SPECS
 templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
+templates.env.globals["hint_labels"] = HINT_LABELS
+templates.env.globals["post_quick_picks"] = POST_QUICK_PICKS
+templates.env.globals["image_quick_picks"] = IMAGE_QUICK_PICKS
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
@@ -329,18 +347,26 @@ def _graphic_context(
     if background != "color" and background not in {str(a.id) for a in usable}:
         background = "color"
     headline = (params.get("graphic_headline") or "")[:80]
-    text = graphic_text(config, briefing, headline)
+    facts = BriefingFacts.from_json(briefing.facts)
+    chosen = params.getlist("graphic_facts")
+    keys = parse_fact_keys(chosen, facts) if chosen else tuple(facts.present_keys())
+    text = graphic_text(config, briefing, headline, keys)
     try:
-        verify_graphic_text(text, BriefingFacts.from_json(briefing.facts), config)
+        verify_graphic_text(text, facts, config)
         problems: list[str] = []
     except GraphicError as error:
         problems = error.problems
-    query = urlencode({"format": fmt, "background": background, "headline": headline})
+    query = urlencode(
+        [("format", fmt), ("background", background), ("headline", headline)]
+        + [("facts", key) for key in keys]
+    )
     ai_background = any(str(a.id) == background and a.ai_generated for a in usable)
     return {
         "format": fmt,
         "background": background,
         "headline": headline,
+        "fact_keys": keys,
+        "available_facts": [(k, FACT_LABELS[k]) for k in facts.present_keys()],
         "layout": LAYOUT_LABELS[layout_for(briefing.occasion_type)],
         "lines": text.lines,
         "problems": problems,
@@ -507,6 +533,26 @@ def draft_edit(
         draft,
         lambda: edit_draft(session, config, client, draft, text, hashtags, user),
     )
+
+
+@router.post("/social/drafts/{draft_id}/revise", response_model=None)
+def draft_revise(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    draft_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """ "Was soll anders werden?": the AI revises the post text; all checks run again."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        revise_post(session, config, client, draft, quick or instruction, user)
+    except RevisionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _back(draft)
 
 
 @router.post("/social/drafts/{draft_id}/reject", response_model=None)
@@ -734,6 +780,49 @@ def image_discard(
     return _images_back(draft)
 
 
+@router.post("/social/drafts/{draft_id}/images/revise", response_model=None)
+def image_revise(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    provider: ImageProviderDep,
+    user: UserDep,
+    storage: StorageDep,
+    draft_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+    regenerate: Annotated[bool, Form()] = False,
+) -> HTMLResponse | RedirectResponse:
+    """Revise the image prompt by instruction, optionally generating new variants at once."""
+    draft = _images_draft(session, draft_id)
+    text = quick or instruction
+    try:
+        if regenerate:
+            revise_image(session, config, client, provider, draft, text, user, storage)
+        else:
+            revise_image_prompt(session, config, client, draft, text, user)
+    except (RevisionError, ImageSuggestionError, ImageError) as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _images_back(draft)
+
+
+@router.post("/social/image-hints/{hint_id}/confirm", response_model=None)
+def image_hint_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, hint_id: int
+) -> HTMLResponse | RedirectResponse:
+    """A person confirms a hint on the image prompt – recorded in the audit trail."""
+    hint = session.get(PromptHint, hint_id)
+    if hint is None:
+        raise HTTPException(status_code=404, detail="Hinweis nicht gefunden")
+    draft = _images_draft(session, hint.draft_id)
+    try:
+        confirm_prompt_hint(session, hint, user)
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
 @router.get("/social/images/candidates/{candidate_id}", response_model=None)
 def image_candidate_file(session: SessionDep, candidate_id: int) -> Response:
     if not image_generation_enabled():
@@ -758,10 +847,21 @@ def briefing_audit(
     """Chronological trail of all AI steps and human actions of a briefing."""
     briefing = _briefing_or_404(session, briefing_id)
     entries = briefing_audit_trail(session, briefing_id)
+    # Instructions of revisions in plain text (deletable audit output; gone after deletion).
+    outputs = audit_outputs(session, [e.id for e in entries if e.id and e.step == REQUEST_STEP])
+    instructions = {
+        entry_id: json.loads(text).get("instruction", "") for entry_id, text in outputs.items()
+    }
     return templates.TemplateResponse(
         request,
         "social_audit.html",
-        {"briefing": briefing, "entries": entries, "config": config, **_labels(config)},
+        {
+            "briefing": briefing,
+            "entries": entries,
+            "instructions": instructions,
+            "config": config,
+            **_labels(config),
+        },
     )
 
 
@@ -874,6 +974,7 @@ def briefing_graphic(
     background: str = "color",
     headline: str = "",
     download: bool = False,
+    facts: Annotated[list[str] | None, Query()] = None,
 ) -> Response:
     """Graphic from the template of the occasion type: rendered by code, facts checked."""
     briefing = _briefing_or_404(session, briefing_id)
@@ -892,7 +993,10 @@ def briefing_graphic(
             raise HTTPException(status_code=404, detail="Hintergrundbild nicht verfügbar")
     content = Path(image.stored_path).read_bytes() if image else None
     try:
-        body, _ = render_graphic(config, briefing, fmt, headline=headline, background=content)
+        keys = parse_fact_keys(facts or [], BriefingFacts.from_json(briefing.facts))
+        body, _ = render_graphic(
+            config, briefing, fmt, headline=headline, background=content, fact_keys=keys
+        )
     except GraphicError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (GraphicLayoutError, ImageExportError) as error:
