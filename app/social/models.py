@@ -215,9 +215,10 @@ class ImageProposal(SQLModel, table=True):
 
 
 class PromptHint(SQLModel, table=True):
-    """Hint on the image prompt of a generation (people, text, real places …), SPEC_social 13.5.
+    """Hint on an image prompt (people, text, real places …), SPEC_social 13.5.
 
-    Must be confirmed by a person before the post with the chosen AI image is approved.
+    Must be confirmed by a person before images are generated from the prompt. A member named
+    in the prompt (`consent_required`) needs the confirmed consent of that person instead.
     """
 
     id: int | None = Field(default=None, primary_key=True)
@@ -227,6 +228,7 @@ class PromptHint(SQLModel, table=True):
     reason: str
     # Hash of the prompt the hint belongs to (a changed prompt needs a new confirmation).
     prompt_hash: str
+    consent_required: bool = False
     confirmed_by: str | None = None
     confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
 

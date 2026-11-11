@@ -1171,13 +1171,7 @@
       },
       {
         "tag": "button",
-        "label": "Geprüft – bestätigen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Geprüft – bestätigen",
+        "label": "Freigeben",
         "visible": true,
         "onScreen": true
       },

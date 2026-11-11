@@ -38,7 +38,7 @@
     </ul>
     {% endif %}
     <p class="hint">Vor dem Erzeugen prüft das System den Prompt auf Personen, Text im Bild, echte Räume oder Ergebnisse und Kontaktdaten.
-      Das sind Hinweise, die Sie vor der Freigabe bestätigen; nur Namen aus der Mitgliederliste verhindern die Erzeugung.
+      Das sind Hinweise, die Sie vor dem Erzeugen bestätigen; ein Name aus der Mitgliederliste braucht die Einwilligung der Person.
       Zusätzlich hängt das System feste Ausschlüsse an (keine echten, erkennbaren Personen, keine Logos).</p>
     <div class="flex flex-wrap items-center gap-2">
       <select name="image_format" class="input w-auto py-1.5" aria-label="Format">
@@ -56,17 +56,20 @@
   {% endif %}
   {% if st.stored_hints %}
   <div class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3" id="image-hints-{{ d.id }}" data-image-hints>
-    <p class="text-sm font-semibold">Hinweise zum Bild – vor der Freigabe bestätigen</p>
+    <p class="text-sm font-semibold">Hinweise zum Bild-Prompt – erst bestätigen, dann erzeugen</p>
     <ul class="mt-1 space-y-1.5 text-sm">
       {% for h in st.stored_hints %}
       <li><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}
         {% if h.confirmed_at %}<span class="badge badge-ok">✓ bestätigt von {{ h.confirmed_by }} am {{ h.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+        {% elif h.consent_required %}<form method="post" action="/social/image-hints/{{ h.id }}/confirm" class="ml-1 inline"
+              onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Verwendung ihres Namens für dieses Bild ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')">
+          <button type="submit" class="btn btn-danger btn-sm">Einwilligung der Person liegt vor</button></form>
         {% else %}<form method="post" action="/social/image-hints/{{ h.id }}/confirm" class="ml-1 inline">
           <button type="submit" class="btn btn-secondary btn-sm border-amber-400">Geprüft – bestätigen</button></form>{% endif %}
       </li>
       {% endfor %}
     </ul>
-    <p class="mt-1 text-xs text-ink-subtle">Diese Hinweise erscheinen nur hier, nie im Bild. Ein geänderter Prompt muss neu bestätigt werden.</p>
+    <p class="mt-1 text-xs text-ink-subtle">Diese Hinweise erscheinen nur hier, nie im Bild. Nach dem Bestätigen erneut erzeugen. Ein geänderter Prompt muss neu bestätigt werden.</p>
   </div>
   {% endif %}
   {% if st.candidates %}

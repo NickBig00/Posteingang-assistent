@@ -110,12 +110,13 @@ def test_people_in_the_prompt_are_a_hint_not_a_rejection(prompt: str) -> None:
     assert HINT_PERSONS in _hint_keys(prompt)
 
 
-def test_member_names_in_the_prompt_stay_an_error() -> None:
-    violations = prompt_violations(
+def test_member_names_in_the_prompt_need_the_consent_of_the_person() -> None:
+    check = check_prompt(
         "Hantelbank, darauf ein Zettel für Erika Beispiel", ["Erika Beispiel"], BRAND
     )
 
-    assert any("Erika Beispiel" in v for v in violations)
+    (member,) = [h for h in check.hints if h.consent_required]
+    assert "Erika Beispiel" in member.reason and "Einwilligung" in member.reason
 
 
 @pytest.mark.parametrize(
@@ -446,5 +447,7 @@ def test_member_from_the_member_table_blocks_generation(session: Session, raw_di
     )
     session.commit()
 
-    with pytest.raises(ImagePromptRejectedError, match="Erika Beispiel"):
+    from app.social.images import ImageHintsPendingError
+
+    with pytest.raises(ImageHintsPendingError, match="Mitglied genannt"):
         _generate(session, _draft(session), raw_dir, "Hantelbank, Widmung für Erika Beispiel")

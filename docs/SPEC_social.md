@@ -222,7 +222,7 @@ Umsetzung der Hinweise im Code: Meilenstein B5 (`docs/ROADMAP_social.md`).
 | Fakten im Grafiktext verändert oder fremd | Fehler (deterministisch) |
 | Gesundheitsversprechen in Texten | wie Abschnitt 6 (Hinweis, in Physio/Reha Fehler bei eindeutigen Heilversprechen); Fehler lassen sich per Anweisung („neutraler formulieren“) beheben |
 
-Hinweise zu einem Bild-Prompt gelten für die damit erzeugten Bilder: Wird eine Variante gewählt, muss der Mensch die Hinweise vor der Freigabe des Beitrags bestätigt haben. Ein geänderter Prompt setzt die Bestätigungen zurück.
+Reihenfolge bei Bild-Prompts: **erst bestätigen, dann erzeugen, dann freigeben.** Bevor ein Prompt an den Bildanbieter geht, muss ein Mensch alle Hinweise dazu bestätigt haben; ein Mitgliedername braucht die bestätigte Einwilligung der Person (danach ist die Erzeugung möglich). Ein geänderter Prompt setzt die Bestätigungen zurück.
 
 ### 13.6 Eigene Fotos mit KI bearbeiten
 

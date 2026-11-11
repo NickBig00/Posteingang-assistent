@@ -42,6 +42,7 @@ GENERATE_STEP = "social.image_generate"
 CHOOSE_STEP = "social.image_choose"
 DISCARD_STEP = "social.image_discard"
 HINT_CONFIRM_STEP = "social.image_hint_confirm"
+MEMBER_CONSENT_STEP = "social.image_member_consent"
 MAX_PROMPT_LENGTH = 800
 AI_IMAGE_LABEL = "KI-generiert"
 
@@ -71,13 +72,19 @@ class ImagePromptRejectedError(ImageSuggestionError):
         self.violations = violations
 
 
+class ImageHintsPendingError(ImageSuggestionError):
+    """Hints on the prompt must be confirmed before anything is generated."""
+
+
 # Keys of the hints on an image prompt (SPEC_social 13.5, table).
+HINT_MEMBER = "mitglied"
 HINT_PERSONS = "personen"
 HINT_NAMES = "namen"
 HINT_TEXT = "text"
 HINT_REAL = "echt"
 HINT_CONTACT = "kontakt"
 HINT_LABELS: dict[str, str] = {
+    HINT_MEMBER: "Mitglied genannt",
     HINT_PERSONS: "Personen im Bild",
     HINT_NAMES: "Name im Prompt",
     HINT_TEXT: "Text im Bild",
@@ -92,6 +99,8 @@ class PromptFinding:
 
     key: str
     reason: str
+    # Member from the member list: only the confirmed consent of that person lifts it.
+    consent_required: bool = False
 
 
 @dataclass(frozen=True)
@@ -208,7 +217,9 @@ def _hits(pattern: re.Pattern[str], text: str) -> list[str]:
 def check_prompt(prompt: str, member_list: list[str], brand_name: str) -> PromptCheck:
     """Code check of an image prompt (SPEC_social 13.5): hint instead of blockade.
 
-    Errors only for what `CLAUDE.md` demands (member names) and for unusable input.
+    Errors only for unusable input (empty, too long). A member named in the prompt needs the
+    confirmed consent of that person (`CLAUDE.md`); all other findings are hints that a
+    person confirms before generating.
     """
     errors: list[str] = []
     hints: list[PromptFinding] = []
@@ -220,10 +231,14 @@ def check_prompt(prompt: str, member_list: list[str], brand_name: str) -> Prompt
     members = [prompt[f.span[0] : f.span[1]] for f in named if f.consent_required and f.span]
     others = [prompt[f.span[0] : f.span[1]] for f in named if not f.consent_required and f.span]
     if members:
-        errors.append(
-            "Name aus der Mitgliederliste im Bild-Prompt "
-            f"({', '.join(dict.fromkeys(members))}): keine Daten von Mitgliedern an den "
-            "Bildanbieter. Bitte den Namen entfernen."
+        hints.append(
+            PromptFinding(
+                HINT_MEMBER,
+                f"„{', '.join(dict.fromkeys(members))}“ steht in der Mitgliederliste. Der Name "
+                "geht an den Bildanbieter – nur mit der dokumentierten Einwilligung der Person, "
+                "sonst den Namen entfernen.",
+                consent_required=True,
+            )
         )
     persons = _hits(_PERSON, prompt)
     if persons:
@@ -363,8 +378,8 @@ def prompt_hints(session: Session, draft_id: int) -> list[PromptHint]:
 def _store_hints(
     session: Session, draft: PostDraft, proposal: ImageProposal, hints: list[PromptFinding]
 ) -> None:
-    """Hints of the prompt used for the generation. A confirmation stays only while the same
-    prompt is used again; a changed prompt starts over (like edited post texts)."""
+    """Hints of the prompt to generate from. A confirmation stays only while the prompt is
+    unchanged; a changed prompt starts over (like edited post texts)."""
     previous = prompt_hints(session, draft.id or 0)
     confirmed = {
         h.key: h
@@ -383,6 +398,7 @@ def _store_hints(
                 key=hint.key,
                 reason=hint.reason,
                 prompt_hash=_hash(proposal.prompt),
+                consent_required=hint.consent_required,
                 confirmed_by=kept.confirmed_by if kept else None,
                 confirmed_at=kept.confirmed_at if kept else None,
             )
@@ -405,11 +421,11 @@ def confirm_prompt_hint(session: Session, hint: PromptHint, user: str) -> Prompt
     session.add(hint)
     session.commit()
     session.refresh(hint)
-    # Which hint, not the prompt itself (its hash is in the generation's audit entry).
+    # Which hint, not the prompt or the name itself (data minimisation).
     write_human_audit_entry(
         session,
         item_id=None,
-        step=HINT_CONFIRM_STEP,
+        step=MEMBER_CONSENT_STEP if hint.consent_required else HINT_CONFIRM_STEP,
         actor=user,
         details=_context(draft) | {"hint_id": hint.id, "hint": hint.key},
     )
@@ -529,6 +545,16 @@ def generate_variants(
     session.refresh(proposal)
     if violations:
         raise ImagePromptRejectedError(violations)
+    # First confirm, then generate (then approve): nothing goes to the provider before a
+    # person has read the hints on this exact prompt.
+    _store_hints(session, draft, proposal, check.hints)
+    pending = [h for h in prompt_hints(session, draft.id or 0) if h.confirmed_at is None]
+    if pending:
+        raise ImageHintsPendingError(
+            "Bitte zuerst die Hinweise zum Bild-Prompt prüfen und bestätigen, dann erzeugen: "
+            + ", ".join(HINT_LABELS.get(h.key, h.key) for h in pending)
+            + "."
+        )
     batch = generate_images(
         session,
         provider,
@@ -543,7 +569,6 @@ def generate_variants(
             "hints": [h.key for h in check.hints],
         },
     )
-    _store_hints(session, draft, proposal, check.hints)
     _remove_candidates(session, draft.id or 0)
     target_dir = storage / "social" / "ki"
     target_dir.mkdir(parents=True, exist_ok=True)
