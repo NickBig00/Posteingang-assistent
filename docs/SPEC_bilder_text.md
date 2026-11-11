@@ -170,9 +170,9 @@ Bestätigung vor der Freigabe; die Bestätigung steht im Audit.
 
 1. **Realistische Personen in KI-Bildern:** erlaubt mit bestätigungspflichtigem Hinweis und
    Kennzeichnung „KI-generiert“; keine Nachbildung echter, erkennbarer Personen (2.2b).
-   Ändert SPEC_social §13.5 („Keine realistischen Personen“) – bei der Übernahme anpassen.
+   In SPEC_social §13.5 bereits übernommen.
 2. **Text direkt vom Bildmodell:** erlaubt; der Hinweis dazu erscheint **nur in der
-   Oberfläche, nicht in der Grafik** (2.2a). Ändert SPEC_social §13.5 („Kein Text im KI-Bild“).
+   Oberfläche, nicht in der Grafik** (2.2a). In SPEC_social §13.5 bereits übernommen.
 3. **Grafiktexte:** je Briefing, optional ein kürzerer Text für die Story (2.2, 3c).
 4. **Karussell für Instagram:** ja, eigener Meilenstein B9 (2.2c).
 
