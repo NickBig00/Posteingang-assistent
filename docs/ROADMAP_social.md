@@ -147,7 +147,7 @@ Spezifikation: `docs/SPEC_social.md` Abschnitte 13.5–13.9 und 14.1–14.2 (Ent
 ersten Praxistest). Reihenfolge: erst die Grundlagen (Fehler, Prüflogik), dann die neuen
 Funktionen.
 
-## [ ] B4 – Feinschliff Bildanbieter und Vorlagen
+## [x] B4 – Feinschliff Bildanbieter und Vorlagen
 
 Echte Fehlermeldungen des Anbieters, Abfangen ungültiger API-Schlüssel, Modell-Hinweise in
 `.env.example`/README, Vorlagen-Verbesserungen und Bedien-Links (SPEC_social 13.9 und 14).

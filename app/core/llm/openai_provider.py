@@ -21,6 +21,13 @@ from app.core.llm.base import (
     LLMTask,
     VisualInput,
 )
+from app.core.provider_errors import (
+    ProviderConfigError,
+    describe_provider_error,
+    require_valid_api_key,
+)
+
+KEY_VARIABLE = "OPENAI_API_KEY"
 
 # Tasks whose answer must be a JSON object: JSON mode guarantees syntactically valid
 # JSON; the schema itself is still checked strictly against the Pydantic models.
@@ -38,7 +45,7 @@ MAX_TOKENS: dict[LLMTask, int] = {
 }
 
 
-class OpenAIConfigError(ValueError):
+class OpenAIConfigError(ProviderConfigError):
     """The OpenAI provider is not configured completely."""
 
 
@@ -65,7 +72,15 @@ class OpenAIProvider(LLMProvider):
             # No silent default: the model choice is a deliberate (data protection) decision.
             raise OpenAIConfigError("LLM_MODEL muss für LLM_PROVIDER=openai gesetzt sein")
         self.model = model
-        self._completions = completions_api or openai.OpenAI().chat.completions
+        if completions_api is None:
+            require_valid_api_key(KEY_VARIABLE)
+            try:
+                completions_api = openai.OpenAI().chat.completions
+            except openai.OpenAIError as error:
+                raise OpenAIConfigError(
+                    f"{KEY_VARIABLE} fehlt: für LLM_PROVIDER=openai einen API-Schlüssel setzen"
+                ) from error
+        self._completions = completions_api
 
     def complete(
         self,
@@ -94,7 +109,13 @@ class OpenAIProvider(LLMProvider):
         except openai.APIConnectionError as error:
             raise LLMProviderError("OpenAI API not reachable") from error
         except openai.APIStatusError as error:
-            raise LLMProviderError(f"OpenAI API error (HTTP {error.status_code})") from error
+            detail = describe_provider_error(error, "OpenAI", KEY_VARIABLE)
+            raise LLMProviderError(
+                f"OpenAI API error (HTTP {error.status_code}): {detail}"
+            ) from error
+        except UnicodeEncodeError as error:
+            detail = describe_provider_error(error, "OpenAI", KEY_VARIABLE)
+            raise LLMProviderError(detail) from error
 
         if not response.choices:
             raise LLMProviderError("OpenAI API returned no choices")

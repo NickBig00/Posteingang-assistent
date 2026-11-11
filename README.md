@@ -67,7 +67,13 @@ Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Faceboo
 ### KI-Bilder (optional)
 
 Standardmäßig aus. Einschalten mit `IMAGE_GENERATION_ENABLED=true`; Anbieter über
-`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Das
+`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Modellnamen ändern
+sich beim Anbieter; welche Bildmodelle das eigene Konto nutzen kann, zeigt
+`uv run python -m app.cli image-models` (braucht `OPENAI_API_KEY`). Lehnt der Anbieter eine
+Anfrage ab (unbekanntes Modell, Abrechnungslimit, Inhaltsfilter …), zeigen Oberfläche und Audit
+den genauen Grund; „nicht erreichbar“ erscheint nur bei Verbindungsfehlern. Ein API-Schlüssel mit
+unzulässigen Zeichen (z. B. aus einem Platzhalter) wird beim Start protokolliert, unter
+Einstellungen markiert und führt zu einer klaren Meldung statt eines Serverfehlers. Das
 anbieterunabhängige Interface liegt in `app/core/images/` (einziger Ort für Bild-SDKs neben
 `app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3) und `IMAGE_MAX_PER_DAY`
 (Standard 20) Erzeugungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht

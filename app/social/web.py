@@ -72,6 +72,7 @@ from app.social.graphics import (
     GraphicLayoutError,
     graphic_text,
     layout_for,
+    parse_fact_keys,
     render_graphic,
     verify_graphic_text,
 )
@@ -329,18 +330,26 @@ def _graphic_context(
     if background != "color" and background not in {str(a.id) for a in usable}:
         background = "color"
     headline = (params.get("graphic_headline") or "")[:80]
-    text = graphic_text(config, briefing, headline)
+    facts = BriefingFacts.from_json(briefing.facts)
+    chosen = params.getlist("graphic_facts")
+    keys = parse_fact_keys(chosen, facts) if chosen else tuple(facts.present_keys())
+    text = graphic_text(config, briefing, headline, keys)
     try:
-        verify_graphic_text(text, BriefingFacts.from_json(briefing.facts), config)
+        verify_graphic_text(text, facts, config)
         problems: list[str] = []
     except GraphicError as error:
         problems = error.problems
-    query = urlencode({"format": fmt, "background": background, "headline": headline})
+    query = urlencode(
+        [("format", fmt), ("background", background), ("headline", headline)]
+        + [("facts", key) for key in keys]
+    )
     ai_background = any(str(a.id) == background and a.ai_generated for a in usable)
     return {
         "format": fmt,
         "background": background,
         "headline": headline,
+        "fact_keys": keys,
+        "available_facts": [(k, FACT_LABELS[k]) for k in facts.present_keys()],
         "layout": LAYOUT_LABELS[layout_for(briefing.occasion_type)],
         "lines": text.lines,
         "problems": problems,
@@ -874,6 +883,7 @@ def briefing_graphic(
     background: str = "color",
     headline: str = "",
     download: bool = False,
+    facts: Annotated[list[str] | None, Query()] = None,
 ) -> Response:
     """Graphic from the template of the occasion type: rendered by code, facts checked."""
     briefing = _briefing_or_404(session, briefing_id)
@@ -892,7 +902,10 @@ def briefing_graphic(
             raise HTTPException(status_code=404, detail="Hintergrundbild nicht verfügbar")
     content = Path(image.stored_path).read_bytes() if image else None
     try:
-        body, _ = render_graphic(config, briefing, fmt, headline=headline, background=content)
+        keys = parse_fact_keys(facts or [], BriefingFacts.from_json(briefing.facts))
+        body, _ = render_graphic(
+            config, briefing, fmt, headline=headline, background=content, fact_keys=keys
+        )
     except GraphicError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (GraphicLayoutError, ImageExportError) as error:

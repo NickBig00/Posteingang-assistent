@@ -60,7 +60,15 @@ const SHOTS = {
     ["leer-posteingang", "/inbox", { empty: true }],
     ["leer-social", "/social", { empty: true }],
   ],
+  B4: [
+    ["briefing-wunschtermin", "/social/briefings/new", { selector: "#desired-date-hint", fullPage: true }],
+    ["grafik-farbflaeche-hochformat", "/social/briefings/{briefing}#grafik", { selector: "#grafik" }],
+    ["grafik-faktenauswahl", "/social/briefings/{approved_briefing}?graphic_format=9:16&graphic_headline=Zwei%20Wochen%20gratis&graphic_facts=zeitraum#grafik", { selector: "#grafik" }],
+  ],
 };
+
+// Milestones whose pages need the AI image functions switched on.
+const IMAGE_MILESTONES = new Set(["B2", "B4", "B5", "B6", "B8", "B9"]);
 
 function startServer(env) {
   // Start uvicorn directly (not via `uv run`), so stopping the child really stops the server.
@@ -206,7 +214,13 @@ async function shoot(browser, milestone, ids, empty) {
     const page = await context.newPage();
     await page.goto(BASE + fill(urlPath, ids), { waitUntil: "networkidle" });
     if (options.click) await page.click(options.click);
-    await page.screenshot({ path: path.join(dir, `${name}.png`), fullPage: Boolean(options.fullPage) });
+    if (options.before) await options.before(page, ids);
+    const file = path.join(dir, `${name}.png`);
+    if (options.selector && !options.fullPage) {
+      await page.locator(options.selector).first().screenshot({ path: file });
+    } else {
+      await page.screenshot({ path: file, fullPage: Boolean(options.fullPage) });
+    }
     await context.close();
     console.log(`docs/screenshots/${milestone}/${name}.png`);
   }
@@ -227,13 +241,13 @@ async function run(milestones, empty) {
     DATABASE_URL: `sqlite:///${path.join(tmp, "demo.db")}`,
     STORAGE_DIR: path.join(tmp, "raw"),
     LLM_PROVIDER: "fake",
-    IMAGE_GENERATION_ENABLED: milestones.includes("B2") ? "true" : "false",
+    IMAGE_GENERATION_ENABLED: milestones.some((m) => IMAGE_MILESTONES.has(m)) ? "true" : "false",
     IMAGE_PROVIDER: "fake",
   };
   const server = startServer(env);
   try {
     await waitForServer();
-    const ids = empty ? {} : await seed(milestones.includes("B2"));
+    const ids = empty ? {} : await seed(milestones.some((m) => IMAGE_MILESTONES.has(m)));
     const browser = await chromium.launch();
     for (const milestone of milestones) await shoot(browser, milestone, ids, empty);
     await browser.close();
