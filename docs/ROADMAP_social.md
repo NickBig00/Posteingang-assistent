@@ -115,25 +115,25 @@ Liste, Detailansicht, Audit-Ansicht umgestellt, ohne Funktionsänderung.
 
 **Akzeptanz:** Tests grün; Screenshots im PR.
 
-## [ ] B1 – Bild-Interface
+## [x] B1 – Bild-Interface
 
 Interface, Fake-Anbieter, OpenAI-Anbieter, Schalter `IMAGE_GENERATION_ENABLED`, Kostenbremse, Audit.
 
 **Akzeptanz:** Tests nur mit Fake; Bildfunktion ohne Schalter unsichtbar.
 
-## [ ] B2 – Bildvorschläge im Entwurf
+## [x] B2 – Bildvorschläge im Entwurf
 
 Bildstil im Markenprofil, Bild-Prompt aus Briefing (sichtbar, bearbeitbar), Schutzregeln gemäß `docs/SPEC_social.md` Abschnitt 13.5, Varianten, Auswahl, Kennzeichnung, Löschkonzept.
 
 **Akzeptanz:** Tests für Schutzregeln (Personenbezug im Prompt wird abgelehnt), Kennzeichnung und Löschen.
 
-## [ ] B3 – Grafiken aus Vorlagen
+## [x] B3 – Grafiken aus Vorlagen
 
 Vorlagen je Anlass-Typ, Rendering per Code, Faktenprüfung für Text in der Grafik, Formate und JPEG-Export.
 
 **Akzeptanz:** Tests für Faktentreue und Formate; Beispielgrafiken im PR.
 
-## [ ] U5 – Feinschliff
+## [x] U5 – Feinschliff
 
 Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 
@@ -171,3 +171,20 @@ Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 - [ ] **Veralteter Pfad in `docs/ROADMAP.md`:** Meilenstein M0 nennt noch `app/llm/` (heute
   `app/core/llm/`). Bewusst nicht geändert, weil es die historische Beschreibung eines
   abgeschlossenen Meilensteins ist; bei Bedarf als Fußnote ergänzen.
+- [x] **„eingeplant (extern)“:** entschieden: Vermerk auf Status `scheduled`, kein eigener
+  Status (SPEC_social §12). Die Meta Business Suite ist vorerst nicht vorgesehen; veröffentlicht
+  wird direkt in Instagram, Facebook bzw. LinkedIn.
+- [x] **Seite „Einstellungen“:** entschieden: bleibt nur lesbar, bis es eine Benutzerverwaltung
+  mit Rollen und Audit für Konfigurationsänderungen gibt (SPEC §10.2).
+- [x] **Markenfarbe der Oberfläche aus dem Markenprofil:** umgesetzt; Vorrang `BRAND_COLOR` >
+  `design.primary_color` des aktiven Markenprofils > Standardfarbe.
+- [x] **Grafik-Download:** erst nach der Freigabe eines Beitrags des Briefings; die Vorschau
+  bleibt jederzeit sichtbar (SPEC_social §14).
+- [x] **Logo in Grafiken:** optionales Feld `design.logo` (Dateiname neben dem Markenprofil);
+  ohne Logo bleibt der Markenname als Schriftzug. Demo-Profile haben bewusst kein Logo.
+- [ ] **Migrationen:** `add_missing_columns` reicht für SQLite-Demo-Datenbanken; Alembic erst
+  beim Wechsel auf PostgreSQL einführen.
+- [ ] **Screenreader-Test:** Barrierefreiheit bisher nur automatisch geprüft (axe, Tastatur);
+  ein Test mit NVDA oder VoiceOver durch einen Menschen steht aus.
+- [ ] **Kostenschätzung KI-Bilder:** Standardwert `IMAGE_COST_PER_IMAGE_EUR=0.05` ist eine
+  Annahme; vor echtem Einsatz mit der aktuellen Preisliste des Anbieters abgleichen.

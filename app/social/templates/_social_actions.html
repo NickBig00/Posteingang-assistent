@@ -7,7 +7,7 @@
   </form>
   {% endif %}
   {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
-  <form method="post" action="/social/drafts/{{ d.id }}/recheck">
+  <form method="post" action="/social/drafts/{{ d.id }}/recheck" data-loading="Wird geprüft …">
     <button type="submit" class="btn btn-secondary">Erneut prüfen</button>
   </form>
   {% endif %}
@@ -17,7 +17,7 @@
   </form>
   {% if not d.is_scheduled_externally %}
   <form method="post" action="/social/drafts/{{ d.id }}/external">
-    <button type="submit" class="btn btn-secondary" title="Halten Sie fest, dass der Beitrag im Planer der Plattform (z. B. Meta Business Suite) eingeplant ist.">Als „eingeplant (extern)“ markieren</button>
+    <button type="submit" class="btn btn-secondary" title="Halten Sie fest, dass der Beitrag in der Planungsfunktion der Plattform (z. B. LinkedIn) eingeplant ist.">Als „eingeplant (extern)“ markieren</button>
   </form>
   {% endif %}
   <form method="post" action="/social/drafts/{{ d.id }}/unschedule">
@@ -43,16 +43,20 @@
 {% if d.status.value in ("approved", "scheduled", "published") %}
 <div class="mt-4 rounded-lg border border-line bg-surface-muted p-3" id="publish-aids-{{ d.id }}">
   <p class="text-sm font-semibold">Zum Veröffentlichen</p>
-  <p class="mt-0.5 text-xs text-ink-subtle">Das System postet nichts selbst. Text und Bild übernehmen Sie von Hand in die Meta Business Suite bzw. in LinkedIn.</p>
+  <p class="mt-0.5 text-xs text-ink-subtle">Das System postet nichts selbst. Text und Bild übernehmen Sie von Hand direkt in Instagram, Facebook bzw. LinkedIn.</p>
   <div class="mt-2 flex flex-wrap items-center gap-2">
     <button type="button" class="btn btn-primary btn-sm" data-copy="{{ d.full_text }}">{{ ui.icon("copy") }}<span data-copy-label>Text kopieren</span></button>
     <a href="/social/drafts/{{ d.id }}/export" class="btn btn-secondary btn-sm">{{ ui.icon("doc") }}Als Textdatei</a>
-    {% for a in usable_assets %}
+    {% for a in draft_images[d.id] %}
     <a href="/social/drafts/{{ d.id }}/image.jpg?asset={{ a.id }}" class="btn btn-secondary btn-sm" download
-       data-jpeg-download>{{ ui.icon("download") }}Bild „{{ a.filename | truncate(18, true, "…") }}“ als JPEG ({{ channel_formats[d.channel].value }})</a>
+       data-jpeg-download>{{ ui.icon("download") }}{% if a.ai_generated %}KI-Bild{% else %}Bild „{{ a.filename | truncate(18, true, "…") }}“{% endif %} als JPEG ({{ channel_formats[d.channel].value }})</a>
     {% endfor %}
   </div>
-  {% if not usable_assets %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild zum Download: Bild hochladen (und ggf. Einwilligung bestätigen).</p>{% endif %}
+  {% if draft_images[d.id] | selectattr("ai_generated") | list %}
+  <div class="mt-2">{% call ui.alert("", "ai") %}<strong>Beim Posten als KI-generiert kennzeichnen:</strong> Das Bild wurde mit KI erzeugt.
+    Setzen Sie auf der Plattform die Kennzeichnung (z. B. „Mit KI erstellt“ bzw. „KI-Info“) oder erwähnen Sie es im Text.{% endcall %}</div>
+  {% endif %}
+  {% if not draft_images[d.id] %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild zum Download: Bild hochladen (und ggf. Einwilligung bestätigen).</p>{% endif %}
 </div>
 {% endif %}
 

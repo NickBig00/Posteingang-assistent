@@ -3,7 +3,7 @@
 {% block title %}Kampagnen – Social Media{% endblock %}
 {% block content %}
 {% call ui.page_header("Kampagnen", "Ein Anlass, mehrere Beiträge über einige Wochen – jeder einzeln geprüft und freigegeben", "/social", "Social Media") %}
-<form method="post" action="/social/campaigns/demo">
+<form method="post" action="/social/campaigns/demo" data-loading="Wird angelegt …">
   <button type="submit" class="btn btn-secondary">Demo-Kampagne anlegen</button>
 </form>
 <a href="/social/campaigns/new" class="btn btn-primary">{{ ui.icon("plus") }}Neue Kampagne</a>

@@ -103,7 +103,7 @@
             Die Kennzeichnung „KI-Vorschlag“ wird beim Freigeben entfernt.</p>
         </form>
         {% if item.status.value == "needs_manual_review" %}
-        <form method="post" action="/items/{{ item.id }}/reprocess" class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+        <form method="post" action="/items/{{ item.id }}/reprocess" class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4" data-loading="Wird verarbeitet …">
           <button class="btn btn-secondary">{{ ui.icon("sparkles") }}Neu verarbeiten</button>
           <span class="text-xs text-ink-subtle">Führt die KI-Verarbeitung erneut aus (z. B. nach Profiländerung); wird protokolliert.</span>
         </form>

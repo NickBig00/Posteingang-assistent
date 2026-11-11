@@ -31,6 +31,7 @@ MAX_TOKENS: dict[LLMTask, int] = {
     "ocr": 16000,
     "post_draft": 4000,
     "post_assess": 4000,
+    "image_prompt": 2000,
 }
 
 

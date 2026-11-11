@@ -21,6 +21,7 @@ Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 | `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Seitenleiste, Design-System, Einstellungen |
 | `app/core/static/` | Lokal ausgeliefertes CSS (Tailwind, kompiliert), HTMX, Schrift Inter, kleines JavaScript |
 | `app/core/llm/` | Anbieterunabhängiges LLM-Interface (einziger Ort für Anbieter-SDKs) |
+| `app/core/images/` | Anbieterunabhängiges Bild-Interface: Fake- und OpenAI-Anbieter, Schalter, Kostenbremse, Audit |
 | `app/inbox/` | Modul Posteingang: Eingang, Pipeline, Vorschläge, Freigabe, Löschkonzept, Evaluation |
 | `app/inbox/llm/` | LLM-Client des Posteingangs (Klassifizierung, Extraktion, Entwurf, OCR) und Ausgabe-Schemas |
 | `app/inbox/rules/` | Deterministische Regel-Engine (Fristen, Pflichtfelder, Plausibilität) |
@@ -43,9 +44,13 @@ Der Titel in Kopfzeile und Browser-Tab kommt aus der Konfiguration: `APP_TITLE` 
 
 Gemeinsames Design-System mit Seitenleiste, Kopfzeile und zentral definierten Komponenten:
 [`docs/DESIGN.md`](docs/DESIGN.md), lebende Übersicht unter `/design`. Die Markenfarbe kommt
-aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`). CSS, HTMX und Schrift werden lokal unter
+aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`), sonst aus `design.primary_color` des
+aktiven Markenprofils, sonst gilt die Standardfarbe. CSS, HTMX und Schrift werden lokal unter
 `/static` ausgeliefert, nicht per CDN. Nach Änderungen an Templates das CSS neu erzeugen:
 `npm install` (einmalig) und `uv run python scripts/build_css.py`.
+
+Barrierefreiheit: `node scripts/a11y.cjs` (axe-core und Tastatur-Durchlauf, Bericht unter
+`docs/accessibility/`).
 
 Screenshots für Pull Requests: `node scripts/screenshots.cjs U1` (Playwright mit Chromium nötig)
 startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs unter
@@ -53,11 +58,37 @@ startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs 
 
 ### Veröffentlichen (Social Media)
 
-Das System postet nichts selbst; veröffentlicht wird von Hand über die Meta Business Suite bzw.
-direkt in LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (inkl. Hashtags), den
+Das System postet nichts selbst; veröffentlicht wird von Hand direkt in Instagram, Facebook bzw.
+LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (inkl. Hashtags), den
 Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Facebook 4:5, Story
 9:16, LinkedIn 1:1; Metadaten wie Standort werden entfernt) und die Markierung „eingeplant
 (extern)“ im Kalender. Die Entwurfsansicht zeigt eine ungefähre Vorschau je Kanal.
+
+### KI-Bilder (optional)
+
+Standardmäßig aus. Einschalten mit `IMAGE_GENERATION_ENABLED=true`; Anbieter über
+`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Das
+anbieterunabhängige Interface liegt in `app/core/images/` (einziger Ort für Bild-SDKs neben
+`app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3) und `IMAGE_MAX_PER_DAY`
+(Standard 20) Erzeugungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht
+mit Modell, Parametern, Variantenzahl und Kostenschätzung (`IMAGE_COST_PER_IMAGE_EUR`) im Audit.
+Tests rufen nie eine echte Bild-API auf.
+
+Im Entwurf (vor der Freigabe) schlägt „Bild vorschlagen“ einen Bild-Prompt aus Briefing und
+`image_style` des Bereichs im Markenprofil vor. Der Prompt ist sichtbar und bearbeitbar; vor
+jeder Erzeugung lehnt ein Code-Check Personen, Namen, Text im Bild, echte Räume oder
+Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten ab. Die gewählte Variante
+ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
+hochgeladenes Bild gelöscht.
+
+### Grafiken aus Vorlagen (Social Media)
+
+Im Briefing erzeugt „Grafik aus Vorlage“ deterministisch per Code (Pillow, Schrift Inter, kein
+LLM) eine Grafik je Anlass-Typ (Ankündigung, Aktion mit Preis, Hinweis, Standard): Hintergrund
+(eigenes Foto, gewähltes KI-Bild oder Farbfläche), Markenname, Markenfarben aus `design:` im
+Markenprofil und die Fakten aus dem Briefing. Vor dem Rendern prüft der Code: jeder Fakt genau
+einmal in Anzeige-Schreibweise, kein anderes Datum, keine andere Uhrzeit, kein anderer Preis,
+keine andere Telefonnummer, keine verbotenen Begriffe. Formate 1:1, 4:5, 9:16; Export als JPEG.
 
 ### Module ein- und ausschalten
 

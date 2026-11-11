@@ -128,7 +128,7 @@ class PostDraft(SQLModel, table=True):
     scheduled_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     published_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     # "eingeplant (extern)": a person scheduled the post in the platform's own planner (e.g.
-    # Meta Business Suite). A marker on status `scheduled`, not a status of its own.
+    # LinkedIn). A marker on status `scheduled`, not a status of its own.
     external_scheduled_at: datetime | None = Field(
         default=None, sa_column=_optional_timestamp_column()
     )
@@ -191,11 +191,42 @@ class Asset(SQLModel, table=True):
     consent_confirmed: bool = False
     consent_by: str | None = None
     consent_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+    # AI image (SPEC_social 13): labelled "KI-generiert"; belongs to one draft.
+    ai_generated: bool = False
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     # Consent withdrawn: the file is deleted, the entry stays as record until removed.
     consent_revoked_by: str | None = None
     consent_revoked_at: datetime | None = Field(
         default=None, sa_column=_optional_timestamp_column()
     )
+
+
+class ImageProposal(SQLModel, table=True):
+    """Prompt for AI images of one draft: AI suggestion, visible and editable by a person."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True)
+    prompt: str = ""
+    # The current prompt is the unchanged AI suggestion (False once a person edited it).
+    prompt_from_ai: bool = True
+    image_format: str = "1:1"
+    created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+
+class ImageCandidate(SQLModel, table=True):
+    """One generated variant waiting for a person's choice (deleted after choice/discard)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    proposal_id: int = Field(foreign_key="imageproposal.id", index=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True)
+    variant: int
+    stored_path: str
+    media_type: str
+    content_hash: str
+    model: str
+    created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
 
 
 class PostReview(SQLModel, table=True):

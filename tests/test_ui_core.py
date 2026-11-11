@@ -12,11 +12,13 @@ from app.core.theme import (
     DEFAULT_BRAND_COLOR,
     MIN_CONTRAST,
     WHITE,
+    BrandColorChoice,
     ThemeConfigError,
     build_theme,
     contrast_ratio,
     current_theme,
     parse_hex,
+    resolve_brand_color,
 )
 from app.core.web import SETTINGS_ENTRY, NavEntry, active_entry
 
@@ -233,7 +235,7 @@ def test_settings_flag_an_invalid_brand_colour(
 ) -> None:
     monkeypatch.setenv("BRAND_COLOR", "lila")
 
-    assert "ungültig – Standardfarbe wird verwendet" in client.get("/settings").text
+    assert "„lila“ ungültig, ignoriert" in client.get("/settings").text
 
 
 def test_design_page_shows_all_components(client: TestClient) -> None:
@@ -275,3 +277,74 @@ def test_every_status_of_both_modules_has_a_design_tone() -> None:
     )
     assert STATUS_TONES[ItemStatus.APPROVED] == POST_STATUS_TONES[PostStatus.APPROVED]
     assert STATUS_TONES[ItemStatus.REJECTED] == POST_STATUS_TONES[PostStatus.REJECTED]
+
+
+# --- contrast of the design tokens (U5; the full page check is scripts/a11y.cjs) ---
+
+# Text and background colours of the tones (Tailwind palette values used in app.css).
+TONE_PAIRS = {
+    "badge-neutral": ("#334155", "#f1f5f9"),
+    "badge-info": ("#075985", "#f0f9ff"),
+    "badge-ok": ("#166534", "#f0fdf4"),
+    "badge-warning": ("#78350f", "#fffbeb"),
+    "badge-error": ("#991b1b", "#fef2f2"),
+    "badge-ai": ("#5b21b6", "#f5f3ff"),
+    "alert-warning": ("#451a03", "#fffbeb"),
+    "ink-subtle on surface": ("#64748b", "#ffffff"),
+    "ink-subtle on page": ("#64748b", "#f8fafc"),
+    "code": ("#475569", "#f1f5f9"),
+    "btn-success": ("#ffffff", "#15803d"),
+    "btn-danger": ("#b91c1c", "#ffffff"),
+}
+
+
+@pytest.mark.parametrize("name", list(TONE_PAIRS))
+def test_tone_colours_meet_wcag_aa(name: str) -> None:
+    text, background = TONE_PAIRS[name]
+
+    assert contrast_ratio(parse_hex(text), parse_hex(background)) >= MIN_CONTRAST
+
+
+def test_sidebar_list_contains_only_list_items(client: TestClient) -> None:
+    html = client.get("/settings").text
+    nav = html[html.index('id="sidebar"') : html.index("</nav>")]
+
+    assert 'role="separator"' not in nav
+    assert nav.count("<li") == nav.count("</li>")
+
+
+# --- brand colour from the brand profile (follow-up to U1) ---
+
+
+def test_brand_colour_precedence(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BRAND_COLOR", raising=False)
+    assert resolve_brand_color(None) == BrandColorChoice(DEFAULT_BRAND_COLOR, "default")
+    assert resolve_brand_color("#334155") == BrandColorChoice("#334155", "profile")
+    monkeypatch.setenv("BRAND_COLOR", "#1e3a8a")
+    assert resolve_brand_color("#334155") == BrandColorChoice("#1e3a8a", "env")
+    monkeypatch.setenv("BRAND_COLOR", "lila")
+    assert resolve_brand_color("#334155") == BrandColorChoice("#334155", "profile", "lila")
+
+
+def test_interface_uses_the_colour_of_the_brand_profile(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("BRAND_COLOR", raising=False)
+    monkeypatch.setenv("BRAND_PROFILE", "handwerk_demo")
+
+    assert "--brand: 51 65 85;" in client.get("/").text  # #334155 from handwerk_demo.yaml
+    assert "aus dem Markenprofil" in client.get("/settings").text
+    monkeypatch.setenv("BRAND_COLOR", "#1e3a8a")
+    assert "--brand: 30 58 138;" in client.get("/").text
+
+
+def test_without_social_module_the_profile_colour_is_not_used(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.main import create_app
+
+    monkeypatch.delenv("BRAND_COLOR", raising=False)
+    monkeypatch.setenv("BRAND_PROFILE", "handwerk_demo")
+    monkeypatch.setenv("MODULES", "inbox")
+
+    assert create_app().state.brand_color_providers == []

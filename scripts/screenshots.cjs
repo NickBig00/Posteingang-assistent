@@ -63,9 +63,12 @@ const SHOTS = {
 };
 
 function startServer(env) {
+  // Start uvicorn directly (not via `uv run`), so stopping the child really stops the server.
+  const local = path.join(ROOT, ".venv", "bin", "uvicorn");
+  const [command, prefix] = fs.existsSync(local) ? [local, []] : ["uv", ["run", "uvicorn"]];
   const child = spawn(
-    "uv",
-    ["run", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", String(PORT)],
+    command,
+    [...prefix, "app.main:app", "--host", "127.0.0.1", "--port", String(PORT)],
     { cwd: ROOT, env, stdio: ["ignore", "ignore", "pipe"] },
   );
   child.stderr.on("data", () => {});
@@ -174,7 +177,13 @@ async function seed(withImages) {
   if (withImages) {
     const first = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
     const draft = (first.match(/id="draft-(\d+)"/) || [])[1];
-    if (draft) await post(`/social/drafts/${draft}/images/suggest`);
+    if (draft) {
+      await post(`/social/drafts/${draft}/images/suggest`, { image_format: "4:5" });
+      const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      const match = page.match(new RegExp(`id="prompt-${draft}"[^>]*>([^<]*)</textarea>`));
+      const prompt = match ? match[1].replace(/&amp;/g, "&").replace(/&#34;/g, '"').replace(/&#39;/g, "'") : "";
+      if (prompt) await post(`/social/drafts/${draft}/images/generate`, { prompt, image_format: "4:5" });
+    }
   }
   return ids;
 }
@@ -203,6 +212,13 @@ async function shoot(browser, milestone, ids, empty) {
   }
 }
 
+async function stopServer(server) {
+  if (server.exitCode !== null) return;
+  const exited = new Promise((resolve) => server.once("exit", resolve));
+  server.kill();
+  await exited;
+}
+
 async function run(milestones, empty) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "screens-"));
   const env = {
@@ -222,12 +238,36 @@ async function run(milestones, empty) {
     for (const milestone of milestones) await shoot(browser, milestone, ids, empty);
     await browser.close();
   } finally {
-    server.kill();
+    await stopServer(server);
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 }
 
-(async () => {
+// Start the app on a fresh temporary database, seed demo data and run `fn(ids)`.
+async function withServer(fn, { images = false } = {}) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "a11y-"));
+  const env = {
+    ...process.env,
+    POSTEINGANG_NO_DOTENV: "1",
+    DATABASE_URL: `sqlite:///${path.join(tmp, "demo.db")}`,
+    STORAGE_DIR: path.join(tmp, "raw"),
+    LLM_PROVIDER: "fake",
+    IMAGE_GENERATION_ENABLED: images ? "true" : "false",
+    IMAGE_PROVIDER: "fake",
+  };
+  const server = startServer(env);
+  try {
+    await waitForServer();
+    return await fn(await seed(images));
+  } finally {
+    await stopServer(server);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+module.exports = { withServer, BASE, LAPTOP, TABLET, ROOT };
+
+if (require.main === module) (async () => {
   const milestones = process.argv.slice(2);
   const unknown = milestones.filter((m) => !SHOTS[m]);
   if (milestones.length === 0 || unknown.length) {

@@ -15,11 +15,21 @@ contact:
   email: info@gesundheitszentrum.example
   website: https://gesundheitszentrum.example
 forbidden_terms: [billig, Schnäppchen, Bikinifigur, Problemzonen, sofort abnehmen]
+# Farben und Schrift für Grafiken aus Vorlagen (fiktiv).
+design:
+  primary_color: "#0f766e"
+  accent_color: "#f59e0b"
+  font: inter
 areas:
   - key: fitness
     label: Fitness
     address_form: du
     tone: locker, motivierend, nicht marktschreierisch
+    image_style:
+      colors: hell, Petrol und warmes Weiß
+      mood: freundlich, motivierend, aufgeräumt
+      motifs: Trainingsgeräte, Hanteln, Matten, Tageslicht, Pflanzen
+      exclusions: [Spiegel-Selfies, Körper im Detail]
     channels: [instagram_post, instagram_story, facebook]
     emojis: {allowed: true, max: 3}
     hashtags: ["#Fitness"]
@@ -34,6 +44,11 @@ areas:
     label: Kurse
     address_form: du
     tone: freundlich, gemeinschaftlich, einladend
+    image_style:
+      colors: helle Pastelltöne, Petrol als Akzent
+      mood: ruhig, gemeinschaftlich, einladend
+      motifs: Kursraum mit Matten, Bällen und Bändern, Natur, Wald
+      exclusions: [Gruppenfotos]
     channels: [instagram_post, facebook]
     emojis: {allowed: true, max: 2}
     hashtags: ["#Kurse"]
@@ -48,6 +63,11 @@ areas:
     label: Physiotherapie
     address_form: sie
     tone: ruhig, fachlich, vertrauensvoll
+    image_style:
+      colors: Weiß, helles Holz, sanftes Grün
+      mood: ruhig, fachlich, vertrauensvoll
+      motifs: aufgeräumter Behandlungsraum, Pflanzen, Licht durch Fenster
+      exclusions: [Behandlungen am Körper, medizinische Geräte in Nahaufnahme]
     channels: [facebook, instagram_post]
     emojis: {allowed: false}
     examples:
@@ -60,6 +80,11 @@ areas:
     label: Rehasport
     address_form: sie
     tone: ruhig, fachlich, vertrauensvoll
+    image_style:
+      colors: warme, gedämpfte Farben
+      mood: ruhig, ermutigend, sachlich
+      motifs: Bewegungsraum mit Geländer, Bälle, Matten, Natur
+      exclusions: [Krankheitsbilder, Hilfsmittel in Nahaufnahme]
     channels: [facebook]
     emojis: {allowed: false}
     examples:
@@ -73,6 +98,11 @@ areas:
     label: Firmenfitness
     address_form: sie
     tone: sachlich, Nutzen für Arbeitgeber im Vordergrund
+    image_style:
+      colors: Petrol, Grau, Weiß
+      mood: sachlich, modern, aufgeräumt
+      motifs: Büro mit Pflanzen, Treppenhaus, Fahrradständer, Laufschuhe
+      exclusions: [Firmenlogos]
     channels: [linkedin]
     emojis: {allowed: false}
     hashtags: ["#Firmenfitness"]
