@@ -170,7 +170,7 @@ def test_status_is_shown_in_german(
     item_id = _create(engine, status)
 
     detail = client.get(f"/items/{item_id}").text
-    inbox = client.get("/").text
+    inbox = client.get("/inbox").text
 
     assert f'id="status">{label}</span>' in detail
     assert f">{label}</span>" in inbox
@@ -255,7 +255,7 @@ def test_full_ui_flow_load_review_approve_execute(
     assert "27 Beispiel-Eingänge importiert" in client.post("/samples/import").text
     inbox = client.post("/items/process").text
     assert "27 Eingänge verarbeitet" in inbox
-    assert "bg-red-600" in inbox  # traffic light for rule errors
+    assert "dot-error" in inbox  # traffic light for rule errors
 
     with Session(engine) as session:
         suggestion = session.exec(

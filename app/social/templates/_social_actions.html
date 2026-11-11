@@ -1,49 +1,80 @@
-<div class="mt-3 flex flex-wrap items-center gap-2">
+{% import "_ui.html" as ui %}
+<div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
   {% if d.status.value == "in_review" %}
   <form method="post" action="/social/drafts/{{ d.id }}/approve">
     <button type="submit" {% if blockers[d.id] %}disabled title="{{ blockers[d.id] | join(' ') }}"{% endif %}
-            class="rounded bg-green-700 px-3 py-1.5 text-sm text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-slate-300">
-      Freigeben</button>
+            class="btn btn-success">{{ ui.icon("check") }}Freigeben</button>
   </form>
   {% endif %}
   {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
-  <form method="post" action="/social/drafts/{{ d.id }}/recheck">
-    <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Erneut prüfen</button>
-  </form>
-  {% endif %}
-  {% if d.status.value in ("draft", "in_review", "needs_manual_review", "approved", "scheduled") %}
-  <form method="post" action="/social/drafts/{{ d.id }}/reject">
-    <button type="submit" class="rounded border border-red-300 px-3 py-1.5 text-sm text-red-800 hover:bg-red-50">Verwerfen</button>
-  </form>
-  {% endif %}
-  {% if d.status.value == "rejected" %}
-  <form method="post" action="/social/drafts/{{ d.id }}/reopen">
-    <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Wieder öffnen</button>
+  <form method="post" action="/social/drafts/{{ d.id }}/recheck" data-loading="Wird geprüft …">
+    <button type="submit" class="btn btn-secondary">Erneut prüfen</button>
   </form>
   {% endif %}
   {% if d.status.value == "scheduled" %}
   <form method="post" action="/social/drafts/{{ d.id }}/publish">
-    <button type="submit" class="rounded bg-blue-700 px-3 py-1.5 text-sm text-white hover:bg-blue-800">Als veröffentlicht markieren</button>
+    <button type="submit" class="btn btn-primary">Als veröffentlicht markieren</button>
   </form>
+  {% if not d.is_scheduled_externally %}
+  <form method="post" action="/social/drafts/{{ d.id }}/external">
+    <button type="submit" class="btn btn-secondary" title="Halten Sie fest, dass der Beitrag in der Planungsfunktion der Plattform (z. B. LinkedIn) eingeplant ist.">Als „eingeplant (extern)“ markieren</button>
+  </form>
+  {% endif %}
   <form method="post" action="/social/drafts/{{ d.id }}/unschedule">
-    <button type="submit" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Aus Kalender nehmen</button>
+    <button type="submit" class="btn btn-secondary">Aus Kalender nehmen</button>
   </form>
   {% endif %}
-  <form method="post" action="/social/drafts/{{ d.id }}/delete"
+  {% if d.status.value == "rejected" %}
+  <form method="post" action="/social/drafts/{{ d.id }}/reopen">
+    <button type="submit" class="btn btn-secondary">Wieder öffnen</button>
+  </form>
+  {% endif %}
+  {% if d.status.value in ("draft", "in_review", "needs_manual_review", "approved", "scheduled") %}
+  <form method="post" action="/social/drafts/{{ d.id }}/reject">
+    <button type="submit" class="btn btn-danger">Verwerfen</button>
+  </form>
+  {% endif %}
+  <form method="post" action="/social/drafts/{{ d.id }}/delete" class="ml-auto"
         onsubmit="return confirm('Diesen Entwurf mit Prüfergebnissen und gespeicherten KI-Ausgaben löschen?')">
-    <button type="submit" class="rounded px-2 py-1.5 text-xs text-red-700 hover:underline">Entwurf löschen</button>
+    <button type="submit" class="btn btn-ghost btn-sm text-red-700">{{ ui.icon("trash") }}Entwurf löschen</button>
   </form>
-  {% if d.status.value in ("approved", "scheduled", "published") %}
-  <a href="/social/drafts/{{ d.id }}/export" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Als Textdatei</a>
-  <button type="button" data-copy="{{ d.full_text }}"
-          onclick="navigator.clipboard.writeText(this.dataset.copy).then(() => { this.textContent = 'Kopiert ✓'; })"
-          class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">Text kopieren</button>
-  {% endif %}
 </div>
-{% if d.scheduled_at %}<p class="mt-2 text-sm">Geplant: <strong>{{ (d.scheduled_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr</strong>{% if d.published_at %} · veröffentlicht am {{ (d.published_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr{% endif %}</p>{% endif %}
+
+{% if d.status.value in ("approved", "scheduled", "published") %}
+<div class="mt-4 rounded-lg border border-line bg-surface-muted p-3" id="publish-aids-{{ d.id }}">
+  <p class="text-sm font-semibold">Zum Veröffentlichen</p>
+  <p class="mt-0.5 text-xs text-ink-subtle">Das System postet nichts selbst. Text und Bild übernehmen Sie von Hand direkt in Instagram, Facebook bzw. LinkedIn.</p>
+  <div class="mt-2 flex flex-wrap items-center gap-2">
+    <button type="button" class="btn btn-primary btn-sm" data-copy="{{ d.full_text }}">{{ ui.icon("copy") }}<span data-copy-label>Text kopieren</span></button>
+    <a href="/social/drafts/{{ d.id }}/export" class="btn btn-secondary btn-sm">{{ ui.icon("doc") }}Als Textdatei</a>
+    {% for a in draft_images[d.id] %}
+    <a href="/social/drafts/{{ d.id }}/image.jpg?asset={{ a.id }}" class="btn btn-secondary btn-sm" download
+       data-jpeg-download>{{ ui.icon("download") }}{% if a.ai_generated %}KI-Bild{% else %}Bild „{{ a.filename | truncate(18, true, "…") }}“{% endif %} als JPEG ({{ channel_formats[d.channel].value }})</a>
+    {% endfor %}
+  </div>
+  {% if draft_images[d.id] | selectattr("ai_generated") | list %}
+  <div class="mt-2">{% call ui.alert("", "ai") %}<strong>Beim Posten als KI-generiert kennzeichnen:</strong> Das Bild wurde mit KI erzeugt.
+    Setzen Sie auf der Plattform die Kennzeichnung (z. B. „Mit KI erstellt“ bzw. „KI-Info“) oder erwähnen Sie es im Text.{% endcall %}</div>
+  {% endif %}
+  {% if not draft_images[d.id] %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild zum Download: Bild hochladen (und ggf. Einwilligung bestätigen).</p>{% endif %}
+</div>
+{% endif %}
+
+{% if d.scheduled_at %}
+<p class="mt-3 flex flex-wrap items-center gap-2 text-sm">{{ ui.icon("calendar", "h-4 w-4 text-ink-subtle") }}
+  Geplant: <strong>{{ (d.scheduled_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr</strong>
+  {% if d.is_scheduled_externally %}
+  <span class="badge badge-info" data-external>eingeplant (extern)</span>
+  <span class="text-xs text-ink-subtle">von {{ d.external_scheduled_by }} am {{ (d.external_scheduled_at | local).strftime("%d.%m.%Y %H:%M") }}</span>
+  <form method="post" action="/social/drafts/{{ d.id }}/external/undo" class="inline">
+    <button type="submit" class="btn btn-link btn-sm">zurücknehmen</button>
+  </form>
+  {% endif %}
+  {% if d.published_at %}· veröffentlicht am {{ (d.published_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr{% endif %}</p>
+{% endif %}
 <div class="mt-2">{% set back = "" %}{% include "_social_schedule.html" %}</div>
 {% if d.status.value == "in_review" and blockers[d.id] %}
-<ul class="mt-2 list-disc pl-5 text-xs text-slate-600" aria-label="Freigabe noch nicht möglich">
+<ul class="mt-2 list-disc pl-5 text-xs text-ink-muted" aria-label="Freigabe noch nicht möglich">
   {% for b in blockers[d.id] %}<li>{{ b }}</li>{% endfor %}
 </ul>
 {% endif %}

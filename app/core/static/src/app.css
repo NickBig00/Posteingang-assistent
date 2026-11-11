@@ -1,0 +1,299 @@
+/*
+ * Design system of the application (docs/DESIGN.md).
+ * Source file: compiled with `uv run python scripts/build_css.py` to app/core/static/css/app.css.
+ * Do not edit the compiled file by hand.
+ */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/Inter_400Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+  src: url("/static/fonts/Inter_600SemiBold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/Inter_700Bold.ttf") format("truetype");
+}
+
+@tailwind base;
+@tailwind components;
+
+/* ---------- Tokens ---------- */
+@layer base {
+  :root {
+    /* Brand colour: overridden per request from env BRAND_COLOR (app/core/theme.py). */
+    --brand: 15 118 110;
+    --brand-on: 255 255 255;
+    --brand-strong: 12 97 90;
+    --brand-text: 15 118 110;
+    --brand-soft: 231 241 241;
+
+    /* Neutral surfaces, lines and text (slate scale). */
+    --surface: 255 255 255;
+    --surface-muted: 248 250 252;
+    --surface-sunken: 241 245 249;
+    --line: 226 232 240;
+    --line-strong: 203 213 225;
+    --ink: 15 23 42;
+    --ink-muted: 71 85 105;
+    --ink-subtle: 100 116 139;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-surface-muted font-sans text-ink antialiased;
+  }
+  /* Visible focus for keyboard users everywhere (WCAG 2.4.7). */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+  }
+  a {
+    @apply text-brand-text;
+  }
+  code {
+    @apply rounded bg-surface-sunken px-1 py-0.5 text-[0.85em] text-ink-muted;
+  }
+}
+
+/* ---------- Components ----------
+ * Deliberately outside `@layer`: always emitted (also for class names composed in templates,
+ * e.g. `badge-{{ tone }}`), and placed before the utilities so utilities can still override.
+ */
+  /* Layout */
+  .page-title {
+    @apply text-xl font-semibold tracking-tight text-ink;
+  }
+  .page-subtitle {
+    @apply mt-0.5 text-sm text-ink-muted;
+  }
+  .back-link {
+    @apply mb-2 inline-flex items-center gap-1 text-sm font-medium text-brand-text hover:underline;
+  }
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:shadow-card;
+  }
+
+  /* Card */
+  .card {
+    @apply rounded-card border border-line bg-surface shadow-card;
+  }
+  .card-body {
+    @apply p-5;
+  }
+  .card-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3;
+  }
+  .card-title {
+    @apply text-base font-semibold text-ink;
+  }
+  .card-ai {
+    @apply border-violet-200;
+  }
+  .card-done {
+    @apply border-green-300;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border px-3.5 py-2 text-sm font-medium no-underline transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs;
+  }
+  .btn-primary {
+    @apply border-transparent bg-brand text-brand-on hover:bg-brand-strong;
+  }
+  .btn-secondary {
+    @apply border-line-strong bg-surface text-ink hover:bg-surface-sunken;
+  }
+  .btn-success {
+    @apply border-transparent bg-green-700 text-white hover:bg-green-800 disabled:bg-slate-400 disabled:opacity-100;
+  }
+  .btn-danger {
+    @apply border-red-300 bg-surface text-red-700 hover:bg-red-50;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-ink-muted hover:bg-surface-sunken hover:text-ink;
+  }
+  .btn-link {
+    @apply border-transparent bg-transparent px-1 text-brand-text hover:underline;
+  }
+
+  /* Badges: one tone per meaning, used by all modules (docs/DESIGN.md, "Töne"). */
+  .badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium leading-5;
+  }
+  .badge-neutral {
+    @apply border-slate-200 bg-slate-100 text-slate-700;
+  }
+  .badge-info {
+    @apply border-sky-200 bg-sky-50 text-sky-800;
+  }
+  .badge-ok {
+    @apply border-green-200 bg-green-50 text-green-800;
+  }
+  .badge-warning {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+  .badge-error {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+  .badge-ai {
+    @apply border-violet-200 bg-violet-50 text-violet-800;
+  }
+  .badge-brand {
+    @apply border-transparent bg-brand-soft text-brand-text;
+  }
+
+  /* Traffic light dot */
+  .dot {
+    @apply inline-block h-2.5 w-2.5 shrink-0 rounded-full;
+  }
+  .dot-ok {
+    @apply bg-green-600;
+  }
+  .dot-warning {
+    @apply bg-amber-500;
+  }
+  .dot-error {
+    @apply bg-red-600;
+  }
+  .dot-neutral {
+    @apply bg-slate-400;
+  }
+
+  /* Tables */
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table thead {
+    @apply border-b border-line bg-surface-muted text-xs font-medium uppercase tracking-wide text-ink-subtle;
+  }
+  .table th {
+    @apply px-4 py-2.5 font-medium;
+  }
+  .table td {
+    @apply border-b border-line px-4 py-3 align-top;
+  }
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .table tbody tr:hover {
+    @apply bg-surface-muted;
+  }
+  .table-wrap {
+    @apply relative overflow-x-auto;
+  }
+
+  /* Forms */
+  .field {
+    @apply block text-sm;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-ink;
+  }
+  .hint {
+    @apply mt-1 block text-xs text-ink-subtle;
+  }
+  .field-error {
+    @apply mt-1 block text-xs font-medium text-red-700;
+  }
+  .input {
+    @apply block w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30;
+  }
+  .input-invalid {
+    @apply border-red-500;
+  }
+  .checkbox {
+    @apply h-4 w-4 accent-brand;
+  }
+  .file-input {
+    @apply block w-full text-sm text-ink-muted file:mr-3 file:rounded-lg file:border file:border-solid file:border-line-strong file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink hover:file:bg-surface-sunken;
+  }
+
+  /* Alerts and toasts */
+  .alert {
+    @apply flex gap-3 rounded-lg border px-4 py-3 text-sm;
+  }
+  .alert-info {
+    @apply border-sky-200 bg-sky-50 text-sky-900;
+  }
+  .alert-ok {
+    @apply border-green-200 bg-green-50 text-green-900;
+  }
+  .alert-warning {
+    @apply border-amber-200 bg-amber-50 text-amber-950;
+  }
+  .alert-error {
+    @apply border-red-200 bg-red-50 text-red-900;
+  }
+  .alert-ai {
+    @apply border-violet-200 bg-violet-50 text-violet-950;
+  }
+  .toast {
+    @apply fixed bottom-4 right-4 z-40 max-w-sm shadow-lg;
+  }
+
+  /* Empty state */
+  .empty-state {
+    @apply flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line-strong bg-surface px-6 py-10 text-center;
+  }
+  .empty-state-title {
+    @apply text-sm font-semibold text-ink;
+  }
+  .empty-state-text {
+    @apply max-w-md text-sm text-ink-muted;
+  }
+
+  /* Loading indicator (HTMX adds .htmx-request while a request runs) */
+  .spinner {
+    @apply inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent align-[-0.125em];
+  }
+  .htmx-indicator {
+    @apply hidden;
+  }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator {
+    @apply inline-flex;
+  }
+
+  /* Description list */
+  .dl-grid {
+    @apply grid grid-cols-[minmax(7rem,auto)_1fr] gap-x-4 gap-y-1.5 text-sm;
+  }
+  .dl-grid dt {
+    @apply text-ink-subtle;
+  }
+
+  /* Sidebar navigation */
+  .nav-link {
+    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-muted no-underline hover:bg-surface-sunken hover:text-ink;
+  }
+  .nav-link[aria-current="page"] {
+    @apply bg-brand-soft text-brand-text;
+  }
+  .nav-icon {
+    @apply h-5 w-5 shrink-0;
+  }
+
+@tailwind utilities;
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}

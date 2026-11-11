@@ -1,17 +1,16 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Neues Briefing – Social Media{% endblock %}
 {% block content %}
-<a href="/social" class="text-sm text-blue-700 hover:underline">← Social Media</a>
-<h2 class="mb-4 text-lg font-semibold">Neues Briefing</h2>
-{% if errors %}
-<p class="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-  Bitte die markierten Angaben prüfen.</p>
-{% endif %}
-<form method="post" action="/social/briefings" class="rounded-lg border border-slate-200 bg-white p-6">
+{% call ui.page_header("Neues Briefing", "Stichpunkte und harte Fakten – daraus entstehen KI-Entwürfe je Kanal", "/social", "Social Media") %}{% endcall %}
+{% if errors %}<div class="mb-4">{{ ui.alert("Bitte die markierten Angaben prüfen.", "error", "alert") }}</div>{% endif %}
+<form method="post" action="/social/briefings" class="card card-body max-w-4xl" hx-indicator="#briefing-loading" data-loading="Entwürfe werden erstellt …">
   <div id="briefing-fields">{% include "_social_briefing_fields.html" %}</div>
-  <p class="mt-4 text-xs text-slate-500">Bitte keine Namen oder Daten von Mitgliedern, Patientinnen
-    oder Patienten eintragen. Die Stichpunkte werden zur Formulierung an das KI-Modell gesendet.</p>
-  <button type="submit" class="mt-4 rounded bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">
-    Entwürfe erstellen</button>
+  <div class="mt-5">{% call ui.alert("", "warning") %}Bitte keine Namen oder Daten von Mitgliedern, Patientinnen
+    oder Patienten eintragen. Die Stichpunkte werden zur Formulierung an das KI-Modell gesendet.{% endcall %}</div>
+  <div class="mt-5 flex flex-wrap items-center gap-3">
+    <button type="submit" class="btn btn-primary">{{ ui.icon("sparkles") }}Entwürfe erstellen</button>
+    {{ ui.spinner("Felder werden aktualisiert …", "briefing-loading") }}
+  </div>
 </form>
 {% endblock %}

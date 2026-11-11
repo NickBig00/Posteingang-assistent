@@ -12,6 +12,7 @@ from sqlalchemy import JSON, Column, DateTime
 from sqlmodel import Field, SQLModel
 
 from app.core.approval import ReviewDecision
+from app.core.image_formats import ImageFormat
 from app.core.models import timestamp_column, utcnow
 from app.core.outcomes import Outcome
 
@@ -40,6 +41,15 @@ CHANNEL_LABELS: dict[Channel, str] = {
 }
 
 
+# Image format used for the JPEG download per channel (SPEC_social 12).
+CHANNEL_IMAGE_FORMATS: dict[Channel, ImageFormat] = {
+    Channel.INSTAGRAM_POST: ImageFormat.PORTRAIT,
+    Channel.INSTAGRAM_STORY: ImageFormat.STORY,
+    Channel.FACEBOOK: ImageFormat.PORTRAIT,
+    Channel.LINKEDIN: ImageFormat.SQUARE,
+}
+
+
 class PostStatus(StrEnum):
     DRAFT = "draft"
     IN_REVIEW = "in_review"
@@ -59,6 +69,18 @@ POST_STATUS_LABELS: dict[PostStatus, str] = {
     PostStatus.SCHEDULED: "Geplant",
     PostStatus.PUBLISHED: "Veröffentlicht",
     PostStatus.REJECTED: "Verworfen",
+}
+
+
+# Tone of each status in the shared design system (docs/DESIGN.md, "Töne").
+POST_STATUS_TONES: dict[PostStatus, str] = {
+    PostStatus.DRAFT: "neutral",
+    PostStatus.IN_REVIEW: "warning",
+    PostStatus.NEEDS_MANUAL_REVIEW: "error",
+    PostStatus.APPROVED: "ok",
+    PostStatus.SCHEDULED: "info",
+    PostStatus.PUBLISHED: "ok",
+    PostStatus.REJECTED: "neutral",
 }
 
 
@@ -105,12 +127,23 @@ class PostDraft(SQLModel, table=True):
     status: PostStatus = Field(default=PostStatus.DRAFT, index=True)
     scheduled_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     published_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+    # "eingeplant (extern)": a person scheduled the post in the platform's own planner (e.g.
+    # LinkedIn). A marker on status `scheduled`, not a status of its own.
+    external_scheduled_at: datetime | None = Field(
+        default=None, sa_column=_optional_timestamp_column()
+    )
+    external_scheduled_by: str | None = None
     # Transparency requirement: the text was produced by the LLM (kept after approval as
     # provenance; the label is shown in the UI, never inside the post text).
     is_ai_suggestion: bool = True
     # True once a person changed the text.
     edited_by_human: bool = False
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+    @property
+    def is_scheduled_externally(self) -> bool:
+        """Marker "eingeplant (extern)" – only meaningful while the post is scheduled."""
+        return self.status == PostStatus.SCHEDULED and self.external_scheduled_at is not None
 
     @property
     def full_text(self) -> str:
@@ -158,11 +191,42 @@ class Asset(SQLModel, table=True):
     consent_confirmed: bool = False
     consent_by: str | None = None
     consent_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+    # AI image (SPEC_social 13): labelled "KI-generiert"; belongs to one draft.
+    ai_generated: bool = False
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     # Consent withdrawn: the file is deleted, the entry stays as record until removed.
     consent_revoked_by: str | None = None
     consent_revoked_at: datetime | None = Field(
         default=None, sa_column=_optional_timestamp_column()
     )
+
+
+class ImageProposal(SQLModel, table=True):
+    """Prompt for AI images of one draft: AI suggestion, visible and editable by a person."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True)
+    prompt: str = ""
+    # The current prompt is the unchanged AI suggestion (False once a person edited it).
+    prompt_from_ai: bool = True
+    image_format: str = "1:1"
+    created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+
+class ImageCandidate(SQLModel, table=True):
+    """One generated variant waiting for a person's choice (deleted after choice/discard)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    proposal_id: int = Field(foreign_key="imageproposal.id", index=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True)
+    variant: int
+    stored_path: str
+    media_type: str
+    content_hash: str
+    model: str
+    created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
 
 
 class PostReview(SQLModel, table=True):

@@ -94,7 +94,29 @@ Vertragsdaten der (fiktiven) Mitglieder liegen in einer Demo-Tabelle, gegen die 
 - **Audit-Ansicht:** chronologischer Verlauf aller KI-Schritte zu einem Eingang.
 - **Demo-Modus:** Button „Beispieldaten laden“.
 
-## 10. Offene Entscheidungen
+## 10. Gestaltung der Oberfläche
+
+### 10.1 Ziel
+
+Ruhig, modern und übersichtlich, damit die Mitarbeitenden im Büro im Alltag gern damit arbeiten und das Tool bei Kundengesprächen überzeugt. Technik bleibt Jinja2 + HTMX + Tailwind.
+
+### 10.2 Grundsätze
+
+- **Design-System:** Farben, Abstände, Schrift und Komponenten zentral definiert (Karte, Badge, Button, Tabelle, Formular, Hinweis/Toast, Leerzustand, Ladeanzeige)
+- **Markenfarbe konfigurierbar** (aus Konfiguration bzw. Markenprofil), damit die Oberfläche zum Kunden passt. Vorrang: Umgebungsvariable `BRAND_COLOR`, dann `design.primary_color` des aktiven Markenprofils, sonst die Standardfarbe
+- **Einheitliche Status- und Ampelfarben** in allen Modulen
+- **Layout:** Seitenleiste mit Modulen (Übersicht, Posteingang, Social Media, Kalender, Einstellungen), Kopfzeile mit konfigurierbarem Titel. „Einstellungen“ zeigt die wirksame Konfiguration nur an (nie Zugangsdaten); bearbeitbar wird sie erst mit einer Benutzerverwaltung
+- **Startseite als Übersicht:** Was ist heute zu tun? Zahlen je Modul (dringend, zur Prüfung, Entwürfe, geplante Beiträge), Klick führt in die Liste
+- **Beitragsvorschau:** Entwürfe zusätzlich so anzeigen, wie sie auf Instagram bzw. Facebook ungefähr aussehen würden (Bild, Text, gekürzt mit „mehr“)
+- **Responsiv:** gut nutzbar auf Laptop und Tablet
+- **Barrierefreiheit:** ausreichende Kontraste, sichtbarer Fokus, bedienbar per Tastatur
+- **KI-Kennzeichnung** überall gleich gestaltet und gut sichtbar
+
+### 10.3 Review
+
+Jeder UI-Meilenstein legt Screenshots der geänderten Seiten in den Pull Request (z. B. per Playwright headless erzeugt), damit die Gestaltung ohne lokalen Start beurteilt werden kann.
+
+## 11. Offene Entscheidungen
 
 - Produktiver LLM-Anbieter für spätere Echtnutzung
 - OCR: Tesseract oder Vision-Modell

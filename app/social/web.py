@@ -4,12 +4,21 @@ from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from sqlmodel import Session, col, select
 
 from app.core.db import get_session
+from app.core.image_formats import (
+    FORMAT_SPECS,
+    ImageExportError,
+    ImageFormat,
+    export_jpeg,
+)
+from app.core.images.base import ImageError, ImageProvider
+from app.core.images.service import get_image_provider, image_generation_enabled
 from app.core.llm.factory import get_provider
 from app.core.models import utcnow
 from app.core.outcomes import worst_outcome
@@ -24,8 +33,10 @@ from app.social.assets import (
     briefing_assets,
     confirm_consent,
     delete_asset,
+    is_usable,
     revoke_consent,
     save_asset,
+    usable_assets,
 )
 from app.social.audit import briefing_audit_trail
 from app.social.briefings import BriefingFormError, create_briefing, parse_briefing_form
@@ -34,11 +45,13 @@ from app.social.calendar import (
     build_ics,
     calendar_entries,
     export_text,
+    mark_scheduled_externally,
     month_view,
     publish_draft,
     schedule_draft,
     summary_line,
     to_local,
+    unmark_scheduled_externally,
     unschedule_draft,
     week_start,
     week_view,
@@ -53,16 +66,37 @@ from app.social.campaigns import (
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
+from app.social.graphics import (
+    LAYOUT_LABELS,
+    GraphicError,
+    GraphicLayoutError,
+    graphic_text,
+    layout_for,
+    render_graphic,
+    verify_graphic_text,
+)
 from app.social.highlight import highlight
+from app.social.images import (
+    AI_IMAGE_LABEL,
+    ImageSuggestionError,
+    choose_candidate,
+    discard_candidates,
+    generate_variants,
+    image_state,
+    suggest_prompt,
+)
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
+    CHANNEL_IMAGE_FORMATS,
     CHANNEL_LABELS,
     POST_STATUS_LABELS,
+    POST_STATUS_TONES,
     Asset,
     Briefing,
     Campaign,
     Channel,
     CheckResult,
+    ImageCandidate,
     PostDraft,
     PostStatus,
 )
@@ -83,12 +117,19 @@ from app.social.sensitive import SENSITIVE_CHECK_LABELS
 from app.social.status import latest_review
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
-NAV_ENTRY = NavEntry(module="social", label="Social Media", path="/social")
+NAV_ENTRY = NavEntry(module="social", label="Social Media", path="/social", icon="megaphone")
+CALENDAR_NAV_ENTRY = NavEntry(
+    module="social", label="Kalender", path="/social/calendar", icon="calendar"
+)
 
 router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)
 templates.env.globals["channel_labels"] = CHANNEL_LABELS
 templates.env.globals["post_status_labels"] = POST_STATUS_LABELS
+templates.env.globals["post_status_tones"] = POST_STATUS_TONES
+templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
+templates.env.globals["format_specs"] = FORMAT_SPECS
+templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
@@ -102,6 +143,10 @@ def get_social_config() -> SocialConfig:
 
 def get_social_client() -> SocialLLMClient:
     return SocialLLMClient(get_provider())
+
+
+def get_social_image_provider() -> ImageProvider:
+    return get_image_provider()
 
 
 def _labels(config: SocialConfig) -> dict[str, dict[str, str]]:
@@ -144,11 +189,24 @@ def _drafts_by_briefing(session: Session) -> dict[int, list[PostDraft]]:
     return drafts
 
 
+def parse_status_filter(raw: str | None) -> list[PostStatus]:
+    """`?status=draft,in_review` → statuses; unknown values are ignored."""
+    values = {v.strip() for v in (raw or "").split(",") if v.strip()}
+    return [status for status in PostStatus if status.value in values]
+
+
 @router.get("/social", response_class=HTMLResponse)
-def social_index(request: Request, session: SessionDep, config: ConfigDep) -> HTMLResponse:
-    """Overview: briefings with their drafts and status."""
+def social_index(
+    request: Request, session: SessionDep, config: ConfigDep, status: str | None = None
+) -> HTMLResponse:
+    """Overview: briefings with their drafts and status, optionally filtered by status."""
     briefings = session.exec(select(Briefing).order_by(Briefing.id.desc())).all()  # type: ignore[union-attr]
     drafts = _drafts_by_briefing(session)
+    statuses = parse_status_filter(status)
+    if statuses:
+        drafts = {b: [d for d in ds if d.status in statuses] for b, ds in drafts.items()}
+        drafts = {b: ds for b, ds in drafts.items() if ds}
+        briefings = [b for b in briefings if b.id in drafts]
     results = _results_by_draft(session, [d.id for ds in drafts.values() for d in ds if d.id])
     return templates.TemplateResponse(
         request,
@@ -156,6 +214,7 @@ def social_index(request: Request, session: SessionDep, config: ConfigDep) -> HT
         {
             "briefings": briefings,
             "drafts": drafts,
+            "status_filter": statuses,
             "retention_days": retention_days(),
             "lights": {draft_id: _light(r) for draft_id, r in results.items()},
             "config": config,
@@ -241,6 +300,56 @@ async def briefing_create(
     return RedirectResponse(f"/social/briefings/{briefing.id}", status_code=303)
 
 
+RELEASED_STATUSES = (PostStatus.APPROVED, PostStatus.SCHEDULED, PostStatus.PUBLISHED)
+
+
+def _has_approved_post(session: Session, briefing_id: int) -> bool:
+    """The graphic is publishing material: downloadable once a post of the briefing is released."""
+    statement = (
+        select(PostDraft.id)
+        .where(PostDraft.briefing_id == briefing_id)
+        .where(col(PostDraft.status).in_(RELEASED_STATUSES))
+    )
+    return session.exec(statement).first() is not None
+
+
+def _graphic_context(
+    request: Request,
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    usable: list[Asset],
+) -> dict[str, object]:
+    """Form values, layout and fact check result of the graphic from a template."""
+    params = request.query_params
+    fmt = params.get("graphic_format") or ImageFormat.PORTRAIT.value
+    if fmt not in {f.value for f in ImageFormat}:
+        fmt = ImageFormat.PORTRAIT.value
+    background = params.get("graphic_background") or "color"
+    if background != "color" and background not in {str(a.id) for a in usable}:
+        background = "color"
+    headline = (params.get("graphic_headline") or "")[:80]
+    text = graphic_text(config, briefing, headline)
+    try:
+        verify_graphic_text(text, BriefingFacts.from_json(briefing.facts), config)
+        problems: list[str] = []
+    except GraphicError as error:
+        problems = error.problems
+    query = urlencode({"format": fmt, "background": background, "headline": headline})
+    ai_background = any(str(a.id) == background and a.ai_generated for a in usable)
+    return {
+        "format": fmt,
+        "background": background,
+        "headline": headline,
+        "layout": LAYOUT_LABELS[layout_for(briefing.occasion_type)],
+        "lines": text.lines,
+        "problems": problems,
+        "src": f"/social/briefings/{briefing.id}/graphic.jpg?{query}",
+        "ai_background": ai_background,
+        "downloadable": _has_approved_post(session, briefing.id or 0),
+    }
+
+
 def _render_briefing(
     request: Request,
     session: Session,
@@ -258,6 +367,17 @@ def _render_briefing(
     ).all()
     facts = formatted_facts(BriefingFacts.from_json(briefing.facts))
     results = _results_by_draft(session, [d.id for d in drafts if d.id])
+    usable = usable_assets(session, briefing_id)
+    # Per draft: its own AI image first, then the uploaded images of the briefing.
+    draft_images = {
+        d.id: sorted(
+            (a for a in usable if a.draft_id in (None, d.id)),
+            key=lambda a: (not a.ai_generated, a.id or 0),
+        )
+        for d in drafts
+    }
+    images_enabled = image_generation_enabled()
+    graphic = _graphic_context(request, session, config, briefing, usable)
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -269,6 +389,14 @@ def _render_briefing(
             "blockers": {d.id: approval_blockers(session, d) for d in drafts},
             "reviews": {d.id: latest_review(session, d.id) for d in drafts if d.id},
             "assets": briefing_assets(session, briefing_id),
+            "draft_images": draft_images,
+            "usable_assets": usable,
+            "images_enabled": images_enabled,
+            "image_states": {d.id: image_state(session, config, d) for d in drafts}
+            if images_enabled
+            else {},
+            "image_formats": list(ImageFormat),
+            "graphic": graphic,
             "facts": facts,
             "config": config,
             "error": error,
@@ -504,6 +632,122 @@ def asset_file(session: SessionDep, asset_id: int) -> Response:
     )
 
 
+# --- AI images (only with IMAGE_GENERATION_ENABLED) ---
+
+
+ImageProviderDep = Annotated[ImageProvider, Depends(get_social_image_provider)]
+
+
+def _images_draft(session: Session, draft_id: int) -> PostDraft:
+    if not image_generation_enabled():
+        raise HTTPException(status_code=404, detail="Nicht gefunden")
+    return _draft_or_404(session, draft_id)
+
+
+def _images_back(draft: PostDraft) -> RedirectResponse:
+    return RedirectResponse(
+        f"/social/briefings/{draft.briefing_id}#images-{draft.id}", status_code=303
+    )
+
+
+def _image_format(value: str, draft: PostDraft) -> ImageFormat:
+    try:
+        return ImageFormat(value)
+    except ValueError:
+        return CHANNEL_IMAGE_FORMATS[draft.channel]
+
+
+@router.post("/social/drafts/{draft_id}/images/suggest", response_model=None)
+def image_suggest(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    draft_id: int,
+    image_format: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """The AI suggests an image prompt from briefing and image style (visible, editable)."""
+    draft = _images_draft(session, draft_id)
+    try:
+        suggest_prompt(session, config, client, draft, _image_format(image_format, draft))
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/images/generate", response_model=None)
+def image_generate(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    provider: ImageProviderDep,
+    user: UserDep,
+    storage: StorageDep,
+    draft_id: int,
+    prompt: Annotated[str, Form()] = "",
+    image_format: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """Check the prompt and generate 2–3 variants (cost brake and audit in core)."""
+    draft = _images_draft(session, draft_id)
+    try:
+        generate_variants(
+            session,
+            config,
+            provider,
+            draft,
+            prompt=prompt,
+            fmt=_image_format(image_format, draft),
+            user=user,
+            storage=storage,
+        )
+    except (ImageSuggestionError, ImageError) as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _images_back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/images/{candidate_id}/choose", response_model=None)
+def image_choose(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    user: UserDep,
+    draft_id: int,
+    candidate_id: int,
+) -> HTMLResponse | RedirectResponse:
+    draft = _images_draft(session, draft_id)
+    try:
+        choose_candidate(session, draft, candidate_id, user)
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.post("/social/drafts/{draft_id}/images/discard", response_model=None)
+def image_discard(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    draft = _images_draft(session, draft_id)
+    try:
+        discard_candidates(session, draft, user)
+    except ImageSuggestionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _images_back(draft)
+
+
+@router.get("/social/images/candidates/{candidate_id}", response_model=None)
+def image_candidate_file(session: SessionDep, candidate_id: int) -> Response:
+    if not image_generation_enabled():
+        raise HTTPException(status_code=404, detail="Nicht gefunden")
+    candidate = session.get(ImageCandidate, candidate_id)
+    if candidate is None or not Path(candidate.stored_path).is_file():
+        raise HTTPException(status_code=404, detail="Variante nicht gefunden")
+    return Response(
+        Path(candidate.stored_path).read_bytes(),
+        media_type=candidate.media_type,
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )
+
+
 # --- audit ---
 
 
@@ -567,6 +811,105 @@ def draft_publish(
     return _respond(request, session, config, draft, lambda: publish_draft(session, draft, user))
 
 
+@router.post("/social/drafts/{draft_id}/external", response_model=None)
+def draft_mark_external(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    """Record that a person planned the post in the platform's tool ("eingeplant (extern)")."""
+    draft = _draft_or_404(session, draft_id)
+    return _respond(
+        request, session, config, draft, lambda: mark_scheduled_externally(session, draft, user)
+    )
+
+
+@router.post("/social/drafts/{draft_id}/external/undo", response_model=None)
+def draft_unmark_external(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
+) -> HTMLResponse | RedirectResponse:
+    draft = _draft_or_404(session, draft_id)
+    return _respond(
+        request, session, config, draft, lambda: unmark_scheduled_externally(session, draft, user)
+    )
+
+
+@router.get("/social/drafts/{draft_id}/image.jpg", response_model=None)
+def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response:
+    """Image of an approved post as JPEG in the channel's format (metadata removed)."""
+    draft = _draft_or_404(session, draft_id)
+    if draft.status not in (PostStatus.APPROVED, PostStatus.SCHEDULED, PostStatus.PUBLISHED):
+        raise HTTPException(status_code=409, detail="Download erst nach der Freigabe")
+    image = session.get(Asset, asset)
+    if (
+        image is None
+        or image.briefing_id != draft.briefing_id
+        or image.draft_id not in (None, draft.id)
+    ):
+        raise HTTPException(status_code=404, detail="Bild nicht gefunden")
+    path = Path(image.stored_path)
+    if not is_usable(image) or not path.is_file():
+        raise HTTPException(status_code=409, detail="Bild darf nicht verwendet werden")
+    fmt = CHANNEL_IMAGE_FORMATS[draft.channel]
+    try:
+        body = export_jpeg(path.read_bytes(), fmt)
+    except ImageExportError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    label = "-ki-generiert" if image.ai_generated else ""
+    name = f"beitrag-{draft.id}-{draft.channel.value}-{fmt.value.replace(':', 'x')}{label}.jpg"
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.get("/social/briefings/{briefing_id}/graphic.jpg", response_model=None)
+def briefing_graphic(
+    session: SessionDep,
+    config: ConfigDep,
+    briefing_id: int,
+    format: str = ImageFormat.PORTRAIT.value,  # noqa: A002 - query parameter name
+    background: str = "color",
+    headline: str = "",
+    download: bool = False,
+) -> Response:
+    """Graphic from the template of the occasion type: rendered by code, facts checked."""
+    briefing = _briefing_or_404(session, briefing_id)
+    if download and not _has_approved_post(session, briefing_id):
+        raise HTTPException(
+            status_code=409, detail="Download erst nach der Freigabe eines Beitrags"
+        )
+    try:
+        fmt = ImageFormat(format)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Unbekanntes Format") from error
+    image: Asset | None = None
+    if background != "color":
+        image = session.get(Asset, int(background)) if background.isdigit() else None
+        if image is None or image.briefing_id != briefing_id or not is_usable(image):
+            raise HTTPException(status_code=404, detail="Hintergrundbild nicht verfügbar")
+    content = Path(image.stored_path).read_bytes() if image else None
+    try:
+        body, _ = render_graphic(config, briefing, fmt, headline=headline, background=content)
+    except GraphicError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except (GraphicLayoutError, ImageExportError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    label = "-ki-generiert" if image is not None and image.ai_generated else ""
+    name = f"grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
+    disposition = "attachment" if download else "inline"
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'{disposition}; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.get("/social/drafts/{draft_id}/export", response_class=PlainTextResponse)
 def draft_export(session: SessionDep, draft_id: int) -> PlainTextResponse:
     """The approved post as a text file."""
@@ -625,6 +968,7 @@ def calendar_page(
         {
             "view": view,
             "current": current,
+            "today": to_local(utcnow()).date(),
             "weeks": weeks,
             "previous": previous,
             "following": following,

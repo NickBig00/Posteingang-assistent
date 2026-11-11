@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Design-System – {{ app_title }}{% endblock %}
+{% block content %}
+{% call ui.page_header("Design-System", "Alle gemeinsamen Bausteine der Oberfläche (Dokumentation: docs/DESIGN.md)", "/settings", "Einstellungen") %}{% endcall %}
+
+<div class="space-y-6">
+  <section class="card" aria-labelledby="colors">
+    <div class="card-header"><h2 class="card-title" id="colors">Farben</h2></div>
+    <div class="card-body grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {% for name, cls in [("Marke", "bg-brand"), ("Marke kräftig", "bg-brand-strong"), ("Marke hell", "bg-brand-soft"), ("Fläche", "bg-surface-muted"), ("Text", "bg-ink")] %}
+      <div><div class="h-12 rounded-lg ring-1 ring-line {{ cls }}"></div><p class="mt-1 text-xs text-ink-muted">{{ name }}</p></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="badges">
+    <div class="card-header"><h2 class="card-title" id="badges">Status, Ampel und KI-Kennzeichnung</h2></div>
+    <div class="card-body space-y-4">
+      <div class="flex flex-wrap gap-2" id="tones">
+        {{ ui.badge("neutral", "neutral") }} {{ ui.badge("info", "info") }} {{ ui.badge("ok", "ok") }}
+        {{ ui.badge("warning", "warning") }} {{ ui.badge("error", "error") }} {{ ui.badge("brand", "brand") }}
+        {{ ui.ai_badge() }}
+      </div>
+      <div class="flex flex-wrap gap-6">{{ ui.light("ok", "Regeln ok") }} {{ ui.light("warning") }} {{ ui.light("error") }} {{ ui.light(none) }}</div>
+      <p class="text-sm text-ink-muted">Jeder Status beider Module ist genau einem Ton zugeordnet (z. B. „in Prüfung“ → warning,
+        „manuelle Prüfung“ → error, „freigegeben“ → ok). KI-Ergebnisse tragen immer dasselbe violette Kennzeichen.</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="buttons">
+    <div class="card-header"><h2 class="card-title" id="buttons">Buttons</h2></div>
+    <div class="card-body flex flex-wrap items-center gap-2">
+      <button type="button" class="btn btn-primary">Primär</button>
+      <button type="button" class="btn btn-secondary">Sekundär</button>
+      <button type="button" class="btn btn-success">{{ ui.icon("check") }}Freigeben</button>
+      <button type="button" class="btn btn-danger">Verwerfen</button>
+      <button type="button" class="btn btn-ghost">Dezent</button>
+      <button type="button" class="btn btn-link">Link</button>
+      <button type="button" class="btn btn-primary" disabled>Deaktiviert</button>
+      <button type="button" class="btn btn-secondary btn-sm">Klein</button>
+    </div>
+  </section>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="card" aria-labelledby="forms">
+      <div class="card-header"><h2 class="card-title" id="forms">Formular</h2></div>
+      <form class="card-body space-y-4" onsubmit="return false">
+        <label class="field"><span class="label">Textfeld</span>
+          <input class="input" type="text" placeholder="Platzhalter"><span class="hint">Hilfetext unter dem Feld</span></label>
+        <label class="field"><span class="label">Mit Fehler</span>
+          <input class="input input-invalid" type="text" value="31.02." aria-invalid="true"><span class="field-error">Ungültiges Datum.</span></label>
+        <label class="field"><span class="label">Auswahl</span>
+          <select class="input"><option>Fitness</option><option>Kurse</option></select></label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="checkbox" checked> Kontrollkästchen</label>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="alerts">
+      <div class="card-header"><h2 class="card-title" id="alerts">Hinweise und Ladeanzeige</h2></div>
+      <div class="card-body space-y-3">
+        {{ ui.alert("Information zum Vorgang.", "info") }}
+        {{ ui.alert("Gespeichert.", "ok") }}
+        {{ ui.alert("Bitte vor der Freigabe prüfen.", "warning") }}
+        {{ ui.alert("Freigabe nicht möglich.", "error", "alert") }}
+        {{ ui.alert("Dieser Text ist ein KI-Vorschlag.", "ai") }}
+        <p class="flex items-center gap-2 text-sm text-ink-muted"><span class="spinner" aria-hidden="true"></span>Ladeanzeige (erscheint bei HTMX-Anfragen)</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="table">
+    <div class="card-header"><h2 class="card-title" id="table">Tabelle</h2></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th scope="col">Nr.</th><th scope="col">Typ</th><th scope="col">Prüfung</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          <tr><td>12</td><td>kuendigung {{ ui.ai_badge("KI") }}</td><td>{{ ui.light("ok", "Regeln ok") }}</td><td>{{ ui.badge("verarbeitet", "info") }}</td></tr>
+          <tr><td>11</td><td>rechnung {{ ui.ai_badge("KI") }}</td><td>{{ ui.light("error") }}</td><td>{{ ui.badge("manuelle Prüfung", "error") }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="empty">
+    <h2 class="mb-3 text-base font-semibold" id="empty">Leerzustand</h2>
+    {% call ui.empty_state("Noch keine Einträge", "Leerzustände erklären, was hier erscheinen wird, und bieten den nächsten Schritt an.") %}
+      <button type="button" class="btn btn-primary">{{ ui.icon("plus") }}Ersten Eintrag anlegen</button>
+    {% endcall %}
+  </section>
+</div>
+{% endblock %}

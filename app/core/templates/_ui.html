@@ -1,0 +1,101 @@
+{#
+  Shared UI components (docs/DESIGN.md). Import with:
+    {% import "_ui.html" as ui %}
+  CSS classes of the components live in app/core/static/src/app.css.
+#}
+
+{# Icons: simple 24×24 outline paths, drawn for this project. #}
+{% set ICONS = {
+  "home": "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  "inbox": "M3 13h5l1.5 3h5L16 13h5M5 5h14l2 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z",
+  "megaphone": "M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1zm12-2a5 5 0 0 1 0 8m2.5-10.5a8.5 8.5 0 0 1 0 13",
+  "calendar": "M7 3v3m10-3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
+  "settings": "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2-1.2L14.5 3h-4l-.4 2.6a7.6 7.6 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7.6 7.6 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z",
+  "menu": "M4 6h16M4 12h16M4 18h16",
+  "sparkles": "M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z",
+  "check": "M5 12.5l4.5 4.5L19 7.5",
+  "alert": "M12 9v4m0 4h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z",
+  "info": "M12 16v-4m0-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
+  "x": "M6 6l12 12M18 6 6 18",
+  "dot": "M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
+  "copy": "M8 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1zM16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3",
+  "download": "M12 4v11m0 0-4-4m4 4 4-4M5 20h14",
+  "image": "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 11 5-5 4 4 3-3 5 5M15.5 9.5h.01",
+  "plus": "M12 5v14M5 12h14",
+  "arrow-left": "M19 12H5m0 0 6-6m-6 6 6 6",
+  "arrow-right": "M5 12h14m0 0-6-6m6 6-6 6",
+  "clock": "M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
+  "trash": "M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3",
+  "doc": "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm7 0v5h5",
+} %}
+
+{% macro icon(name, cls="h-4 w-4") -%}
+<svg class="{{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="{{ ICONS.get(name, ICONS['dot']) }}"/></svg>
+{%- endmacro %}
+
+{# Badge with one of the tones neutral, info, ok, warning, error, ai, brand. #}
+{% macro badge(text, tone="neutral", attrs="") -%}
+<span class="badge badge-{{ tone }}" {{ attrs | safe }}>{{ text }}</span>
+{%- endmacro %}
+
+{# The one AI label of the application: same look everywhere (SPEC 10.2). #}
+{% macro ai_badge(text="KI-Vorschlag") -%}
+<span class="badge badge-ai" data-ai-label>{{ icon("sparkles", "h-3.5 w-3.5") }}{{ text }}</span>
+{%- endmacro %}
+
+{# Traffic light: dot plus label, tone ok/warning/error (None renders a dash). #}
+{% macro light(value, ok_label="ok") -%}
+{% set labels = {"ok": ok_label, "warning": "Hinweis", "error": "Fehler"} %}
+{% if value %}<span class="inline-flex items-center gap-1.5 text-sm" title="{{ labels[value] }}"><span class="dot dot-{{ value }}" aria-hidden="true"></span>{{ labels[value] }}</span>
+{%- else %}<span class="text-ink-subtle" aria-label="keine Prüfung">–</span>{% endif %}
+{%- endmacro %}
+
+{# Alert / notice. tone: info, ok, warning, error, ai. role "status" for polite updates. #}
+{% macro alert(message, tone="info", role="status", attrs="") -%}
+{% set icons = {"info": "info", "ok": "check", "warning": "alert", "error": "alert", "ai": "sparkles"} %}
+<div class="alert alert-{{ tone }}" role="{{ role }}" {{ attrs | safe }}>
+  {{ icon(icons.get(tone, "info"), "mt-0.5 h-4 w-4 shrink-0") }}
+  <div class="min-w-0 flex-1">{% if caller %}{{ caller() }}{% else %}{{ message }}{% endif %}</div>
+</div>
+{%- endmacro %}
+
+{# Empty state with optional call to action (caller block). #}
+{% macro empty_state(title, text="", icon_name="inbox") -%}
+<div class="empty-state">
+  <span class="flex h-10 w-10 items-center justify-center rounded-full bg-surface-sunken text-ink-subtle">{{ icon(icon_name, "h-5 w-5") }}</span>
+  <p class="empty-state-title">{{ title }}</p>
+  {% if text %}<p class="empty-state-text">{{ text }}</p>{% endif %}
+  {% if caller %}<div class="mt-2 flex flex-wrap justify-center gap-2">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Loading indicator shown by HTMX while a request runs (htmx-indicator). #}
+{% macro spinner(text="Wird geladen …", id="") -%}
+<span class="htmx-indicator items-center gap-2 text-sm text-ink-muted" {% if id %}id="{{ id }}"{% endif %} role="status">
+  <span class="spinner" aria-hidden="true"></span>{{ text }}</span>
+{%- endmacro %}
+
+{# Page header: title, optional subtitle and actions (caller block). #}
+{% macro page_header(title, subtitle="", back_href="", back_label="") -%}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div class="min-w-0">
+    {% if back_href %}<a href="{{ back_href }}" class="back-link">{{ icon("arrow-left") }}{{ back_label }}</a>{% endif %}
+    <h1 class="page-title">{{ title }}</h1>
+    {% if subtitle %}<p class="page-subtitle">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if caller %}<div class="flex flex-wrap items-center gap-2">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Stat tile for the overview: number, label, link to the filtered list. #}
+{% macro stat(value, label, href, tone="neutral", hint="") -%}
+<a href="{{ href }}" class="card group block p-4 no-underline transition hover:border-brand hover:shadow-md" data-stat="{{ label }}">
+  <span class="flex items-center justify-between">
+    <span class="text-3xl font-semibold tabular-nums text-ink" data-value>{{ value }}</span>
+    {% if value and tone != "neutral" %}<span class="dot dot-{{ tone }}" aria-hidden="true"></span>{% endif %}
+  </span>
+  <span class="mt-1 block text-sm font-medium text-ink">{{ label }}</span>
+  {% if hint %}<span class="mt-0.5 block text-xs text-ink-subtle">{{ hint }}</span>{% endif %}
+</a>
+{%- endmacro %}

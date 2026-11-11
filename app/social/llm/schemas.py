@@ -36,3 +36,11 @@ class AssessmentOutput(BaseModel):
     health_claims: list[AssessmentFinding] = Field(max_length=10)
     persons: list[AssessmentFinding] = Field(max_length=10)
     address_form: Literal["du", "sie", "neutral", "gemischt"]
+
+
+class ImagePromptOutput(BaseModel):
+    """Description of an AI mood image (checked by code before any image is generated)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prompt: str = Field(min_length=10, max_length=800)

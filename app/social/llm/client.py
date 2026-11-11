@@ -8,12 +8,16 @@ from app.core.llm.prompts import PROMPTS_DIR, PromptTemplate, load_prompt
 from app.social.channels import CHANNEL_SPECS
 from app.social.facts import FACT_LABELS, BriefingFacts, FactKey, formatted_facts
 from app.social.llm import fake_heuristics as _fake_heuristics  # noqa: F401 - offline demo
-from app.social.llm.schemas import AssessmentOutput, DraftOutput
+from app.social.llm.schemas import AssessmentOutput, DraftOutput, ImagePromptOutput
 from app.social.models import CHANNEL_LABELS, Channel
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig
 
 SOCIAL_PROMPTS_DIR = PROMPTS_DIR / "social"
-PROMPT_VERSIONS: dict[LLMTask, str] = {"post_draft": "v2", "post_assess": "v2"}
+PROMPT_VERSIONS: dict[LLMTask, str] = {
+    "post_draft": "v2",
+    "post_assess": "v2",
+    "image_prompt": "v1",
+}
 
 
 class SocialLLMClient:
@@ -90,6 +94,37 @@ class SocialLLMClient:
         if completion is not None:
             try:
                 call.output = AssessmentOutput.model_validate(parse_json_object(completion.text))
+            except (ValueError, ValidationError) as exc:
+                call.error = f"invalid output: {short_error(exc)}"
+        return call
+
+    def image_prompt(
+        self, config: SocialConfig, *, area_key: str, occasion_key: str, notes: str
+    ) -> LLMCall[ImagePromptOutput]:
+        """Description of an AI mood image from the briefing and the area's image style.
+
+        Only occasion, area, key points and style are sent: no facts, no names (the key
+        points must not contain any, and the code check rejects them in the result).
+        """
+        area = config.brand.area(area_key)
+        style = area.image_style
+        template = self.prompts["image_prompt"]
+        prompt = template.render(
+            occasion_label=config.industry.occasion_type(occasion_key).label,
+            area_label=area.label,
+            notes=notes,
+            colors=style.colors if style else "passend zur Marke",
+            mood=style.mood if style else area.tone,
+            motifs=style.motifs if style else "passend zum Anlass",
+            exclusions=style.exclusions if style else [],
+        )
+        completion, error, duration = timed_complete(self.provider, "image_prompt", prompt)
+        call: LLMCall[ImagePromptOutput] = LLMCall(
+            "image_prompt", template.prompt_id, prompt, duration, completion, error=error
+        )
+        if completion is not None:
+            try:
+                call.output = ImagePromptOutput.model_validate(parse_json_object(completion.text))
             except (ValueError, ValidationError) as exc:
                 call.error = f"invalid output: {short_error(exc)}"
         return call

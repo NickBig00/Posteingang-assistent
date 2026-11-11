@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Übersicht – {{ app_title }}{% endblock %}
+{% block content %}
+{% set subtitle = today ~ " · " ~ ("Nichts Dringendes offen." if not open_total else (open_total ~ " Vorgänge brauchen Ihre Prüfung.")) %}
+{% call ui.page_header("Was ist heute zu tun?", subtitle) %}{% endcall %}
+
+<div class="space-y-8">
+  {% for m in modules %}
+  <section aria-labelledby="overview-{{ m.module }}" data-module="{{ m.module }}">
+    <div class="mb-3 flex items-center justify-between gap-3">
+      <h2 class="text-base font-semibold text-ink" id="overview-{{ m.module }}">{{ m.title }}</h2>
+      <a href="{{ m.href }}" class="inline-flex items-center gap-1 text-sm font-medium">Zur Liste {{ ui.icon("arrow-right") }}</a>
+    </div>
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {% for t in m.tiles %}{{ ui.stat(t.count, t.label, t.href, t.tone, t.hint) }}{% endfor %}
+    </div>
+    <div class="card mt-3">
+      <div class="card-header"><h3 class="card-title text-sm">Heute zu erledigen</h3>{{ ui.badge(m.todos | length, "warning" if m.todos else "ok") }}</div>
+      {% if m.todos %}
+      <ul class="divide-y divide-line" data-todos>
+        {% for todo in m.todos %}
+        <li>
+          <a href="{{ todo.href }}" class="flex items-center gap-3 px-5 py-3 text-ink no-underline hover:bg-surface-muted">
+            <span class="dot dot-{{ todo.tone }}" aria-hidden="true"></span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium">{{ todo.title }}</span>
+              <span class="block truncate text-xs text-ink-subtle">{{ todo.detail }}</span>
+            </span>
+            {% if todo.badge %}{{ ui.badge(todo.badge, todo.tone) }}{% endif %}
+            {{ ui.icon("arrow-right", "h-4 w-4 text-ink-subtle") }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="flex items-center gap-2 px-5 py-4 text-sm text-ink-muted">{{ ui.icon("check", "h-4 w-4 text-green-700") }}{{ m.empty_hint }}</p>
+      {% endif %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+
+<p class="mt-8 text-xs text-ink-subtle">Die Zahlen führen jeweils zur passend gefilterten Liste. Nichts wird ohne Ihre
+  Freigabe ausgeführt, versendet oder veröffentlicht.</p>
+{% endblock %}

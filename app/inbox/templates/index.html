@@ -1,40 +1,40 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Posteingang – {{ app_title }}{% endblock %}
 {% block content %}
-<section class="bg-white rounded-lg border border-slate-200 p-6">
-  <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-    <h2 class="text-lg font-semibold">Posteingang</h2>
-    <div class="flex flex-wrap items-center gap-3">
-      <form hx-post="/items/upload" hx-encoding="multipart/form-data" hx-target="#inbox"
-            class="flex items-center gap-2">
-        <input type="file" name="file" accept="{{ accepted_suffixes }}" required
-               class="text-sm" aria-label="Datei für den Posteingang">
-        <button type="submit"
-                class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
-          Hochladen
-        </button>
-      </form>
-      {% if imap_enabled %}
-      <button hx-post="/mail/fetch" hx-target="#inbox"
-              class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">
-        Postfach abrufen
-      </button>
-      {% endif %}
-      <button hx-post="/items/process" hx-target="#inbox"
-              class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">
-        Eingänge verarbeiten
-      </button>
-      <button hx-post="/samples/import" hx-target="#inbox"
-              class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100">
-        Beispieldaten laden
-      </button>
-    </div>
-  </div>
-  <p class="mb-3 text-xs text-slate-500">Abgeschlossene Eingänge werden nach {{ retention_days }} Tagen
-    automatisch gelöscht (Befehl <code>purge</code>); offene Eingänge bleiben bis zur Erledigung erhalten.
-    Der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
-  <div id="inbox">
-    {% include "_inbox.html" %}
-  </div>
-</section>
+{% call ui.page_header("Posteingang", "E-Mails und Dokumente: KI-Vorschläge prüfen, freigeben oder verwerfen") %}
+  {% if imap_enabled %}
+  <button hx-post="/mail/fetch" hx-target="#inbox" hx-indicator="#inbox-loading" hx-disabled-elt="this" class="btn btn-secondary">Postfach abrufen</button>
+  {% endif %}
+  <button hx-post="/samples/import" hx-target="#inbox" hx-indicator="#inbox-loading" hx-disabled-elt="this" class="btn btn-secondary">Beispieldaten laden</button>
+  <button hx-post="/items/process" hx-target="#inbox" hx-indicator="#inbox-loading" hx-disabled-elt="this" class="btn btn-primary">{{ ui.icon("sparkles") }}Eingänge verarbeiten</button>
+{% endcall %}
+
+<div class="card mb-6">
+  <form hx-post="/items/upload" hx-encoding="multipart/form-data" hx-target="#inbox" hx-indicator="#inbox-loading"
+        class="flex flex-wrap items-center gap-3 p-4">
+    <label class="min-w-0 flex-1">
+      <span class="sr-only">Datei für den Posteingang</span>
+      <input type="file" name="file" accept="{{ accepted_suffixes }}" required
+             class="file-input" aria-label="Datei für den Posteingang">
+    </label>
+    <button type="submit" class="btn btn-secondary">{{ ui.icon("download", "h-4 w-4 rotate-180") }}Hochladen</button>
+    <span class="text-xs text-ink-subtle">.eml, PDF, PNG oder JPG, höchstens 10 MB</span>
+  </form>
+</div>
+
+{% if status_filter %}
+<p class="mb-3 flex flex-wrap items-center gap-2 text-sm text-ink-muted" id="status-filter">Gefiltert nach Status:
+  {% for s in status_filter %}{{ ui.badge(status_labels[s], status_tones[s]) }}{% endfor %}
+  <a href="/inbox" class="text-sm font-medium">Filter entfernen</a></p>
+{% endif %}
+<div class="mb-3">{{ ui.spinner("Wird verarbeitet …", "inbox-loading") }}</div>
+<div id="inbox">
+  {% include "_inbox.html" %}
+</div>
+
+<p class="mt-4 text-xs text-ink-subtle">Abgeschlossene Eingänge werden nach {{ retention_days }} Tagen
+  automatisch gelöscht (Befehl <code>purge</code>); offene Eingänge bleiben bis zur Erledigung erhalten.
+  Der Audit-Verlauf behält dann nur Hashes und Metadaten.</p>
 <div class="mt-6">{% include "_ai_notice.html" %}</div>
 {% endblock %}

@@ -32,6 +32,17 @@ STATUS_LABELS: dict[ItemStatus, str] = {
 }
 
 
+# Tone of each status in the shared design system (docs/DESIGN.md, "Töne").
+STATUS_TONES: dict[ItemStatus, str] = {
+    ItemStatus.NEW: "neutral",
+    ItemStatus.PROCESSED: "warning",
+    ItemStatus.NEEDS_MANUAL_REVIEW: "error",
+    ItemStatus.APPROVED: "ok",
+    ItemStatus.REJECTED: "neutral",
+    ItemStatus.DONE: "ok",
+}
+
+
 class ItemSource(StrEnum):
     UPLOAD = "upload"
     SAMPLE = "sample"

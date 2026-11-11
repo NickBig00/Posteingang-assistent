@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.core.approval import DECISION_LABELS, ReviewDecision
 from app.core.audit import audit_outputs
@@ -32,6 +32,7 @@ from app.inbox.ingest.service import (
 from app.inbox.llm.client import LLMClient
 from app.inbox.models import (
     STATUS_LABELS,
+    STATUS_TONES,
     Classification,
     InboxItem,
     ItemSource,
@@ -58,11 +59,14 @@ from app.inbox.rules import validate_profile_rules
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
-NAV_ENTRY = NavEntry(module="inbox", label="Posteingang", path="/")
+NAV_ENTRY = NavEntry(
+    module="inbox", label="Posteingang", path="/inbox", icon="inbox", prefixes=("/items",)
+)
 
 router = APIRouter()
 templates = module_templates(TEMPLATES_DIR, NAV_ENTRY.module)
 templates.env.globals["status_labels"] = STATUS_LABELS
+templates.env.globals["status_tones"] = STATUS_TONES
 templates.env.globals["decision_labels"] = DECISION_LABELS
 
 
@@ -95,14 +99,22 @@ StorageDep = Annotated[Path, Depends(get_storage_dir)]
 SamplesDep = Annotated[Path, Depends(get_samples_dir)]
 
 
+def parse_status_filter(raw: str | None) -> list[ItemStatus]:
+    """`?status=new,processed` → statuses; unknown values are ignored."""
+    values = {v.strip() for v in (raw or "").split(",") if v.strip()}
+    return [status for status in ItemStatus if status.value in values]
+
+
 def _inbox_items(
-    session: Session,
+    session: Session, statuses: list[ItemStatus] | None = None
 ) -> list[tuple[InboxItem, Classification | None, str | None]]:
     statement = (
         select(InboxItem, Classification)
         .join(Classification, isouter=True)
         .order_by(InboxItem.id.desc())  # type: ignore[union-attr]
     )
+    if statuses:
+        statement = statement.where(col(InboxItem.status).in_(statuses))
     rules: dict[int, list[RuleResult]] = {}
     for result in session.exec(select(RuleResult)).all():
         rules.setdefault(result.item_id, []).append(result)
@@ -122,14 +134,18 @@ def _render_inbox(
     )
 
 
-@router.get("/", response_class=HTMLResponse)
-def index(request: Request, session: SessionDep, imap: ImapDep) -> HTMLResponse:
-    """Render the inbox start page."""
+@router.get("/inbox", response_class=HTMLResponse)
+def index(
+    request: Request, session: SessionDep, imap: ImapDep, status: str | None = None
+) -> HTMLResponse:
+    """Render the inbox list, optionally filtered by status (links from the overview)."""
+    statuses = parse_status_filter(status)
     return templates.TemplateResponse(
         request,
         "index.html",
         {
-            "items": _inbox_items(session),
+            "items": _inbox_items(session, statuses),
+            "status_filter": statuses,
             "message": None,
             "error": False,
             "accepted_suffixes": ",".join(sorted(SUPPORTED_SUFFIXES)),
@@ -266,7 +282,7 @@ def item_delete(session: SessionDep, item_id: int) -> RedirectResponse:
     """Delete an item with all content; the audit trail keeps only hashes and metadata."""
     if not delete_item(session, item_id):
         raise HTTPException(status_code=404, detail="Eingang nicht gefunden")
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse("/inbox", status_code=303)
 
 
 @router.post("/mail/fetch", response_class=HTMLResponse)

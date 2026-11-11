@@ -6,8 +6,7 @@ einem Menschen freigegeben.** Das System ist auf EU-AI-Act- und DSGVO-konforme G
 ausgelegt und arbeitet ausschließlich mit synthetischen Daten.
 
 Die Anwendung ist ein **modularer Monolith**: ein gemeinsamer Kern und fachliche Module mit
-gemeinsamer Navigation. Neben dem Posteingang entsteht ein Social-Media-Modul (bisher nur ein
-Platzhalter).
+gemeinsamer Navigation: Posteingang und Social Media.
 
 Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 [`docs/SPEC_social.md`](docs/SPEC_social.md) (Social Media) · Fahrpläne:
@@ -19,12 +18,14 @@ Details: [`docs/SPEC.md`](docs/SPEC.md) (Kern und Posteingang),
 |---|---|
 | `app/main.py` | FastAPI-Einstieg: setzt Kern und aktivierte Module zusammen |
 | `app/cli.py` | Kommandozeile (`python -m app.cli …`) |
-| `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Navigation |
+| `app/core/` | Kern: Konfiguration, Datenbank, Audit-Log, Freigabe-Entscheidung, Profil-Loader, gemeinsames Layout mit Seitenleiste, Design-System, Einstellungen |
+| `app/core/static/` | Lokal ausgeliefertes CSS (Tailwind, kompiliert), HTMX, Schrift Inter, kleines JavaScript |
 | `app/core/llm/` | Anbieterunabhängiges LLM-Interface (einziger Ort für Anbieter-SDKs) |
+| `app/core/images/` | Anbieterunabhängiges Bild-Interface: Fake- und OpenAI-Anbieter, Schalter, Kostenbremse, Audit |
 | `app/inbox/` | Modul Posteingang: Eingang, Pipeline, Vorschläge, Freigabe, Löschkonzept, Evaluation |
 | `app/inbox/llm/` | LLM-Client des Posteingangs (Klassifizierung, Extraktion, Entwurf, OCR) und Ausgabe-Schemas |
 | `app/inbox/rules/` | Deterministische Regel-Engine (Fristen, Pflichtfelder, Plausibilität) |
-| `app/social/` | Modul Social Media (Platzhalter, siehe `docs/ROADMAP_social.md`) |
+| `app/social/` | Modul Social Media: Briefings, KI-Entwürfe, Prüfungen, Freigabe, Kalender, Kampagnen |
 | `profiles/` | Branchenprofile als YAML |
 | `prompts/` | Versionierte Prompt-Dateien |
 | `samples/` | Synthetische Beispieldaten mit Labels |
@@ -39,16 +40,68 @@ Modul. Tests prüfen diese Grenzen.
 Der Titel in Kopfzeile und Browser-Tab kommt aus der Konfiguration: `APP_TITLE` (Standard
 „Posteingangs-Assistent“), z. B. `APP_TITLE="Demo-Assistent Musterstadt"` in der `.env`.
 
+### Oberfläche und Markenfarbe
+
+Gemeinsames Design-System mit Seitenleiste, Kopfzeile und zentral definierten Komponenten:
+[`docs/DESIGN.md`](docs/DESIGN.md), lebende Übersicht unter `/design`. Die Markenfarbe kommt
+aus `BRAND_COLOR` (Hex, z. B. `BRAND_COLOR=#1e3a8a`), sonst aus `design.primary_color` des
+aktiven Markenprofils, sonst gilt die Standardfarbe. CSS, HTMX und Schrift werden lokal unter
+`/static` ausgeliefert, nicht per CDN. Nach Änderungen an Templates das CSS neu erzeugen:
+`npm install` (einmalig) und `uv run python scripts/build_css.py`.
+
+Barrierefreiheit: `node scripts/a11y.cjs` (axe-core und Tastatur-Durchlauf, Bericht unter
+`docs/accessibility/`).
+
+Screenshots für Pull Requests: `node scripts/screenshots.cjs U1` (Playwright mit Chromium nötig)
+startet die App mit Beispieldaten auf einer temporären Datenbank und legt PNGs unter
+`docs/screenshots/<Meilenstein>/` ab.
+
+### Veröffentlichen (Social Media)
+
+Das System postet nichts selbst; veröffentlicht wird von Hand direkt in Instagram, Facebook bzw.
+LinkedIn. Für freigegebene Beiträge gibt es „Text kopieren“ (inkl. Hashtags), den
+Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Facebook 4:5, Story
+9:16, LinkedIn 1:1; Metadaten wie Standort werden entfernt) und die Markierung „eingeplant
+(extern)“ im Kalender. Die Entwurfsansicht zeigt eine ungefähre Vorschau je Kanal.
+
+### KI-Bilder (optional)
+
+Standardmäßig aus. Einschalten mit `IMAGE_GENERATION_ENABLED=true`; Anbieter über
+`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Das
+anbieterunabhängige Interface liegt in `app/core/images/` (einziger Ort für Bild-SDKs neben
+`app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3) und `IMAGE_MAX_PER_DAY`
+(Standard 20) Erzeugungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht
+mit Modell, Parametern, Variantenzahl und Kostenschätzung (`IMAGE_COST_PER_IMAGE_EUR`) im Audit.
+Tests rufen nie eine echte Bild-API auf.
+
+Im Entwurf (vor der Freigabe) schlägt „Bild vorschlagen“ einen Bild-Prompt aus Briefing und
+`image_style` des Bereichs im Markenprofil vor. Der Prompt ist sichtbar und bearbeitbar; vor
+jeder Erzeugung lehnt ein Code-Check Personen, Namen, Text im Bild, echte Räume oder
+Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten ab. Die gewählte Variante
+ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
+hochgeladenes Bild gelöscht.
+
+### Grafiken aus Vorlagen (Social Media)
+
+Im Briefing erzeugt „Grafik aus Vorlage“ deterministisch per Code (Pillow, Schrift Inter, kein
+LLM) eine Grafik je Anlass-Typ (Ankündigung, Aktion mit Preis, Hinweis, Standard): Hintergrund
+(eigenes Foto, gewähltes KI-Bild oder Farbfläche), Markenname, Markenfarben aus `design:` im
+Markenprofil und die Fakten aus dem Briefing. Vor dem Rendern prüft der Code: jeder Fakt genau
+einmal in Anzeige-Schreibweise, kein anderes Datum, keine andere Uhrzeit, kein anderer Preis,
+keine andere Telefonnummer, keine verbotenen Begriffe. Formate 1:1, 4:5, 9:16; Export als JPEG.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:
 
 ```bash
-MODULES=inbox uv run uvicorn app.main:app   # nur Posteingang, ohne Navigationsleiste
+MODULES=inbox uv run uvicorn app.main:app   # nur Posteingang (Seitenleiste ohne Social Media)
 ```
 
-Unbekannte Modulnamen oder eine leere Liste brechen den Start mit einer Fehlermeldung ab. Ist
-der Posteingang abgeschaltet, leitet `/` auf das erste aktive Modul weiter. Die Befehle der
+Unbekannte Modulnamen oder eine leere Liste brechen den Start mit einer Fehlermeldung ab. Die
+Startseite `/` ist die **Übersicht** („Was ist heute zu tun?“) mit Kennzahlen je aktivem Modul;
+jede Zahl führt in die passend gefilterte Liste (Posteingang unter `/inbox`, Social Media unter
+`/social`). Die Befehle der
 Kommandozeile betreffen den Posteingang und stehen unabhängig davon zur Verfügung.
 
 ## Lokaler Start

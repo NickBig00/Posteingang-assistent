@@ -153,6 +153,15 @@ class Contact(_Strict):
     website: str = Field(min_length=1)
 
 
+class ImageStyle(_Strict):
+    """Look of AI images for an area (SPEC_social 13.4). Never names, never people."""
+
+    colors: str = Field(min_length=1, max_length=200)
+    mood: str = Field(min_length=1, max_length=200)
+    motifs: str = Field(min_length=1, max_length=300)
+    exclusions: list[str] = Field(default_factory=list)
+
+
 class Area(_Strict):
     key: str = Field(pattern=KEY_PATTERN)
     label: str = Field(min_length=1)
@@ -165,6 +174,8 @@ class Area(_Strict):
     hashtags: list[str] = Field(default_factory=list)
     call_to_action: str | None = None
     examples: list[str] = Field(min_length=2, max_length=3)
+    # Optional: style of AI images (only used when image generation is switched on).
+    image_style: ImageStyle | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -185,6 +196,17 @@ def _check_hashtags(hashtags: list[str]) -> None:
         raise ValueError(f"invalid hashtags (expected '#Wort'): {', '.join(invalid)}")
 
 
+class BrandDesign(_Strict):
+    """Colours and font of graphics from templates (SPEC_social 14)."""
+
+    primary_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    accent_color: str = Field(pattern=r"^#[0-9a-fA-F]{6}$")
+    font: Literal["inter"] = "inter"
+    # Optional logo (PNG with transparency or JPG): file name next to the brand profile.
+    # Only a file name, no path, so a profile can never point outside its directory.
+    logo: str | None = Field(default=None, pattern=r"^[\w-]+(?:\.[\w-]+)*\.(?:png|jpg|jpeg)$")
+
+
 class BrandProfile(_Strict):
     key: str = Field(pattern=KEY_PATTERN)
     name: str = Field(min_length=1)
@@ -197,6 +219,8 @@ class BrandProfile(_Strict):
     call_to_action: str = Field(min_length=1)
     contact: Contact
     forbidden_terms: list[str] = Field(default_factory=list)
+    # Optional: colours and font of graphics from templates (default: neutral design).
+    design: BrandDesign | None = None
     areas: list[Area] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -243,6 +267,15 @@ class SocialConfig:
     industry_key: str
     industry: IndustrySocial
     brand: BrandProfile
+    # Directory of the brand profile (logo files live next to it).
+    brand_dir: Path | None = None
+
+    @property
+    def logo_path(self) -> Path | None:
+        design = self.brand.design
+        if design is None or design.logo is None or self.brand_dir is None:
+            return None
+        return self.brand_dir / design.logo
 
     def is_sensitive(self, area_key: str) -> bool:
         return self.brand.area(area_key).rule_category in self.industry.sensitive_areas
@@ -271,6 +304,28 @@ def active_brand_path() -> Path:
     return brand_profiles_dir() / f"{key}.yaml"
 
 
+_COLOR_CACHE: dict[tuple[str, int], str | None] = {}
+
+
+def profile_brand_color() -> str | None:
+    """Primary colour of the active brand profile for the interface (None if unavailable).
+
+    Cached per file and modification time, because it is read on every page.
+    """
+    try:
+        path = active_brand_path()
+        key = (str(path), path.stat().st_mtime_ns)
+    except (ProfileError, OSError):
+        return None
+    if key not in _COLOR_CACHE:
+        try:
+            design = load_brand_profile(path).design
+        except ProfileError:
+            design = None
+        _COLOR_CACHE[key] = design.primary_color if design else None
+    return _COLOR_CACHE[key]
+
+
 def load_social_config(
     industry_path: Path | None = None, brand_path: Path | None = None
 ) -> SocialConfig:
@@ -285,4 +340,12 @@ def load_social_config(
             f"Markenprofil '{brand_path}' gehört zur Branche '{brand.industry}', "
             f"aktiv ist das Branchenprofil '{industry_key}'"
         )
-    return SocialConfig(industry_key=industry_key, industry=industry, brand=brand)
+    config = SocialConfig(
+        industry_key=industry_key, industry=industry, brand=brand, brand_dir=brand_path.parent
+    )
+    if config.logo_path is not None and not config.logo_path.is_file():
+        raise ProfileError(
+            f"Markenprofil '{brand_path}': Logo-Datei '{config.logo_path.name}' fehlt "
+            "(erwartet neben dem Markenprofil)"
+        )
+    return config

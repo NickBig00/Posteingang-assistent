@@ -1,33 +1,55 @@
-<!DOCTYPE html>
+{% import "_ui.html" as ui %}<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app_title }}{% endblock %}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+  {# Everything is served locally from /static (no CDN, no requests to third parties). #}
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>:root { {{ theme.css_variables() }} }</style>
+  <script src="/static/vendor/htmx-2.0.3.min.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-  <header class="bg-white border-b border-slate-200">
-    <div class="max-w-5xl mx-auto px-4 py-4">
-      <h1 class="text-xl font-semibold">{{ app_title }}</h1>
-      <p class="text-sm text-slate-500">Demo mit ausschließlich synthetischen Daten</p>
-    </div>
-    {% set navigation = request.app.state.navigation %}
-    {% if navigation | length > 1 %}
-    <nav class="max-w-5xl mx-auto px-4 flex gap-1 text-sm" aria-label="Module">
-      {% for entry in navigation %}
-      <a href="{{ entry.path }}"
-         {% if entry.module == active_module %}aria-current="page"{% endif %}
-         class="px-3 py-2 border-b-2 {{ 'border-slate-800 font-medium' if entry.module == active_module else 'border-transparent text-slate-500 hover:text-slate-800' }}">
-        {{ entry.label }}
+<body class="min-h-screen">
+  <a href="#inhalt" class="skip-link">Zum Inhalt springen</a>
+  <header class="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+    <div class="flex h-14 items-center gap-3 px-4 lg:px-6">
+      <button type="button" class="btn btn-ghost -ml-2 px-2 lg:hidden" data-nav-toggle
+              aria-controls="sidebar" aria-expanded="false">
+        {{ ui.icon("menu", "h-5 w-5") }}<span class="sr-only">Navigation öffnen</span>
+      </button>
+      <a href="/" class="flex min-w-0 items-center gap-2.5 text-ink no-underline">
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-on" aria-hidden="true">{{ app_title[:1] | upper }}</span>
+        <span class="truncate text-base font-semibold" data-app-title>{{ app_title }}</span>
       </a>
-      {% endfor %}
-    </nav>
-    {% endif %}
+      <div class="ml-auto flex items-center gap-3">
+        <span class="badge badge-warning hidden sm:inline-flex" title="Alle Daten in dieser Demo sind erfunden.">Demo · nur synthetische Daten</span>
+        <span class="hidden items-center gap-2 text-sm text-ink-muted md:flex">
+          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold" aria-hidden="true">D</span>Demo-Benutzer
+        </span>
+      </div>
+    </div>
   </header>
-  <main class="max-w-5xl mx-auto px-4 py-8">
-    {% block content %}{% endblock %}
-  </main>
+
+  <div class="lg:flex lg:min-h-[calc(100vh-3.5rem)]">
+    <div class="border-line bg-surface lg:w-60 lg:shrink-0 lg:border-r">
+    <nav id="sidebar" aria-label="Module" data-nav
+         class="hidden border-b border-line px-3 py-4 lg:sticky lg:top-14 lg:block lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto lg:border-b-0">
+      <ul class="space-y-1">
+        {% for entry in navigation %}
+        <li {% if entry.module == "core" and entry.path == "/settings" %}class="mt-3 border-t border-line pt-3"{% endif %}>
+          <a href="{{ entry.path }}" class="nav-link"
+             {% if active_nav and entry == active_nav %}aria-current="page"{% endif %}>
+            {{ ui.icon(entry.icon, "nav-icon") }}{{ entry.label }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+    </div>
+
+    <main id="inhalt" class="mx-auto w-full max-w-6xl min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8" tabindex="-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </body>
 </html>

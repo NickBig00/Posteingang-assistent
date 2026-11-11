@@ -1,39 +1,45 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Redaktionskalender – Social Media{% endblock %}
 {% set weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] %}
 {% block content %}
-<a href="/social" class="text-sm text-blue-700 hover:underline">← Social Media</a>
+{% set heading = "Redaktionskalender · " ~ (current.strftime("%m/%Y") if view == "month" else "Woche ab " ~ weeks[0][0].day.strftime("%d.%m.%Y")) %}
+{% call ui.page_header(heading, "Geplante und veröffentlichte Beiträge, Zeiten in Ortszeit (Europe/Berlin)") %}
+<a class="btn btn-secondary" href="/social/calendar.ics">{{ ui.icon("download") }}Kalender als .ics</a>
+{% endcall %}
+
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-  <h2 class="text-lg font-semibold">Redaktionskalender ·
-    {% if view == "month" %}{{ current.strftime("%m/%Y") }}{% else %}Woche ab {{ weeks[0][0].day.strftime("%d.%m.%Y") }}{% endif %}</h2>
-  <div class="flex flex-wrap items-center gap-2 text-sm">
-    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar?view={{ view }}&date={{ previous.isoformat() }}">← zurück</a>
-    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar?view={{ view }}">heute</a>
-    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar?view={{ view }}&date={{ following.isoformat() }}">weiter →</a>
-    <a class="rounded px-2 py-1 {{ 'bg-slate-800 text-white' if view == 'week' else 'border border-slate-300' }}" href="/social/calendar?view=week&date={{ current.isoformat() }}">Woche</a>
-    <a class="rounded px-2 py-1 {{ 'bg-slate-800 text-white' if view == 'month' else 'border border-slate-300' }}" href="/social/calendar?view=month&date={{ current.isoformat() }}">Monat</a>
-    <a class="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100" href="/social/calendar.ics">Kalender als .ics</a>
+  <nav class="flex items-center gap-1" aria-label="Zeitraum">
+    <a class="btn btn-secondary btn-sm" href="/social/calendar?view={{ view }}&date={{ previous.isoformat() }}">{{ ui.icon("arrow-left") }}zurück</a>
+    <a class="btn btn-secondary btn-sm" href="/social/calendar?view={{ view }}">heute</a>
+    <a class="btn btn-secondary btn-sm" href="/social/calendar?view={{ view }}&date={{ following.isoformat() }}">weiter{{ ui.icon("arrow-right") }}</a>
+  </nav>
+  <div class="inline-flex rounded-lg border border-line-strong bg-surface p-0.5" role="group" aria-label="Ansicht">
+    <a class="rounded-md px-3 py-1 text-sm font-medium no-underline {{ 'bg-brand text-brand-on' if view == 'week' else 'text-ink-muted hover:bg-surface-sunken' }}" {% if view == 'week' %}aria-current="page"{% endif %} href="/social/calendar?view=week&date={{ current.isoformat() }}">Woche</a>
+    <a class="rounded-md px-3 py-1 text-sm font-medium no-underline {{ 'bg-brand text-brand-on' if view == 'month' else 'text-ink-muted hover:bg-surface-sunken' }}" {% if view == 'month' %}aria-current="page"{% endif %} href="/social/calendar?view=month&date={{ current.isoformat() }}">Monat</a>
   </div>
 </div>
 
-<div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-  <table class="w-full table-fixed text-left text-xs" id="calendar" data-view="{{ view }}">
-    <thead class="border-b border-slate-200 text-slate-500">
-      <tr>{% for name in weekdays %}<th class="p-2">{{ name }}</th>{% endfor %}</tr>
+<div class="card relative overflow-x-auto">
+  <table class="w-full min-w-[42rem] table-fixed text-left text-xs" id="calendar" data-view="{{ view }}">
+    <thead class="border-b border-line bg-surface-muted text-ink-subtle">
+      <tr>{% for name in weekdays %}<th scope="col" class="p-2 font-medium">{{ name }}</th>{% endfor %}</tr>
     </thead>
     <tbody>
       {% for week in weeks %}
       <tr class="align-top">
         {% for cell in week %}
-        <td class="border-r border-t border-slate-100 p-2 {{ '' if cell.in_month else 'bg-slate-50 text-slate-400' }} {{ 'h-40' if view == 'week' else 'h-24' }}" data-day="{{ cell.day.isoformat() }}">
-          <div class="mb-1 font-medium">{{ cell.day.strftime("%d.%m.") }}</div>
+        <td class="border-r border-t border-line p-1.5 last:border-r-0 {{ '' if cell.in_month else 'bg-surface-muted text-ink-subtle' }} {{ 'h-44' if view == 'week' else 'h-24' }}" data-day="{{ cell.day.isoformat() }}">
+          <div class="mb-1 px-1 font-semibold {{ 'text-brand-text' if cell.day == today else '' }}">{{ cell.day.strftime("%d.%m.") }}</div>
           {% for e in cell.entries %}
-          <div class="mb-1 rounded px-1 py-0.5 {{ 'bg-green-100' if e.draft.status.value == 'published' else 'bg-blue-50' }}" data-draft="{{ e.draft.id }}">
-            <a class="hover:underline" href="/social/briefings/{{ e.briefing.id }}#draft-{{ e.draft.id }}">
+          {% set published = e.draft.status.value == 'published' %}
+          <div class="mb-1 rounded-md border-l-4 px-1.5 py-1 {{ 'border-green-600 bg-green-50' if published else ('border-sky-600 bg-sky-50' if e.draft.is_scheduled_externally else 'border-brand bg-brand-soft') }}" data-draft="{{ e.draft.id }}">
+            <a class="font-medium text-ink hover:underline" href="/social/briefings/{{ e.briefing.id }}#draft-{{ e.draft.id }}">
               {{ e.local_time.strftime("%H:%M") }} {{ channel_labels[e.draft.channel] }}</a>
-            <div class="text-slate-500">{{ occasion_labels.get(e.briefing.occasion_type, e.briefing.occasion_type) }} · {{ post_status_labels[e.draft.status] }}</div>
+            <div class="text-ink-muted">{{ occasion_labels.get(e.briefing.occasion_type, e.briefing.occasion_type) }} · {{ post_status_labels[e.draft.status] }}</div>
+            {% if e.draft.is_scheduled_externally %}<div class="mt-0.5 font-medium text-sky-800" data-external>eingeplant (extern)</div>{% endif %}
             {% if view == "week" and e.draft.status.value == "scheduled" %}
-            {% set d = e.draft %}{% set back = request.url.path ~ "?" ~ request.url.query %}{% include "_social_schedule.html" %}
+            <div class="mt-1">{% set d = e.draft %}{% set compact = true %}{% set back = request.url.path ~ "?" ~ request.url.query %}{% include "_social_schedule.html" %}{% set compact = false %}</div>
             {% endif %}
           </div>
           {% endfor %}
@@ -44,19 +50,29 @@
     </tbody>
   </table>
 </div>
+{% set planned = namespace(count=0) %}{% for week in weeks %}{% for cell in week %}{% set planned.count = planned.count + cell.entries | length %}{% endfor %}{% endfor %}
+{% if not planned.count %}<p class="mt-2 text-sm text-ink-muted" data-calendar-empty>Keine Beiträge in diesem Zeitraum. Freigegebene Beiträge lassen sich unten planen.</p>{% endif %}
+<p class="mt-2 flex flex-wrap gap-4 text-xs text-ink-muted">
+  <span class="inline-flex items-center gap-1.5"><span class="h-3 w-1 rounded bg-brand"></span>geplant</span>
+  <span class="inline-flex items-center gap-1.5"><span class="h-3 w-1 rounded bg-sky-600"></span>eingeplant (extern)</span>
+  <span class="inline-flex items-center gap-1.5"><span class="h-3 w-1 rounded bg-green-600"></span>veröffentlicht</span>
+</p>
 
-<section class="mt-6 rounded-lg border border-slate-200 bg-white p-4">
-  <h3 class="mb-2 font-semibold">Freigegeben, noch nicht geplant</h3>
-  {% if unplanned %}
-  <ul class="space-y-2 text-sm">
-    {% for d in unplanned %}
-    <li class="flex flex-wrap items-center gap-3">
-      <a class="text-blue-700 hover:underline" href="/social/briefings/{{ d.briefing_id }}#draft-{{ d.id }}">Entwurf {{ d.id }} · {{ channel_labels[d.channel] }}</a>
-      {% set back = "/social/calendar?view=" ~ view ~ "&date=" ~ current.isoformat() %}{% include "_social_schedule.html" %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% else %}<p class="text-sm text-slate-500">Keine.</p>{% endif %}
-  <p class="mt-3 text-xs text-slate-500">Zeiten in Ortszeit (Europe/Berlin). Veröffentlicht wird von Hand auf der Plattform; „Als veröffentlicht markieren“ hält das nur fest.</p>
+<section class="card mt-6" aria-labelledby="unplanned-title">
+  <div class="card-header"><h2 class="card-title" id="unplanned-title">Freigegeben, noch nicht geplant</h2>{{ ui.badge(unplanned | length, "info" if unplanned else "neutral") }}</div>
+  <div class="card-body">
+    {% if unplanned %}
+    <ul class="space-y-3 text-sm">
+      {% for d in unplanned %}
+      <li class="flex flex-wrap items-center gap-3">
+        <a class="min-w-[12rem] font-medium" href="/social/briefings/{{ d.briefing_id }}#draft-{{ d.id }}">Entwurf {{ d.id }} · {{ channel_labels[d.channel] }}</a>
+        {% set back = "/social/calendar?view=" ~ view ~ "&date=" ~ current.isoformat() %}{% include "_social_schedule.html" %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="text-sm text-ink-muted">Keine – alle freigegebenen Beiträge haben einen Termin.</p>{% endif %}
+    <p class="mt-3 text-xs text-ink-subtle">Veröffentlicht wird von Hand direkt in Instagram, Facebook bzw. LinkedIn.
+      „eingeplant (extern)“ und „Als veröffentlicht markieren“ halten nur fest, was dort geschehen ist.</p>
+  </div>
 </section>
 {% endblock %}
