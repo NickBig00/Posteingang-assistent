@@ -10,6 +10,7 @@ from app.social.facts import FACT_LABELS, BriefingFacts, FactKey, formatted_fact
 from app.social.llm import fake_heuristics as _fake_heuristics  # noqa: F401 - offline demo
 from app.social.llm.schemas import (
     AssessmentOutput,
+    CarouselPlanOutput,
     DraftOutput,
     GraphicTextOutput,
     ImagePromptOutput,
@@ -26,6 +27,7 @@ PROMPT_VERSIONS: dict[LLMTask, str] = {
     "image_prompt_revise": "v1",
     "graphic_text": "v1",
     "graphic_text_revise": "v1",
+    "carousel_plan": "v1",
 }
 
 
@@ -251,4 +253,29 @@ class SocialLLMClient:
             forbidden_terms=brand.forbidden_terms,
             instruction=instruction,
             **texts,
+        )
+
+    def carousel_plan(
+        self,
+        config: SocialConfig,
+        *,
+        area_key: str,
+        occasion_key: str,
+        notes: str,
+        post_text: str,
+    ) -> LLMCall[CarouselPlanOutput]:
+        """Suggested split into carousel pages (no facts are sent; code adds them)."""
+        brand = config.brand
+        area = brand.area(area_key)
+        return self._structured(
+            "carousel_plan",
+            CarouselPlanOutput,
+            brand_name=brand.name,
+            area_label=area.label,
+            tone=area.tone,
+            address_form_label=ADDRESS_FORM_LABELS[area.address_form],
+            forbidden_terms=brand.forbidden_terms,
+            occasion_label=config.industry.occasion_type(occasion_key).label,
+            notes=notes,
+            post_text=post_text,
         )

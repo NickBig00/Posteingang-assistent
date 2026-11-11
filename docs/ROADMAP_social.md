@@ -185,7 +185,7 @@ im PR (u. a. eine Vortragsankündigung mit ✓-Liste).
 
 **Akzeptanz:** Tests nur mit Fake; Kennzeichnung und Löschen getestet; Screenshots.
 
-## [ ] B9 – Karussell-Beiträge für Instagram
+## [x] B9 – Karussell-Beiträge für Instagram
 
 Mehrseitige Beiträge gemäß SPEC_social 14.2: Seiten aus Info-Grafiken und Bildern, Reihenfolge,
 Vorschau, KI-Vorschlag für die Seitenaufteilung, Prüfungen je Seite, Download als ZIP.
@@ -242,3 +242,12 @@ im PR.
   ein Test mit NVDA oder VoiceOver durch einen Menschen steht aus.
 - [ ] **Kostenschätzung KI-Bilder:** Standardwert `IMAGE_COST_PER_IMAGE_EUR=0.05` ist eine
   Annahme; vor echtem Einsatz mit der aktuellen Preisliste des Anbieters abgleichen.
+- [ ] **Mitgliedername im Bild-Prompt (B5):** umgesetzt als Fehler ohne Einwilligungsweg (der
+  Name ginge an den Bildanbieter). SPEC §13.5 sieht die Aufhebung per Einwilligung vor – klären.
+- [ ] **Parameter des Bildmodells (B4/B8):** Qualität „medium“, Größen 1024×1024/1024×1536 und
+  `images.edit` sind ohne echten API-Aufruf nicht gegen das aktuelle Modell geprüft.
+- [ ] **Karussell ohne Faktenseite (B9):** Ein Karussell darf auch ohne Faktenblock freigegeben
+  werden (die Fakten stehen im Beitragstext). Zu entscheiden, ob mindestens eine Seite die
+  Fakten zeigen muss.
+- [ ] **Grafiktext-Prüfung bei Anrede:** Warnungen zur Anrede im Grafiktext brauchen wie bei
+  Beiträgen keine Bestätigung; Gesundheits- und Personenhinweise schon.

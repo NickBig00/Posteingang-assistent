@@ -14,6 +14,7 @@ from app.core.audit import write_human_audit_entry
 from app.core.models import utcnow
 from app.core.outcomes import Outcome
 from app.social.assets import consent_blockers
+from app.social.carousel import carousel_blockers
 from app.social.checking import run_checks
 from app.social.images import image_hint_blockers
 from app.social.llm.client import SocialLLMClient
@@ -60,6 +61,7 @@ def approval_blockers(session: Session, draft: PostDraft) -> list[str]:
             blockers.append(f"Warnung noch nicht bestätigt: {result.reason}")
     blockers += consent_blockers(session, draft.briefing_id)
     blockers += image_hint_blockers(session, draft)
+    blockers += carousel_blockers(session, draft)
     return blockers
 
 

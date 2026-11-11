@@ -65,6 +65,24 @@ from app.social.campaigns import (
     parse_campaign_form,
     validate_campaign,
 )
+from app.social.carousel import (
+    CAROUSEL_FORMATS,
+    MAX_PAGES,
+    CarouselError,
+    PageInput,
+    add_page,
+    ai_pages,
+    carousel_checks,
+    confirm_carousel_check,
+    export_zip,
+    move_page,
+    page_problems,
+    pages,
+    remove_page,
+    render_page,
+    suggest_plan,
+    update_page,
+)
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
@@ -116,6 +134,8 @@ from app.social.models import (
     Asset,
     Briefing,
     Campaign,
+    CarouselCheck,
+    CarouselPage,
     Channel,
     CheckResult,
     ImageCandidate,
@@ -202,7 +222,10 @@ def _labels(config: SocialConfig) -> dict[str, dict[str, str]]:
     return {
         "area_labels": {a.key: a.label for a in config.brand.areas},
         "occasion_labels": {o.key: o.label for o in config.industry.occasion_types},
-        "check_labels": CHECK_LABELS | SENSITIVE_CHECK_LABELS | {r.key: r.label for r in rules},
+        "check_labels": CHECK_LABELS
+        | SENSITIVE_CHECK_LABELS
+        | {"seiten": "Karussell"}
+        | {r.key: r.label for r in rules},
     }
 
 
@@ -473,6 +496,26 @@ def _info_context(
     }
 
 
+def _carousel_context(session: Session, briefing: Briefing, draft: PostDraft) -> dict[str, object]:
+    rows = pages(session, draft.id or 0)
+    results = carousel_checks(session, draft.id or 0)
+    return {
+        "pages": [
+            {
+                "page": page,
+                "texts": InfoTexts.from_json(page.texts),
+                "problems": page_problems(session, briefing, page, number),
+            }
+            for number, page in enumerate(rows, start=1)
+        ],
+        "results": results,
+        "light": _light(list(results)) if results else None,  # type: ignore[arg-type]
+        "ai_pages": ai_pages(session, rows),
+        "max_pages": MAX_PAGES,
+        "formats": CAROUSEL_FORMATS,
+    }
+
+
 def _render_briefing(
     request: Request,
     session: Session,
@@ -522,6 +565,11 @@ def _render_briefing(
             "image_formats": list(ImageFormat),
             "graphic": graphic,
             "info": info,
+            "carousels": {
+                d.id: _carousel_context(session, briefing, d)
+                for d in drafts
+                if d.channel is Channel.INSTAGRAM_POST
+            },
             "facts": facts,
             "config": config,
             "error": error,
@@ -1346,6 +1394,221 @@ def info_graphic_file(
         media_type="image/jpeg",
         headers={
             "Content-Disposition": f'{"attachment" if download else "inline"}; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+# --- carousel (Instagram) ---
+
+
+def _carousel_back(draft_id: int, briefing_id: int) -> RedirectResponse:
+    return RedirectResponse(f"/social/briefings/{briefing_id}#carousel-{draft_id}", status_code=303)
+
+
+def _page_or_404(session: Session, page_id: int) -> tuple[CarouselPage, PostDraft]:
+    page = session.get(CarouselPage, page_id)
+    if page is None:
+        raise HTTPException(status_code=404, detail="Seite nicht gefunden")
+    return page, _draft_or_404(session, page.draft_id)
+
+
+def _page_input(
+    kind: str,
+    headline: str,
+    subline: str,
+    intro: str,
+    points: str,
+    closing: str,
+    asset: str,
+    show_facts: bool,
+    variant: str,
+) -> PageInput:
+    return PageInput(
+        kind=kind,
+        texts=InfoTexts(headline, subline, intro, parse_points(points), closing),
+        asset_id=int(asset) if asset.isdigit() else None,
+        show_facts=show_facts,
+        variant=variant,
+    )
+
+
+PageForm = Annotated[str, Form()]
+
+
+@router.post("/social/drafts/{draft_id}/carousel/suggest", response_model=None)
+def carousel_suggest(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    draft_id: int,
+) -> HTMLResponse | RedirectResponse:
+    """AI suggestion for the split into pages (labelled, editable)."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        suggest_plan(session, config, client, draft, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _carousel_back(draft_id, draft.briefing_id)
+
+
+@router.post("/social/drafts/{draft_id}/carousel/pages", response_model=None)
+def carousel_add(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    draft_id: int,
+    kind: PageForm = "info",
+    headline: PageForm = "",
+    subline: PageForm = "",
+    intro: PageForm = "",
+    points: PageForm = "",
+    closing: PageForm = "",
+    asset: PageForm = "",
+    show_facts: Annotated[bool, Form()] = False,
+    variant: PageForm = "zentriert",
+) -> HTMLResponse | RedirectResponse:
+    draft = _draft_or_404(session, draft_id)
+    data = _page_input(kind, headline, subline, intro, points, closing, asset, show_facts, variant)
+    try:
+        add_page(session, config, client, draft, data, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _carousel_back(draft_id, draft.briefing_id)
+
+
+@router.post("/social/carousel-pages/{page_id}", response_model=None)
+def carousel_update(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    page_id: int,
+    headline: PageForm = "",
+    subline: PageForm = "",
+    intro: PageForm = "",
+    points: PageForm = "",
+    closing: PageForm = "",
+    asset: PageForm = "",
+    show_facts: Annotated[bool, Form()] = False,
+    variant: PageForm = "zentriert",
+) -> HTMLResponse | RedirectResponse:
+    page, draft = _page_or_404(session, page_id)
+    data = _page_input(
+        page.kind, headline, subline, intro, points, closing, asset, show_facts, variant
+    )
+    try:
+        update_page(session, config, client, page, data, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+@router.post("/social/carousel-pages/{page_id}/move", response_model=None)
+def carousel_move(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    page_id: int,
+    direction: Annotated[int, Form()] = 1,
+) -> HTMLResponse | RedirectResponse:
+    page, draft = _page_or_404(session, page_id)
+    try:
+        move_page(session, config, client, page, -1 if direction < 0 else 1, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+@router.post("/social/carousel-pages/{page_id}/delete", response_model=None)
+def carousel_remove(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    page_id: int,
+) -> HTMLResponse | RedirectResponse:
+    page, draft = _page_or_404(session, page_id)
+    try:
+        remove_page(session, config, client, page, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+@router.post("/social/carousel-checks/{result_id}/confirm", response_model=None)
+def carousel_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, result_id: int
+) -> HTMLResponse | RedirectResponse:
+    result = session.get(CarouselCheck, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Prüfergebnis nicht gefunden")
+    draft = _draft_or_404(session, result.draft_id)
+    try:
+        confirm_carousel_check(session, result, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+def _carousel_format(value: str) -> ImageFormat:
+    try:
+        fmt = ImageFormat(value)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Unbekanntes Format") from error
+    if fmt not in CAROUSEL_FORMATS:
+        raise HTTPException(status_code=422, detail="Karussells gibt es in 4:5 oder 1:1")
+    return fmt
+
+
+@router.get("/social/carousel-pages/{page_id}.jpg", response_model=None)
+def carousel_page_file(
+    session: SessionDep,
+    config: ConfigDep,
+    page_id: int,
+    format: str = "4:5",  # noqa: A002
+) -> Response:
+    """Preview of one page (the download is the ZIP after approval)."""
+    page, draft = _page_or_404(session, page_id)
+    briefing = _briefing_or_404(session, draft.briefing_id)
+    try:
+        body = render_page(session, config, briefing, page, _carousel_format(format))
+    except CarouselError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@router.get("/social/drafts/{draft_id}/carousel.zip", response_model=None)
+def carousel_zip(
+    session: SessionDep,
+    config: ConfigDep,
+    draft_id: int,
+    format: str = "4:5",  # noqa: A002
+) -> Response:
+    """All pages as ZIP with numbered JPEGs (01.jpg, 02.jpg, …), after the approval."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        body = export_zip(session, config, draft, _carousel_format(format))
+    except CarouselError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    name = f"karussell-beitrag-{draft_id}-{format.replace(':', 'x')}.zip"
+    return Response(
+        body,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
             "X-Content-Type-Options": "nosniff",
         },
     )

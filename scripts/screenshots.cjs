@@ -88,6 +88,9 @@ const SHOTS = {
   B8: [
     ["foto-bearbeiten", "/social/briefings/{briefing}#photo-edit-{photo}", { selector: "#bilder" }],
   ],
+  B9: [
+    ["karussell", "/social/briefings/{briefing}#carousel-{image_draft}", { selector: "#carousel-{image_draft}" }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
@@ -242,6 +245,8 @@ async function seed(withImages) {
       const assetsPage = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
       ids.photo = (assetsPage.match(/id="asset-(\d+)"/) || [])[1];
       if (ids.photo) await post(`/social/assets/${ids.photo}/edit`, { quick: "Wärmeres Licht", image_format: "4:5" });
+      // A carousel for the Instagram post (B9), suggested by the (offline) AI.
+      await post(`/social/drafts/${ids.image_draft}/carousel/suggest`);
       // A revision by instruction, so the audit trail shows one (B6).
       await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
     }

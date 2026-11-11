@@ -131,6 +131,16 @@ Gestaltung „Text zentriert“, „Text in Farbfeld unten“ oder „Foto oben,
 trotzdem nicht passt, wird mit Meldung abgelehnt, nie abgeschnitten. Beispielgrafiken:
 `uv run python scripts/example_graphics.py`.
 
+### Karussell-Beiträge (Instagram)
+
+Ein Instagram-Beitrag kann aus 2–10 Seiten bestehen: Info-Grafik-Seiten (eigene Texte,
+optional Hintergrundbild und Faktenblock) oder Bilder des Briefings. „Seitenaufteilung
+vorschlagen“ liefert einen KI-Vorschlag (`prompts/social/carousel_plan_v1.md`, ohne Fakten),
+der frei bearbeitbar ist. Reihenfolge per Pfeil, Vorschau als Bildleiste. Jede Seite wird
+geprüft (Fakten exakt, keine fremden Daten, verbotene Begriffe, Gesundheitsversprechen,
+Personen, Anrede, Einwilligung bei Bildern); Fehler und unbestätigte Warnungen blockieren die
+Freigabe des Beitrags. Nach der Freigabe: Download als ZIP mit `01.jpg`, `02.jpg`, … in 4:5 oder 1:1.
+
 ### Module ein- und ausschalten
 
 Per Umgebungsvariable `MODULES` (kommagetrennt, Standard: alle), z. B.:

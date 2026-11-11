@@ -1,6 +1,7 @@
 """Example info graphics and carousels for pull requests (ROADMAP_social B7, B9).
 
-    uv run python scripts/example_graphics.py   → docs/screenshots/B7/beispiele/
+    uv run python scripts/example_graphics.py   → docs/screenshots/B7/beispiele/ (info graphics)
+                                                 docs/screenshots/B9/beispiele/ (carousel)
 
 Renders with the fictitious demo brand profile and synthetic texts only (no LLM, no API).
 """
@@ -87,9 +88,74 @@ def info_examples(target: Path) -> list[Path]:
     return written
 
 
+CAROUSEL = [
+    # (texts, background photo, facts block)
+    (InfoTexts("Vortrag: Bewegung im Büroalltag", "Wisch dich durch alle Infos"), True, False),
+    (
+        InfoTexts(
+            "Das erwartet euch",
+            points=[
+                "Kleine Übungen für den Schreibtisch",
+                "Pausen sinnvoll nutzen",
+                "Tipps für den Arbeitsweg",
+                "Zeit für eure Fragen",
+            ],
+        ),
+        False,
+        False,
+    ),
+    (
+        InfoTexts("Termin und Anmeldung", closing="Meldet euch einfach am Empfang an!"),
+        False,
+        True,
+    ),
+]
+
+
+def carousel_examples(target: Path) -> list[Path]:
+    """Three carousel pages (01.jpg …) plus an overview strip of all pages."""
+    from PIL import Image  # noqa: PLC0415
+
+    config = load_social_config(
+        PROFILES_DIR / "fitness.yaml", DEFAULT_BRAND_PROFILES_DIR / "demo.yaml"
+    )
+    photo = BACKGROUND.read_bytes()
+    talk = _briefing("veranstaltung", TALK_FACTS)
+    target.mkdir(parents=True, exist_ok=True)
+    written = []
+    for number, (texts, with_photo, facts) in enumerate(CAROUSEL, start=1):
+        path = target / f"{number:02d}.jpg"
+        path.write_bytes(
+            render_info_graphic(
+                config,
+                talk,
+                texts,
+                ImageFormat.PORTRAIT,
+                background=photo if with_photo else None,
+                show_facts=facts,
+                few_points=True,
+            )
+        )
+        written.append(path)
+    images = [Image.open(path) for path in written]
+    gap = 24
+    strip = Image.new(
+        "RGB", (sum(i.width for i in images) + gap * (len(images) - 1), images[0].height), "white"
+    )
+    x = 0
+    for image in images:
+        strip.paste(image, (x, 0))
+        x += image.width + gap
+    overview = target / "karussell-uebersicht.jpg"
+    strip.resize((strip.width // 2, strip.height // 2)).save(overview, quality=85)
+    return [*written, overview]
+
+
 def main() -> int:
     argparse.ArgumentParser(description=__doc__).parse_args()
     for path in info_examples(ROOT / "docs" / "screenshots" / "B7" / "beispiele"):
+        print(path.relative_to(ROOT))
+    for path in carousel_examples(ROOT / "docs" / "screenshots" / "B9" / "beispiele"):
         print(path.relative_to(ROOT))
     return 0
 

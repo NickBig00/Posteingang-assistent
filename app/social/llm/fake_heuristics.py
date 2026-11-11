@@ -127,6 +127,44 @@ def _graphic_text_revise(user: str) -> str:
     )
 
 
+def _carousel_plan(user: str) -> str:
+    # Title page, one page with the key points as list, last page with the facts.
+    occasion = prompt_section(user, "anlass").strip() or "Neu bei uns"
+    notes = [n.strip(" -•") for n in re.split(r"[,;\n]", prompt_section(user, "stichpunkte"))]
+    points = [n[:80] for n in notes if n and not re.search(r"\d", n)][:6]
+    points += ["Für Einsteiger geeignet", "Kleine Gruppe", "Mit Zeit für Fragen"][
+        : max(0, 3 - len(points))
+    ]
+    pages = [
+        {
+            "headline": occasion,
+            "subline": "Alle Infos zum Durchwischen",
+            "intro": "",
+            "points": [],
+            "closing": "",
+            "show_facts": False,
+        },
+        {
+            "headline": "Das erwartet euch",
+            "subline": "",
+            "intro": "",
+            "points": points,
+            "closing": "",
+            "show_facts": False,
+        },
+        {
+            "headline": "Termin und Anmeldung",
+            "subline": "",
+            "intro": "",
+            "points": [],
+            "closing": "Meldet euch am Empfang an!",
+            "show_facts": True,
+        },
+    ]
+    return json.dumps({"pages": pages}, ensure_ascii=False)
+
+
+register_heuristic("carousel_plan", _carousel_plan)
 register_heuristic("graphic_text", _graphic_text)
 register_heuristic("graphic_text_revise", _graphic_text_revise)
 register_heuristic("post_draft", _post_draft)

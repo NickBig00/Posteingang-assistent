@@ -296,6 +296,42 @@ class InfoGraphicCheck(SQLModel, table=True):
     confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
 
 
+class CarouselPage(SQLModel, table=True):
+    """One page of an Instagram carousel post (SPEC_social 14.2), in the order of `position`.
+
+    `kind` "info": an info graphic page with its own texts (optional background image and
+    facts block); "image": an image of the briefing (own photo, AI image, AI-edited photo).
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    position: int
+    kind: str = "info"
+    texts: dict[str, JsonValue] = Field(default_factory=dict, sa_column=Column(JSON))
+    # Image of the page (no foreign key: a deleted image shows as an error on the page).
+    asset_id: int | None = None
+    show_facts: bool = False
+    variant: str = "zentriert"
+    is_ai_suggestion: bool = False
+    edited_by_human: bool = False
+
+
+class CarouselCheck(SQLModel, table=True):
+    """Check result on the pages of a carousel (like `CheckResult` for the post text)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    page: int | None = None
+    check_key: str
+    outcome: Outcome
+    reason: str
+    is_ai_assessment: bool = False
+    requires_confirmation: bool = False
+    consent_required: bool = False
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+
+
 class RevisionTarget(StrEnum):
     POST_TEXT = "post_text"
     GRAPHIC_TEXT = "graphic_text"

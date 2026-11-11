@@ -159,10 +159,12 @@ def clean_texts(texts: InfoTexts) -> InfoTexts:
     )
 
 
-def validate_texts(texts: InfoTexts, *, story: bool = False) -> list[str]:
-    """Length limits and the size of the list (a story text may have fewer points)."""
+def validate_texts(texts: InfoTexts, *, story: bool = False, label: str | None = None) -> list[str]:
+    """Length limits and the size of the list (a story text or a carousel page may have fewer
+    points; `label` prefixes the messages, e.g. "Seite 2: ")."""
     problems: list[str] = []
-    label = "Story: " if story else ""
+    if label is None:
+        label = "Story: " if story else ""
     if not texts.headline:
         problems.append(f"{label}Bitte eine Überschrift eingeben.")
     for key, name in (
@@ -723,15 +725,23 @@ def render_info_graphic(
     variant: str = "zentriert",
     background: bytes | None = None,
     fact_keys: Iterable[FactKey] | None = None,
+    show_facts: bool = True,
+    few_points: bool = False,
 ) -> bytes:
     """Check the facts, lay out the texts (shrinking if needed) and render the JPEG.
 
+    `show_facts=False` leaves out the facts block (carousel pages without facts; the free texts
+    are still checked against the briefing). `few_points` allows 0–6 points (carousel pages).
     Raises `InfoGraphicError` for fact problems and `GraphicLayoutError` when the text does
     not fit even at the smallest font size.
     """
     facts = BriefingFacts.from_json(briefing.facts)
-    keys = parse_fact_keys(fact_keys if fact_keys is not None else FACT_KEYS, facts)
-    problems = validate_texts(texts, story=fmt is ImageFormat.STORY) + fact_problems(
+    keys: tuple[FactKey, ...] = (
+        parse_fact_keys(fact_keys if fact_keys is not None else FACT_KEYS, facts)
+        if show_facts
+        else ()
+    )
+    problems = validate_texts(texts, story=fmt is ImageFormat.STORY or few_points) + fact_problems(
         texts, facts, keys
     )
     if problems:

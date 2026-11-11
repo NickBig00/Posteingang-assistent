@@ -954,8 +954,26 @@
         "onScreen": true
       },
       {
+        "tag": "summary",
+        "label": "Foto mit KI bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "button",
         "label": "Bild entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Bild entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Weiter mit KI bearbeiten",
         "visible": true,
         "onScreen": true
       },
@@ -1009,6 +1027,12 @@
       },
       {
         "tag": "a",
+        "label": "Foto mit KI bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
         "label": "KI-Bild erzeugen (im Entwurf Instagram-B",
         "visible": true,
         "onScreen": true
@@ -1040,6 +1064,60 @@
       {
         "tag": "button",
         "label": "Vorschau aktualisieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Text für Grafik vorschlagen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "headline",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "subline",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "intro",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "points",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "closing",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Text zentriert Text in Farbfeld unten Fo",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Kürzerer Text für die Story (9:16, optio",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Speichern und prüfen",
         "visible": true,
         "onScreen": true
       },
@@ -1105,103 +1183,79 @@
       },
       {
         "tag": "button",
+        "label": "Seitenaufteilung vorschlagen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 1 nach hinten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 1 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 2 nach vorne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 2 nach hinten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 2 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 3 nach vorne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 3 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Seite 1 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Seite 2 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Seite 3 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "+ Seite hinzufügen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
         "label": "Freigeben",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Erneut prüfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Verwerfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Entwurf löschen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Kurs! Neuer Rückenkurs am Abend, für Ein",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Bearbeiten",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Von KI überarbeiten lassen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "textarea",
-        "label": "Frau beim Rückentraining auf einer Matte",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Format",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Varianten erzeugen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Bild per Anweisung ändern",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Geprüft – bestätigen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Geprüft – bestätigen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Erneut prüfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Verwerfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Entwurf löschen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Briefing löschen",
         "visible": true,
         "onScreen": true
       }
@@ -1269,6 +1323,12 @@
         "onScreen": true
       },
       {
+        "tag": "summary",
+        "label": "Foto mit KI bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "button",
         "label": "Bild entfernen",
         "visible": true,
@@ -1318,6 +1378,12 @@
       },
       {
         "tag": "a",
+        "label": "Foto mit KI bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
         "label": "KI-Bild erzeugen (im Entwurf Instagram-B",
         "visible": true,
         "onScreen": true
@@ -1349,6 +1415,102 @@
       {
         "tag": "a",
         "label": "Grafik als JPEG",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Text für Grafik vorschlagen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Winter-Schnupperwochen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Zwei Wochen alle Kurse ausprobieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Neugierig auf unsere Kurse? In den Schnu",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Alle Kurse inklusive Ohne Vertragsbindun",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Melde dich einfach am Empfang!",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Text zentriert Text in Farbfeld unten Fo",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Kürzerer Text für die Story (9:16, optio",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Speichern und prüfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Grafiktext von KI überarbeiten lassen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "select",
+        "label": "Farbfläche in Markenfarbe Foto „demo_hin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "preis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Vorschau aktualisieren",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Info-Grafik als JPEG",
         "visible": true,
         "onScreen": true
       },
@@ -1463,78 +1625,6 @@
       {
         "tag": "button",
         "label": "Entwurf löschen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Text kopieren",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Als Textdatei",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Bild „demo_hintergrund.jpg“ als JPEG (4:",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Planen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Briefing löschen",
         "visible": true,
         "onScreen": true
       }

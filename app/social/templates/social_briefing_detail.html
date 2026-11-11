@@ -91,6 +91,7 @@
         {% endif %}
 
         {% if images_enabled %}{% include "_social_ai_images.html" %}{% endif %}
+        {% if d.id in carousels %}{% include "_social_carousel.html" %}{% endif %}
         {% include "_social_checks.html" %}
         {% include "_social_actions.html" %}
       </div>
