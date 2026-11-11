@@ -13,7 +13,7 @@ Demo-Fall: ein fiktives Fitness- und Gesundheitsstudio. Nur synthetische Daten.
 - Kein direktes Posten über Plattform-Schnittstellen (Meta usw.); das ist auch künftig nicht geplant, veröffentlicht wird von Hand (Abschnitt 12)
 - Keine Auswertung von Reichweite oder Interaktionen
 - Keine KI-Bilderzeugung ohne ausdrückliche Aktivierung: KI-Bilder sind optional, standardmäßig ausgeschaltet und nur mit menschlicher Auswahl und Freigabe nutzbar (Abschnitt 13)
-- Kein Text in KI-Bildern; Text in Grafiken entsteht ausschließlich deterministisch aus Vorlagen (Abschnitt 14)
+- Keine ungeprüften Fakten in Grafiken: Datum, Uhrzeit, Preis, Ort und Telefonnummer kommen deterministisch aus dem Briefing (Abschnitt 14); Text, den das Bildmodell selbst zeichnet, muss ein Mensch vor der Freigabe prüfen (Abschnitt 13.5)
 - Keine Werbeanzeigen (Ads)
 - Keine personenbezogenen Daten von Mitgliedern oder Patienten in Beiträgen (einzige Ausnahme: die namentliche Nennung eines Mitglieds mit bestätigter Einwilligung, siehe Abschnitt 6)
 
@@ -183,16 +183,28 @@ Zu einem Beitrag optional passende Bilder erzeugen: Stimmungs- und Hintergrundbi
 
 Neues Feld `image_style` je Bereich, z. B. Farben, Stimmung („hell, freundlich, ruhig“), Motive („Trainingsgeräte, Natur, Wald“), Ausschlüsse. Felder: `colors`, `mood`, `motifs`, `exclusions` (Liste).
 
-### 13.5 Schutzregeln (nicht verhandelbar)
+### 13.5 Schutzregeln
 
-- **Keine realistischen Personen**, keine erkennbaren Gesichter. Der Bild-Prompt enthält standardmäßig einen entsprechenden Ausschluss; ein Code-Check prüft den Prompt auf Personenbezug.
-- **Keine Darstellung, die vorgibt, das echte Studio, echte Räume oder echte Ergebnisse zu zeigen.** Keine Vorher-nachher-Bilder, keine medizinischen Darstellungen.
-- **Kein Text im KI-Bild.** Text kommt ausschließlich über Vorlagen (Abschnitt 14), damit Fakten nicht verfälscht werden.
-- **Keine personenbezogenen Daten im Bild-Prompt** (keine Namen, keine Mitgliederdaten).
+Grundsatz: Jedes KI-Bild wird von einem Menschen geprüft und mit dem Beitrag freigegeben. Die
+Prüfungen helfen dabei; sie blockieren nur, wo es unten ausdrücklich steht.
+
+**Immer (nicht verhandelbar):**
+
+- **Keine Daten von Mitgliedern oder Patienten im Bild-Prompt.** Ein Name aus der Mitgliederliste ist ein Fehler, den nur die bestätigte Einwilligung der Person aufhebt (wie bei Beiträgen, Abschnitt 6).
+- **Keine Nachbildung echter, erkennbarer Personen** (Mitarbeitende, Mitglieder, Prominente).
 - **Kennzeichnung:** KI-Bilder werden gespeichert mit Kennzeichen „KI-generiert“, in der Oberfläche als solche markiert. Beim Download erscheint der Hinweis, das Bild beim Posten als KI-generiert zu kennzeichnen.
-- **Audit:** Bild-Prompt, Modell, Parameter, Anzahl Varianten und Kosten-Schätzung je Erzeugung.
+- **Audit:** Bild-Prompt, Modell, Parameter, Anzahl Varianten und Kosten-Schätzung je Erzeugung; Bestätigungen von Hinweisen ebenso.
 - **Kostenbremse:** maximale Anzahl Erzeugungen pro Beitrag und pro Tag, konfigurierbar.
 - **Löschkonzept:** Erzeugte Bilder werden wie hochgeladene Bilder behandelt (Aufbewahrung, Löschen, Audit nur mit Hashes).
+
+**Hinweise, die ein Mensch vor der Freigabe bestätigt** (Bestätigung im Audit-Log):
+
+- **Realistische Personen** im Bild (z. B. „Frau beim Rückentraining“) sind erlaubt. Die Oberfläche weist darauf hin, dass gezeigte Personen keine echten Mitglieder sind.
+- **Text im KI-Bild**, den das Bildmodell selbst zeichnet, ist erlaubt. Der Hinweis, dass Bildmodelle Buchstaben und Zahlen verfälschen können, erscheint **nur in der Oberfläche, nicht im Bild**. Fakten (Datum, Uhrzeit, Preis, Ort) gehören bevorzugt in die geprüfte Grafik aus Vorlagen (Abschnitt 14).
+- **Darstellungen, die echte Räume, das echte Studio oder echte Ergebnisse vorgeben könnten**, Vorher-nachher- und medizinische Motive: Hinweis mit Begründung.
+- **Andere Namen und Kontaktdaten** im Bild-Prompt: Hinweis.
+
+Umsetzung der Hinweise im Code: Meilenstein B5 (`docs/SPEC_bilder_text.md`). Bis dahin lehnt die App solche Prompts noch ab.
 
 ## 14. Grafiken aus Vorlagen
 

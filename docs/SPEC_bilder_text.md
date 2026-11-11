@@ -53,6 +53,47 @@ Löschkonzept, nur synthetische Daten im Repository) gelten weiter.
 - Die übrigen Texte laufen durch dieselben Prüfungen wie Beiträge (Gesundheitsversprechen,
   verbotene Begriffe, Personen, Anrede) – Ergebnis als **Hinweise**, die der Mensch bestätigt
   (siehe 2.4).
+- **Pflege der Texte (Entscheidung 3c):** ein Grafiktext **je Briefing** für alle Kanäle;
+  für die **Story** kann optional ein kürzerer eigener Text hinterlegt werden (sonst gilt der
+  Briefing-Text; passt er nicht ins 9:16-Format, kommt eine Meldung – nie abschneiden).
+
+### 2.2a Text direkt im KI-Bild (Entscheidung 2b)
+
+- Der Bild-Prompt darf Text im Bild verlangen (z. B. Schriftzug „Darmgesundheit“); das
+  Bildmodell zeichnet ihn selbst.
+- Die App zeigt dazu einen **Hinweis in der Oberfläche** (nicht im Bild): Bildmodelle verändern
+  oft Buchstaben und Zahlen; Daten, Uhrzeiten, Preise und Orte im Bild bitte genau prüfen oder
+  über die Info-Grafik einfügen. Der Hinweis muss vor der Freigabe bestätigt werden; die
+  Bestätigung steht im Audit.
+- **In das Bild selbst kommt kein Hinweis** und kein zusätzlicher Vermerk außer dem, was der
+  Prompt verlangt. Die KI-Kennzeichnung erfolgt wie bisher in Oberfläche, Speicherung und
+  Download-Hinweis.
+- Empfehlung in der Oberfläche: Fakten lieber über die Info-Grafik (geprüft), Schmuckschrift
+  und Überschriften dürfen vom Bildmodell kommen.
+
+### 2.2b Personen in KI-Bildern (Entscheidung 1a)
+
+- KI-Bilder **dürfen realistische Menschen zeigen** (z. B. „Frau beim Rückentraining“). Der
+  Prompt-Check gibt dazu einen **Hinweis**, den der Mensch vor der Freigabe bestätigt.
+- **Nicht erlaubt** bleibt, echte, erkennbare Personen nachzubilden (Mitarbeitende, Mitglieder,
+  Prominente) – Namen im Prompt bleiben ein Hinweis bzw. bei Mitgliedernamen ein Fehler.
+- Das Bild ist immer als **„KI-generiert“** gekennzeichnet; beim Download erscheint der
+  Hinweis, es beim Posten als KI-generiert zu kennzeichnen (EU AI Act, synthetische Inhalte).
+  Die Oberfläche weist darauf hin, dass gezeigte Personen keine echten Mitglieder sind.
+- Gilt auch für die KI-Bearbeitung eigener Fotos (2.1): Personen auf hochgeladenen Fotos nur mit
+  bestätigter Einwilligung; die Bearbeitung darf Personen nicht verfälschend verändern
+  (z. B. Körperform, Vorher-nachher).
+
+### 2.2c Karussell-Beiträge für Instagram (Entscheidung 4: ja)
+
+- Ein Instagram-Beitrag kann aus **mehreren Seiten** bestehen (2–10), z. B. Seite 1 Titel mit
+  Bild, Seite 2 Themen als ✓-Liste, Seite 3 Termin und Anmeldung.
+- Jede Seite ist eine Info-Grafik oder ein Bild (eigenes Foto, KI-Bild, KI-bearbeitetes Foto);
+  gleiche Prüfungen und Kennzeichnung je Seite; Fakten werden auf allen Seiten exakt geprüft.
+- Reihenfolge per Oberfläche änderbar; Vorschau als Karussell; Download als ZIP mit
+  nummerierten JPEGs (`01.jpg`, `02.jpg`, …) im Format 4:5 oder 1:1.
+- Die KI kann eine Seitenaufteilung aus Briefing und Beitragstext vorschlagen (KI-Vorschlag,
+  bearbeitbar).
 
 ### 2.3 Überarbeiten per Anweisung („Was passt nicht?“)
 
@@ -70,8 +111,8 @@ dabei, sie ersetzen die Entscheidung nicht.
 
 | Prüfung | bisher | neu |
 |---|---|---|
-| Bild-Prompt: Personen, Körperteile, Team | Ablehnung | **Hinweis**, Mensch bestätigt oder ändert per Anweisung |
-| Bild-Prompt: Text im Bild | Ablehnung | **Hinweis**; Text gehört bevorzugt in die Info-Grafik (Code), damit Fakten stimmen |
+| Bild-Prompt: Personen, Körperteile, Team | Ablehnung | **Hinweis**, Mensch bestätigt oder ändert per Anweisung (2.2b) |
+| Bild-Prompt: Text im Bild | Ablehnung | **Hinweis in der Oberfläche** (nicht im Bild), bestätigungspflichtig; Fakten bevorzugt über die Info-Grafik (2.2a) |
 | Bild-Prompt: echte Räume, Vorher-nachher, medizinische Motive | Ablehnung | **Hinweis** mit Begründung |
 | Bild-Prompt: Kontaktdaten | Ablehnung | **Hinweis** |
 | Bild-Prompt / Texte: **Namen aus der Mitgliederliste** | Ablehnung | **bleibt Fehler**, aufhebbar nur durch bestätigte Einwilligung (CLAUDE.md) |
@@ -119,20 +160,25 @@ Bestätigung vor der Freigabe; die Bestätigung steht im Audit.
 - `GraphicText` (neu, je Briefing oder Entwurf): Überschrift, Unterzeile, Einleitung, Punkte
   (Liste), Schlusssatz, Vorlage/Variante, `is_ai_suggestion`, `edited_by_human`; Prüfergebnisse
   wie `CheckResult`.
+- `GraphicText` zusätzlich: optionaler Kurztext für die Story (Entscheidung 3c).
 - `RevisionRequest` (neu): Ziel (Entwurf, Grafiktext, Bild-Prompt, Bild), Anweisung, Ersteller,
   Zeitpunkt; Audit-Eintrag je Überarbeitung.
+- `CarouselPage` (neu): Entwurf, Position, Art (Info-Grafik oder Bild), Verweis auf
+  `GraphicText` bzw. `Asset`.
 
-## 5. Offene Fragen
+## 5. Entschiedene Fragen (Product Owner, November 2026)
 
-1. **Realistische Personen in KI-Bildern** (§13.5 bisher „nicht verhandelbar“): nur Hinweis
-   mit Bestätigung, oder weiterhin ausgeschlossen? Vorschlag: Hinweis; erkennbare Gesichter
-   echter Personen bleiben ausgeschlossen, und das Bild ist immer als KI-generiert gekennzeichnet
-   (EU AI Act, Kennzeichnung synthetischer Inhalte).
-2. **Text direkt vom Bildmodell** zeichnen lassen (statt per Code): zulassen mit Hinweis, oder nur
-   über die Info-Grafik? Vorschlag: nur Info-Grafik, weil Bildmodelle Zahlen und Buchstaben
-   verfälschen; Ausnahme reine Schmuckschrift ohne Fakten mit Hinweis.
-3. Sollen Info-Grafik-Texte je **Kanal** (Story kürzer) oder je **Briefing** gepflegt werden?
-4. Brauchen wir eine **Mehrseiten-Grafik (Karussell)** für Instagram?
+1. **Realistische Personen in KI-Bildern:** erlaubt mit bestätigungspflichtigem Hinweis und
+   Kennzeichnung „KI-generiert“; keine Nachbildung echter, erkennbarer Personen (2.2b).
+   In SPEC_social §13.5 bereits übernommen.
+2. **Text direkt vom Bildmodell:** erlaubt; der Hinweis dazu erscheint **nur in der
+   Oberfläche, nicht in der Grafik** (2.2a). In SPEC_social §13.5 bereits übernommen.
+3. **Grafiktexte:** je Briefing, optional ein kürzerer Text für die Story (2.2, 3c).
+4. **Karussell für Instagram:** ja, eigener Meilenstein B9 (2.2c).
+
+Weiterhin gilt aus `CLAUDE.md`: Mitgliedernamen sind ein Fehler, der nur durch die bestätigte
+Einwilligung der Person aufgehoben wird; Fakten werden deterministisch geprüft; jede Freigabe
+durch einen Menschen; Kennzeichnung und Audit.
 
 ## 6. Meilensteine (in `docs/ROADMAP_social.md` übernehmen)
 
@@ -164,3 +210,9 @@ im PR (u. a. eine Vortragsankündigung mit ✓-Liste).
 `edit` im Bild-Interface, Bearbeitung per Anweisung und Schnellauswahl, Kennzeichnung
 „KI-bearbeitet“, Original bleibt, Einwilligung bei Personen, Kostenbremse, Audit, Löschkonzept.
 **Akzeptanz:** Tests nur mit Fake; Kennzeichnung und Löschen getestet; Screenshots.
+
+### [ ] B9 – Karussell-Beiträge für Instagram
+Mehrseitige Beiträge gemäß 2.2c: Seiten aus Info-Grafiken und Bildern, Reihenfolge, Vorschau,
+KI-Vorschlag für die Seitenaufteilung, Prüfungen je Seite, Download als ZIP.
+**Akzeptanz:** Tests für Faktentreue über alle Seiten, Reihenfolge und Export; Beispiel-Karussell
+im PR.
