@@ -143,7 +143,7 @@ Responsivität, Barrierefreiheit, einheitliche Leer- und Ladezustände.
 
 ## Nächste Ausbaustufe: Bilder bearbeiten, Texte auf Bildern, Überarbeiten per Anweisung
 
-Entwurf und Meilensteine B4–B8 stehen in `docs/SPEC_bilder_text.md` (Entscheidungen nach dem
+Entwurf und Meilensteine B4–B9 stehen in `docs/SPEC_bilder_text.md` (Entscheidungen nach dem
 ersten Praxistest). Die nächste Session übernimmt sie wie beschrieben in `docs/SPEC_social.md`
 und in diese Roadmap und löscht danach die Entwurfsdatei.
 
