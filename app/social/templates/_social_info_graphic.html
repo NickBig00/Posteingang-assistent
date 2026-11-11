@@ -88,7 +88,7 @@
         <label class="field font-medium">Hintergrund
           <select name="info_background" class="input mt-1">
             <option value="color" {% if info.background == "color" %}selected{% endif %}>Farbfläche in Markenfarbe</option>
-            {% for a in usable_assets %}<option value="{{ a.id }}" {% if info.background == a.id | string %}selected{% endif %}>{{ ("KI-Bild" if a.ai_generated else "Foto") ~ " „" ~ a.filename | truncate(24, true, "…") ~ "“" }}</option>{% endfor %}
+            {% for a in usable_assets %}<option value="{{ a.id }}" {% if info.background == a.id | string %}selected{% endif %}>{{ ("KI-Bild" if a.ai_generated else ("KI-bearbeitet" if a.ai_edited else "Foto")) ~ " „" ~ a.filename | truncate(24, true, "…") ~ "“" }}</option>{% endfor %}
           </select></label>
         {% if info.available_facts %}
         <fieldset><legend class="font-medium">Fakten</legend>

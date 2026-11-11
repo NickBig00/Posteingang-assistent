@@ -193,6 +193,17 @@ class Asset(SQLModel, table=True):
     consent_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     # AI image (SPEC_social 13): labelled "KI-generiert"; belongs to one draft.
     ai_generated: bool = False
+    # Own photo edited with AI (SPEC_social 13.6): labelled "KI-bearbeitet"; a new image, the
+    # original stays. `source_asset_id` points to the image it was made from (no foreign key:
+    # the original may be deleted while the edited version stays).
+    ai_edited: bool = False
+    source_asset_id: int | None = None
+    # Hint on the edit instruction (e.g. changing body shapes) that a person must confirm.
+    edit_hint: str | None = None
+    edit_hint_confirmed_by: str | None = None
+    edit_hint_confirmed_at: datetime | None = Field(
+        default=None, sa_column=_optional_timestamp_column()
+    )
     draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     # Consent withdrawn: the file is deleted, the entry stays as record until removed.
     consent_revoked_by: str | None = None

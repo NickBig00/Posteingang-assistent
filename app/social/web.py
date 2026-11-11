@@ -125,6 +125,15 @@ from app.social.models import (
     PostStatus,
     PromptHint,
 )
+from app.social.photo_edit import (
+    AI_EDITED_LABEL,
+    PhotoEditError,
+    confirm_edit_hint,
+    edit_photo,
+)
+from app.social.photo_edit import (
+    QUICK_PICKS as PHOTO_QUICK_PICKS,
+)
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
 from app.social.retention import delete_briefing, delete_campaign, delete_draft
 from app.social.review import (
@@ -165,6 +174,8 @@ templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
 templates.env.globals["format_specs"] = FORMAT_SPECS
 templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
 templates.env.globals["hint_labels"] = HINT_LABELS
+templates.env.globals["ai_edited_label"] = AI_EDITED_LABEL
+templates.env.globals["photo_quick_picks"] = PHOTO_QUICK_PICKS
 templates.env.globals["post_quick_picks"] = POST_QUICK_PICKS
 templates.env.globals["image_quick_picks"] = IMAGE_QUICK_PICKS
 templates.env.globals["fact_labels"] = FACT_LABELS
@@ -379,7 +390,7 @@ def _graphic_context(
         [("format", fmt), ("background", background), ("headline", headline)]
         + [("facts", key) for key in keys]
     )
-    ai_background = any(str(a.id) == background and a.ai_generated for a in usable)
+    ai_background = any(str(a.id) == background and (a.ai_generated or a.ai_edited) for a in usable)
     return {
         "format": fmt,
         "background": background,
@@ -455,7 +466,9 @@ def _info_context(
         "problems": problems,
         "blockers": check_blockers(session, graphic) if graphic else [],
         "src": f"/social/briefings/{briefing.id}/info-graphic.jpg?{query}",
-        "ai_background": any(str(a.id) == background and a.ai_generated for a in usable),
+        "ai_background": any(
+            str(a.id) == background and (a.ai_generated or a.ai_edited) for a in usable
+        ),
         "downloadable": _has_approved_post(session, briefing.id or 0),
     }
 
@@ -893,6 +906,58 @@ def image_revise(
     return _images_back(draft)
 
 
+@router.post("/social/assets/{asset_id}/edit", response_model=None)
+def asset_edit(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    provider: ImageProviderDep,
+    user: UserDep,
+    storage: StorageDep,
+    asset_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+    image_format: Annotated[str, Form()] = ImageFormat.PORTRAIT.value,
+) -> HTMLResponse | RedirectResponse:
+    """Edit an own photo with AI; the result is a new image labelled "KI-bearbeitet"."""
+    if not image_generation_enabled():
+        raise HTTPException(status_code=404, detail="Nicht gefunden")
+    asset = _asset_or_404(session, asset_id)
+    try:
+        fmt = ImageFormat(image_format)
+    except ValueError:
+        fmt = ImageFormat.PORTRAIT
+    try:
+        edited = edit_photo(
+            session,
+            provider,
+            asset,
+            instruction=quick or instruction,
+            fmt=fmt,
+            user=user,
+            storage=storage,
+        )
+    except (PhotoEditError, ImageError) as error:
+        return _render_briefing(request, session, config, asset.briefing_id, str(error), 422)
+    return RedirectResponse(
+        f"/social/briefings/{asset.briefing_id}#asset-{edited.id}", status_code=303
+    )
+
+
+@router.post("/social/assets/{asset_id}/edit-hint/confirm", response_model=None)
+def asset_edit_hint_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, asset_id: int
+) -> HTMLResponse | RedirectResponse:
+    asset = _asset_or_404(session, asset_id)
+    try:
+        confirm_edit_hint(session, asset, user)
+    except PhotoEditError as error:
+        return _render_briefing(request, session, config, asset.briefing_id, str(error), 409)
+    return RedirectResponse(
+        f"/social/briefings/{asset.briefing_id}#asset-{asset.id}", status_code=303
+    )
+
+
 @router.post("/social/image-hints/{hint_id}/confirm", response_model=None)
 def image_hint_confirm(
     request: Request, session: SessionDep, config: ConfigDep, user: UserDep, hint_id: int
@@ -1039,7 +1104,7 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
         body = export_jpeg(path.read_bytes(), fmt)
     except ImageExportError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    label = "-ki-generiert" if image.ai_generated else ""
+    label = "-ki-generiert" if image.ai_generated else ("-ki-bearbeitet" if image.ai_edited else "")
     name = f"beitrag-{draft.id}-{draft.channel.value}-{fmt.value.replace(':', 'x')}{label}.jpg"
     return Response(
         body,
@@ -1049,6 +1114,12 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+def _ai_label(image: Asset | None) -> str:
+    if image is None:
+        return ""
+    return "-ki-generiert" if image.ai_generated else ("-ki-bearbeitet" if image.ai_edited else "")
 
 
 @router.get("/social/briefings/{briefing_id}/graphic.jpg", response_model=None)
@@ -1087,7 +1158,7 @@ def briefing_graphic(
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (GraphicLayoutError, ImageExportError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    label = "-ki-generiert" if image is not None and image.ai_generated else ""
+    label = _ai_label(image)
     name = f"grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
     disposition = "attachment" if download else "inline"
     return Response(
@@ -1268,7 +1339,7 @@ def info_graphic_file(
         background=background,
         fact_keys=facts or [],
     )
-    label = "-ki-generiert" if image is not None and image.ai_generated else ""
+    label = _ai_label(image)
     name = f"info-grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
     return Response(
         body,

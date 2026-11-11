@@ -177,7 +177,7 @@ Gestaltungsvarianten, Formaten und JPEG-Export.
 **Akzeptanz:** Tests für Faktentreue, Prüfungen, Layout (nichts abgeschnitten); Beispielgrafiken
 im PR (u. a. eine Vortragsankündigung mit ✓-Liste).
 
-## [ ] B8 – Eigene Fotos mit KI bearbeiten
+## [x] B8 – Eigene Fotos mit KI bearbeiten
 
 `edit` im Bild-Interface, Bearbeitung per Anweisung und Schnellauswahl, Kennzeichnung
 „KI-bearbeitet“, Original bleibt, Einwilligung bei Personen, Kostenbremse, Audit, Löschkonzept

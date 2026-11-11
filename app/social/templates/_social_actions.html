@@ -49,9 +49,13 @@
     <a href="/social/drafts/{{ d.id }}/export" class="btn btn-secondary btn-sm">{{ ui.icon("doc") }}Als Textdatei</a>
     {% for a in draft_images[d.id] %}
     <a href="/social/drafts/{{ d.id }}/image.jpg?asset={{ a.id }}" class="btn btn-secondary btn-sm" download
-       data-jpeg-download>{{ ui.icon("download") }}{% if a.ai_generated %}KI-Bild{% else %}Bild „{{ a.filename | truncate(18, true, "…") }}“{% endif %} als JPEG ({{ channel_formats[d.channel].value }})</a>
+       data-jpeg-download>{{ ui.icon("download") }}{% if a.ai_generated %}KI-Bild{% elif a.ai_edited %}KI-bearbeitetes Bild{% else %}Bild „{{ a.filename | truncate(18, true, "…") }}“{% endif %} als JPEG ({{ channel_formats[d.channel].value }})</a>
     {% endfor %}
   </div>
+  {% if draft_images[d.id] | selectattr("ai_edited") | list %}
+  <div class="mt-2" data-ai-edited-notice>{% call ui.alert("", "ai") %}<strong>KI-bearbeitetes Bild beim Posten kennzeichnen:</strong> Mindestens ein Foto wurde mit KI verändert.
+    Setzen Sie auf der Plattform die KI-Kennzeichnung, wenn Sie es verwenden.{% endcall %}</div>
+  {% endif %}
   {% if draft_images[d.id] | selectattr("ai_generated") | list %}
   <div class="mt-2">{% call ui.alert("", "ai") %}<strong>Beim Posten als KI-generiert kennzeichnen:</strong> Das Bild wurde mit KI erzeugt.
     Setzen Sie auf der Plattform die Kennzeichnung (z. B. „Mit KI erstellt“ bzw. „KI-Info“) oder erwähnen Sie es im Text.{% endcall %}</div>

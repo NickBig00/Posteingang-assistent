@@ -82,19 +82,28 @@ class Usage:
     today: int
 
 
+# Marker in the audit parameters of every paid image call (generation or edit).
+IMAGE_CALL_MARKER = "image_call"
+
+
 def _generation_entries(session: Session, step: str) -> list[AuditEntry]:
-    statement = (
-        select(AuditEntry).where(AuditEntry.step == step).where(col(AuditEntry.error).is_(None))
-    )
-    return list(session.exec(statement).all())
+    statement = select(AuditEntry).where(col(AuditEntry.error).is_(None))
+    return [
+        e
+        for e in session.exec(statement).all()
+        if e.step == step or e.model_params.get(IMAGE_CALL_MARKER) is True
+    ]
 
 
 def usage(session: Session, step: str, scope: str, now: datetime | None = None) -> Usage:
-    """Successful generations of `scope` (all time) and of all scopes in the last 24 hours."""
+    """Successful image calls of `scope` (all time) and of all scopes in the last 24 hours.
+
+    The daily limit counts every paid image call (generations and edits of all steps).
+    """
     now = now or utcnow()
     since = now - timedelta(days=1)
     entries = _generation_entries(session, step)
-    in_scope = sum(1 for e in entries if e.model_params.get("scope") == scope)
+    in_scope = sum(1 for e in entries if e.model_params.get("scope") == scope and e.step == step)
     today = 0
     for entry in entries:
         created = entry.created_at
@@ -148,6 +157,7 @@ def generate_images(
         "scope": scope,
         "format": fmt.value,
         "variants": count,
+        IMAGE_CALL_MARKER: True,
     }
     try:
         batch = provider.generate(prompt=prompt, fmt=fmt, count=count)
@@ -176,5 +186,69 @@ def generate_images(
             "cost_estimate_eur": batch.cost_estimate_eur,
         },
         output=json.dumps({"prompt": prompt, "image_hashes": hashes}, ensure_ascii=False),
+    )
+    return batch
+
+
+def edit_image(
+    session: Session,
+    provider: ImageProvider,
+    *,
+    image: bytes,
+    media_type: str,
+    instruction: str,
+    fmt: ImageFormat,
+    step: str,
+    scope: str,
+    user: str,
+    details: dict[str, JsonValue] | None = None,
+    now: datetime | None = None,
+) -> ImageBatch:
+    """AI edit of an own photo after checking switch and cost brake; audited like generations.
+
+    The audit entry stores the hash of the instruction (input), model, parameters and cost;
+    instruction and image hashes go into the deletable audit output.
+    """
+    if not image_generation_enabled():
+        raise ImageGenerationDisabledError("Die Bildbearbeitung mit KI ist ausgeschaltet.")
+    blocker = budget_blocker(session, step, scope, now)
+    if blocker:
+        raise ImageBudgetExceededError(blocker.replace("Bilderzeugungen", "KI-Bildaufrufe"))
+    started = time.monotonic()
+    base_params: dict[str, JsonValue] = {
+        **(details or {}),
+        "actor": user,
+        "scope": scope,
+        "format": fmt.value,
+        "variants": 1,
+        "source_hash": hash_input(image.hex()),
+        IMAGE_CALL_MARKER: True,
+    }
+    try:
+        batch = provider.edit(image=image, media_type=media_type, instruction=instruction, fmt=fmt)
+    except ImageProviderError as error:
+        write_audit_entry(
+            session,
+            step=step,
+            model=getattr(provider, "model", provider.name),
+            input_text=instruction,
+            duration_ms=int((time.monotonic() - started) * 1000),
+            model_params={**base_params, "provider": provider.name, "cost_estimate_eur": 0.0},
+            error=str(error),
+        )
+        raise
+    hashes = [hash_input(result.content.hex()) for result in batch.images]
+    write_audit_entry(
+        session,
+        step=step,
+        model=batch.model,
+        input_text=instruction,
+        duration_ms=int((time.monotonic() - started) * 1000),
+        model_params={
+            **base_params,
+            **batch.params,
+            "cost_estimate_eur": batch.cost_estimate_eur,
+        },
+        output=json.dumps({"instruction": instruction, "image_hashes": hashes}, ensure_ascii=False),
     )
     return batch

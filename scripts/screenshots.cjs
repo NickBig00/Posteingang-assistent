@@ -85,6 +85,9 @@ const SHOTS = {
     ["info-grafik", "/social/briefings/{approved_briefing}?info_background={background_asset}#info-grafik", { selector: "#info-grafik" }],
     ["info-grafik-leer", "/social/briefings/{briefing}#info-grafik", { selector: "#info-grafik" }],
   ],
+  B8: [
+    ["foto-bearbeiten", "/social/briefings/{briefing}#photo-edit-{photo}", { selector: "#bilder" }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
@@ -235,6 +238,10 @@ async function seed(withImages) {
       const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
       const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];
       if (candidate) await post(`/social/drafts/${ids.hint_draft}/images/${candidate}/choose`);
+      // An own photo edited with AI (B8): the result is a new image labelled "KI-bearbeitet".
+      const assetsPage = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      ids.photo = (assetsPage.match(/id="asset-(\d+)"/) || [])[1];
+      if (ids.photo) await post(`/social/assets/${ids.photo}/edit`, { quick: "Wärmeres Licht", image_format: "4:5" });
       // A revision by instruction, so the audit trail shows one (B6).
       await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
     }

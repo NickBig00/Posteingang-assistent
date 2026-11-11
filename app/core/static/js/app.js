@@ -53,4 +53,13 @@
     const close = event.target.closest("[data-dismiss]");
     if (close) close.closest(".toast, .alert").remove();
   });
+
+  // A link to a collapsed section (e.g. "Foto mit KI bearbeiten") opens it.
+  function openTarget() {
+    if (!location.hash) return;
+    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (target && target.tagName === "DETAILS") target.open = true;
+  }
+  window.addEventListener("hashchange", openTarget);
+  openTarget();
 })();
