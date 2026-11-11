@@ -11,8 +11,8 @@ Demo-Daten wie bei den Screenshots (Fake-Anbieter, KI-Bilder eingeschaltet).
 | Laptop 1366×900 | Audit Eingang | keine | 8 | 0 | nein |
 | Laptop 1366×900 | Social Media | keine | 18 | 0 | nein |
 | Laptop 1366×900 | Neues Briefing | keine | 39 | 0 | nein |
-| Laptop 1366×900 | Entwurf in Prüfung (mit KI-Bild) | keine | 50 | 0 | nein |
-| Laptop 1366×900 | Entwurf freigegeben | keine | 54 | 0 | nein |
+| Laptop 1366×900 | Entwurf in Prüfung (mit KI-Bild) | keine | 60 | 0 | nein |
+| Laptop 1366×900 | Entwurf freigegeben | keine | 60 | 0 | nein |
 | Laptop 1366×900 | Kalender Woche | keine | 31 | 0 | nein |
 | Laptop 1366×900 | Kalender Monat | keine | 23 | 0 | nein |
 | Laptop 1366×900 | Kampagnen | keine | 11 | 0 | nein |

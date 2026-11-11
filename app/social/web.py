@@ -65,6 +65,24 @@ from app.social.campaigns import (
     parse_campaign_form,
     validate_campaign,
 )
+from app.social.carousel import (
+    CAROUSEL_FORMATS,
+    MAX_PAGES,
+    CarouselError,
+    PageInput,
+    add_page,
+    ai_pages,
+    carousel_checks,
+    confirm_carousel_check,
+    export_zip,
+    move_page,
+    page_problems,
+    pages,
+    remove_page,
+    render_page,
+    suggest_plan,
+    update_page,
+)
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
@@ -90,6 +108,23 @@ from app.social.images import (
     image_state,
     suggest_prompt,
 )
+from app.social.infographic import (
+    VARIANT_LABELS,
+    InfoGraphicError,
+    InfoTexts,
+    check_blockers,
+    confirm_check,
+    get_info_graphic,
+    graphic_checks,
+    parse_points,
+    render_info_graphic,
+    revise_texts,
+    save_texts,
+    story_texts,
+    suggest_texts,
+    text_errors,
+    texts_for_format,
+)
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
     CHANNEL_IMAGE_FORMATS,
@@ -99,12 +134,25 @@ from app.social.models import (
     Asset,
     Briefing,
     Campaign,
+    CarouselCheck,
+    CarouselPage,
     Channel,
     CheckResult,
     ImageCandidate,
+    InfoGraphic,
+    InfoGraphicCheck,
     PostDraft,
     PostStatus,
     PromptHint,
+)
+from app.social.photo_edit import (
+    AI_EDITED_LABEL,
+    PhotoEditError,
+    confirm_edit_hint,
+    edit_photo,
+)
+from app.social.photo_edit import (
+    QUICK_PICKS as PHOTO_QUICK_PICKS,
 )
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig, load_social_config
 from app.social.retention import delete_briefing, delete_campaign, delete_draft
@@ -146,6 +194,8 @@ templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
 templates.env.globals["format_specs"] = FORMAT_SPECS
 templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
 templates.env.globals["hint_labels"] = HINT_LABELS
+templates.env.globals["ai_edited_label"] = AI_EDITED_LABEL
+templates.env.globals["photo_quick_picks"] = PHOTO_QUICK_PICKS
 templates.env.globals["post_quick_picks"] = POST_QUICK_PICKS
 templates.env.globals["image_quick_picks"] = IMAGE_QUICK_PICKS
 templates.env.globals["fact_labels"] = FACT_LABELS
@@ -172,7 +222,10 @@ def _labels(config: SocialConfig) -> dict[str, dict[str, str]]:
     return {
         "area_labels": {a.key: a.label for a in config.brand.areas},
         "occasion_labels": {o.key: o.label for o in config.industry.occasion_types},
-        "check_labels": CHECK_LABELS | SENSITIVE_CHECK_LABELS | {r.key: r.label for r in rules},
+        "check_labels": CHECK_LABELS
+        | SENSITIVE_CHECK_LABELS
+        | {"seiten": "Karussell"}
+        | {r.key: r.label for r in rules},
     }
 
 
@@ -360,7 +413,7 @@ def _graphic_context(
         [("format", fmt), ("background", background), ("headline", headline)]
         + [("facts", key) for key in keys]
     )
-    ai_background = any(str(a.id) == background and a.ai_generated for a in usable)
+    ai_background = any(str(a.id) == background and (a.ai_generated or a.ai_edited) for a in usable)
     return {
         "format": fmt,
         "background": background,
@@ -373,6 +426,93 @@ def _graphic_context(
         "src": f"/social/briefings/{briefing.id}/graphic.jpg?{query}",
         "ai_background": ai_background,
         "downloadable": _has_approved_post(session, briefing.id or 0),
+    }
+
+
+def _info_context(
+    request: Request,
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    usable: list[Asset],
+) -> dict[str, object]:
+    """Info graphic (SPEC_social 14.1): texts, checks, preview parameters."""
+    params = request.query_params
+    graphic = get_info_graphic(session, briefing.id or 0)
+    fmt = params.get("info_format") or ImageFormat.PORTRAIT.value
+    if fmt not in {f.value for f in ImageFormat}:
+        fmt = ImageFormat.PORTRAIT.value
+    background = params.get("info_background") or "color"
+    if background != "color" and background not in {str(a.id) for a in usable}:
+        background = "color"
+    facts = BriefingFacts.from_json(briefing.facts)
+    chosen = params.getlist("info_facts")
+    keys = parse_fact_keys(chosen, facts) if chosen else tuple(facts.present_keys())
+    variant = (graphic.variant if graphic else None) or "zentriert"
+    query = urlencode(
+        [("format", fmt), ("background", background), ("variant", variant)]
+        + [("facts", key) for key in keys]
+    )
+    results = graphic_checks(session, graphic.id or 0) if graphic else []
+    errors = text_errors(session, graphic) if graphic else []
+    problems: list[str] = []
+    if graphic is not None:
+        try:
+            # Preflight of facts and layout, so the page shows the reason instead of a
+            # broken image.
+            render_info_graphic(
+                config,
+                briefing,
+                texts_for_format(graphic, ImageFormat(fmt)),
+                ImageFormat(fmt),
+                variant=variant,
+                background=None,
+                fact_keys=keys,
+            )
+        except InfoGraphicError as error:
+            problems = error.problems
+        except GraphicLayoutError as error:
+            problems = [str(error)]
+    return {
+        "graphic": graphic,
+        "texts": InfoTexts.of(graphic) if graphic else InfoTexts(),
+        "story": story_texts(graphic) if graphic else None,
+        "format": fmt,
+        "background": background,
+        "fact_keys": keys,
+        "available_facts": [(k, FACT_LABELS[k]) for k in facts.present_keys()],
+        "variant": variant,
+        "variants": VARIANT_LABELS,
+        "results": results,
+        "light": _light(results) if results else None,
+        "errors": errors,
+        "problems": problems,
+        "blockers": check_blockers(session, graphic) if graphic else [],
+        "src": f"/social/briefings/{briefing.id}/info-graphic.jpg?{query}",
+        "ai_background": any(
+            str(a.id) == background and (a.ai_generated or a.ai_edited) for a in usable
+        ),
+        "downloadable": _has_approved_post(session, briefing.id or 0),
+    }
+
+
+def _carousel_context(session: Session, briefing: Briefing, draft: PostDraft) -> dict[str, object]:
+    rows = pages(session, draft.id or 0)
+    results = carousel_checks(session, draft.id or 0)
+    return {
+        "pages": [
+            {
+                "page": page,
+                "texts": InfoTexts.from_json(page.texts),
+                "problems": page_problems(session, briefing, page, number),
+            }
+            for number, page in enumerate(rows, start=1)
+        ],
+        "results": results,
+        "light": _light(list(results)) if results else None,  # type: ignore[arg-type]
+        "ai_pages": ai_pages(session, rows),
+        "max_pages": MAX_PAGES,
+        "formats": CAROUSEL_FORMATS,
     }
 
 
@@ -404,6 +544,7 @@ def _render_briefing(
     }
     images_enabled = image_generation_enabled()
     graphic = _graphic_context(request, session, config, briefing, usable)
+    info = _info_context(request, session, config, briefing, usable)
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -423,6 +564,12 @@ def _render_briefing(
             else {},
             "image_formats": list(ImageFormat),
             "graphic": graphic,
+            "info": info,
+            "carousels": {
+                d.id: _carousel_context(session, briefing, d)
+                for d in drafts
+                if d.channel is Channel.INSTAGRAM_POST
+            },
             "facts": facts,
             "config": config,
             "error": error,
@@ -807,6 +954,58 @@ def image_revise(
     return _images_back(draft)
 
 
+@router.post("/social/assets/{asset_id}/edit", response_model=None)
+def asset_edit(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    provider: ImageProviderDep,
+    user: UserDep,
+    storage: StorageDep,
+    asset_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+    image_format: Annotated[str, Form()] = ImageFormat.PORTRAIT.value,
+) -> HTMLResponse | RedirectResponse:
+    """Edit an own photo with AI; the result is a new image labelled "KI-bearbeitet"."""
+    if not image_generation_enabled():
+        raise HTTPException(status_code=404, detail="Nicht gefunden")
+    asset = _asset_or_404(session, asset_id)
+    try:
+        fmt = ImageFormat(image_format)
+    except ValueError:
+        fmt = ImageFormat.PORTRAIT
+    try:
+        edited = edit_photo(
+            session,
+            provider,
+            asset,
+            instruction=quick or instruction,
+            fmt=fmt,
+            user=user,
+            storage=storage,
+        )
+    except (PhotoEditError, ImageError) as error:
+        return _render_briefing(request, session, config, asset.briefing_id, str(error), 422)
+    return RedirectResponse(
+        f"/social/briefings/{asset.briefing_id}#asset-{edited.id}", status_code=303
+    )
+
+
+@router.post("/social/assets/{asset_id}/edit-hint/confirm", response_model=None)
+def asset_edit_hint_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, asset_id: int
+) -> HTMLResponse | RedirectResponse:
+    asset = _asset_or_404(session, asset_id)
+    try:
+        confirm_edit_hint(session, asset, user)
+    except PhotoEditError as error:
+        return _render_briefing(request, session, config, asset.briefing_id, str(error), 409)
+    return RedirectResponse(
+        f"/social/briefings/{asset.briefing_id}#asset-{asset.id}", status_code=303
+    )
+
+
 @router.post("/social/image-hints/{hint_id}/confirm", response_model=None)
 def image_hint_confirm(
     request: Request, session: SessionDep, config: ConfigDep, user: UserDep, hint_id: int
@@ -953,7 +1152,7 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
         body = export_jpeg(path.read_bytes(), fmt)
     except ImageExportError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    label = "-ki-generiert" if image.ai_generated else ""
+    label = "-ki-generiert" if image.ai_generated else ("-ki-bearbeitet" if image.ai_edited else "")
     name = f"beitrag-{draft.id}-{draft.channel.value}-{fmt.value.replace(':', 'x')}{label}.jpg"
     return Response(
         body,
@@ -963,6 +1162,12 @@ def draft_image_jpeg(session: SessionDep, draft_id: int, asset: int) -> Response
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+def _ai_label(image: Asset | None) -> str:
+    if image is None:
+        return ""
+    return "-ki-generiert" if image.ai_generated else ("-ki-bearbeitet" if image.ai_edited else "")
 
 
 @router.get("/social/briefings/{briefing_id}/graphic.jpg", response_model=None)
@@ -1001,7 +1206,7 @@ def briefing_graphic(
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (GraphicLayoutError, ImageExportError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    label = "-ki-generiert" if image is not None and image.ai_generated else ""
+    label = _ai_label(image)
     name = f"grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
     disposition = "attachment" if download else "inline"
     return Response(
@@ -1009,6 +1214,401 @@ def briefing_graphic(
         media_type="image/jpeg",
         headers={
             "Content-Disposition": f'{disposition}; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+# --- info graphic ---
+
+
+def _info_back(briefing_id: int) -> RedirectResponse:
+    return RedirectResponse(f"/social/briefings/{briefing_id}#info-grafik", status_code=303)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic", response_model=None)
+def info_graphic_save(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    briefing_id: int,
+    headline: Annotated[str, Form()] = "",
+    subline: Annotated[str, Form()] = "",
+    intro: Annotated[str, Form()] = "",
+    points: Annotated[str, Form()] = "",
+    closing: Annotated[str, Form()] = "",
+    story_headline: Annotated[str, Form()] = "",
+    story_intro: Annotated[str, Form()] = "",
+    story_points: Annotated[str, Form()] = "",
+    story_closing: Annotated[str, Form()] = "",
+    variant: Annotated[str, Form()] = "zentriert",
+) -> HTMLResponse | RedirectResponse:
+    """Texts written or edited by a person; all checks run again when they changed."""
+    briefing = _briefing_or_404(session, briefing_id)
+    texts = InfoTexts(headline, subline, intro, parse_points(points), closing)
+    story = InfoTexts(story_headline, "", story_intro, parse_points(story_points), story_closing)
+    try:
+        save_texts(
+            session, config, client, briefing, texts, story=story, variant=variant, user=user
+        )
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _info_back(briefing_id)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic/suggest", response_model=None)
+def info_graphic_suggest(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    briefing_id: int,
+) -> HTMLResponse | RedirectResponse:
+    """ "Text für Grafik vorschlagen" – AI suggestion, labelled and freely editable."""
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        suggest_texts(session, config, client, briefing, user)
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _info_back(briefing_id)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic/revise", response_model=None)
+def info_graphic_revise(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    briefing_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        revise_texts(session, config, client, briefing, quick or instruction, user)
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _info_back(briefing_id)
+
+
+@router.post("/social/info-graphic-checks/{result_id}/confirm", response_model=None)
+def info_graphic_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, result_id: int
+) -> HTMLResponse | RedirectResponse:
+    result = session.get(InfoGraphicCheck, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Prüfergebnis nicht gefunden")
+    graphic = session.get(InfoGraphic, result.graphic_id)
+    if graphic is None:
+        raise HTTPException(status_code=404, detail="Grafik nicht gefunden")
+    try:
+        confirm_check(session, result, user)
+    except InfoGraphicError as error:
+        return _render_briefing(request, session, config, graphic.briefing_id, str(error), 409)
+    return _info_back(graphic.briefing_id)
+
+
+def info_graphic_jpeg(
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    fmt: ImageFormat,
+    *,
+    variant: str,
+    background: str,
+    fact_keys: list[str],
+) -> tuple[bytes, Asset | None]:
+    """Rendered info graphic (raises HTTPException with the reason)."""
+    graphic = get_info_graphic(session, briefing.id or 0)
+    if graphic is None:
+        raise HTTPException(status_code=404, detail="Noch kein Grafiktext")
+    errors = text_errors(session, graphic)
+    if errors:
+        raise HTTPException(status_code=422, detail=" ".join(errors))
+    image: Asset | None = None
+    if background != "color":
+        image = session.get(Asset, int(background)) if background.isdigit() else None
+        if image is None or image.briefing_id != briefing.id or not is_usable(image):
+            raise HTTPException(status_code=404, detail="Hintergrundbild nicht verfügbar")
+    content = Path(image.stored_path).read_bytes() if image else None
+    keys = parse_fact_keys(fact_keys, BriefingFacts.from_json(briefing.facts))
+    try:
+        body = render_info_graphic(
+            config,
+            briefing,
+            texts_for_format(graphic, fmt),
+            fmt,
+            variant=variant,
+            background=content,
+            fact_keys=keys,
+        )
+    except InfoGraphicError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except (GraphicLayoutError, ImageExportError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return body, image
+
+
+@router.get("/social/briefings/{briefing_id}/info-graphic.jpg", response_model=None)
+def info_graphic_file(
+    session: SessionDep,
+    config: ConfigDep,
+    briefing_id: int,
+    format: str = ImageFormat.PORTRAIT.value,  # noqa: A002 - query parameter name
+    background: str = "color",
+    variant: str = "zentriert",
+    download: bool = False,
+    facts: Annotated[list[str] | None, Query()] = None,
+) -> Response:
+    """Info graphic as JPEG; download only after a released post and confirmed checks."""
+    briefing = _briefing_or_404(session, briefing_id)
+    try:
+        fmt = ImageFormat(format)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Unbekanntes Format") from error
+    if download:
+        if not _has_approved_post(session, briefing_id):
+            raise HTTPException(
+                status_code=409, detail="Download erst nach der Freigabe eines Beitrags"
+            )
+        graphic = get_info_graphic(session, briefing_id)
+        if graphic is not None and check_blockers(session, graphic):
+            raise HTTPException(status_code=409, detail="Prüfungen des Grafiktexts offen")
+    body, image = info_graphic_jpeg(
+        session,
+        config,
+        briefing,
+        fmt,
+        variant=variant,
+        background=background,
+        fact_keys=facts or [],
+    )
+    label = _ai_label(image)
+    name = f"info-grafik-briefing-{briefing_id}-{fmt.value.replace(':', 'x')}{label}.jpg"
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'{"attachment" if download else "inline"}; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+# --- carousel (Instagram) ---
+
+
+def _carousel_back(draft_id: int, briefing_id: int) -> RedirectResponse:
+    return RedirectResponse(f"/social/briefings/{briefing_id}#carousel-{draft_id}", status_code=303)
+
+
+def _page_or_404(session: Session, page_id: int) -> tuple[CarouselPage, PostDraft]:
+    page = session.get(CarouselPage, page_id)
+    if page is None:
+        raise HTTPException(status_code=404, detail="Seite nicht gefunden")
+    return page, _draft_or_404(session, page.draft_id)
+
+
+def _page_input(
+    kind: str,
+    headline: str,
+    subline: str,
+    intro: str,
+    points: str,
+    closing: str,
+    asset: str,
+    show_facts: bool,
+    variant: str,
+) -> PageInput:
+    return PageInput(
+        kind=kind,
+        texts=InfoTexts(headline, subline, intro, parse_points(points), closing),
+        asset_id=int(asset) if asset.isdigit() else None,
+        show_facts=show_facts,
+        variant=variant,
+    )
+
+
+PageForm = Annotated[str, Form()]
+
+
+@router.post("/social/drafts/{draft_id}/carousel/suggest", response_model=None)
+def carousel_suggest(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    draft_id: int,
+) -> HTMLResponse | RedirectResponse:
+    """AI suggestion for the split into pages (labelled, editable)."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        suggest_plan(session, config, client, draft, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _carousel_back(draft_id, draft.briefing_id)
+
+
+@router.post("/social/drafts/{draft_id}/carousel/pages", response_model=None)
+def carousel_add(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    draft_id: int,
+    kind: PageForm = "info",
+    headline: PageForm = "",
+    subline: PageForm = "",
+    intro: PageForm = "",
+    points: PageForm = "",
+    closing: PageForm = "",
+    asset: PageForm = "",
+    show_facts: Annotated[bool, Form()] = False,
+    variant: PageForm = "zentriert",
+) -> HTMLResponse | RedirectResponse:
+    draft = _draft_or_404(session, draft_id)
+    data = _page_input(kind, headline, subline, intro, points, closing, asset, show_facts, variant)
+    try:
+        add_page(session, config, client, draft, data, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _carousel_back(draft_id, draft.briefing_id)
+
+
+@router.post("/social/carousel-pages/{page_id}", response_model=None)
+def carousel_update(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    page_id: int,
+    headline: PageForm = "",
+    subline: PageForm = "",
+    intro: PageForm = "",
+    points: PageForm = "",
+    closing: PageForm = "",
+    asset: PageForm = "",
+    show_facts: Annotated[bool, Form()] = False,
+    variant: PageForm = "zentriert",
+) -> HTMLResponse | RedirectResponse:
+    page, draft = _page_or_404(session, page_id)
+    data = _page_input(
+        page.kind, headline, subline, intro, points, closing, asset, show_facts, variant
+    )
+    try:
+        update_page(session, config, client, page, data, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+@router.post("/social/carousel-pages/{page_id}/move", response_model=None)
+def carousel_move(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    page_id: int,
+    direction: Annotated[int, Form()] = 1,
+) -> HTMLResponse | RedirectResponse:
+    page, draft = _page_or_404(session, page_id)
+    try:
+        move_page(session, config, client, page, -1 if direction < 0 else 1, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+@router.post("/social/carousel-pages/{page_id}/delete", response_model=None)
+def carousel_remove(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    page_id: int,
+) -> HTMLResponse | RedirectResponse:
+    page, draft = _page_or_404(session, page_id)
+    try:
+        remove_page(session, config, client, page, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+@router.post("/social/carousel-checks/{result_id}/confirm", response_model=None)
+def carousel_confirm(
+    request: Request, session: SessionDep, config: ConfigDep, user: UserDep, result_id: int
+) -> HTMLResponse | RedirectResponse:
+    result = session.get(CarouselCheck, result_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Prüfergebnis nicht gefunden")
+    draft = _draft_or_404(session, result.draft_id)
+    try:
+        confirm_carousel_check(session, result, user)
+    except CarouselError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 409)
+    return _carousel_back(draft.id or 0, draft.briefing_id)
+
+
+def _carousel_format(value: str) -> ImageFormat:
+    try:
+        fmt = ImageFormat(value)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="Unbekanntes Format") from error
+    if fmt not in CAROUSEL_FORMATS:
+        raise HTTPException(status_code=422, detail="Karussells gibt es in 4:5 oder 1:1")
+    return fmt
+
+
+@router.get("/social/carousel-pages/{page_id}.jpg", response_model=None)
+def carousel_page_file(
+    session: SessionDep,
+    config: ConfigDep,
+    page_id: int,
+    format: str = "4:5",  # noqa: A002
+) -> Response:
+    """Preview of one page (the download is the ZIP after approval)."""
+    page, draft = _page_or_404(session, page_id)
+    briefing = _briefing_or_404(session, draft.briefing_id)
+    try:
+        body = render_page(session, config, briefing, page, _carousel_format(format))
+    except CarouselError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return Response(
+        body,
+        media_type="image/jpeg",
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@router.get("/social/drafts/{draft_id}/carousel.zip", response_model=None)
+def carousel_zip(
+    session: SessionDep,
+    config: ConfigDep,
+    draft_id: int,
+    format: str = "4:5",  # noqa: A002
+) -> Response:
+    """All pages as ZIP with numbered JPEGs (01.jpg, 02.jpg, …), after the approval."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        body = export_zip(session, config, draft, _carousel_format(format))
+    except CarouselError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    name = f"karussell-beitrag-{draft_id}-{format.replace(':', 'x')}.zip"
+    return Response(
+        body,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
             "X-Content-Type-Options": "nosniff",
         },
     )

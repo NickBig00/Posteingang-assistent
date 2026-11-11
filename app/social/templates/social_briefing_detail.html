@@ -44,6 +44,7 @@
 </div>
 
 {% include "_social_graphic.html" %}
+{% include "_social_info_graphic.html" %}
 
 <h2 class="mb-3 text-base font-semibold">Entwürfe je Kanal</h2>
 <div class="space-y-6">
@@ -90,6 +91,7 @@
         {% endif %}
 
         {% if images_enabled %}{% include "_social_ai_images.html" %}{% endif %}
+        {% if d.id in carousels %}{% include "_social_carousel.html" %}{% endif %}
         {% include "_social_checks.html" %}
         {% include "_social_actions.html" %}
       </div>

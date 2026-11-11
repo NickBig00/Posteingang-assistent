@@ -193,6 +193,17 @@ class Asset(SQLModel, table=True):
     consent_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
     # AI image (SPEC_social 13): labelled "KI-generiert"; belongs to one draft.
     ai_generated: bool = False
+    # Own photo edited with AI (SPEC_social 13.6): labelled "KI-bearbeitet"; a new image, the
+    # original stays. `source_asset_id` points to the image it was made from (no foreign key:
+    # the original may be deleted while the edited version stays).
+    ai_edited: bool = False
+    source_asset_id: int | None = None
+    # Hint on the edit instruction (e.g. changing body shapes) that a person must confirm.
+    edit_hint: str | None = None
+    edit_hint_confirmed_by: str | None = None
+    edit_hint_confirmed_at: datetime | None = Field(
+        default=None, sa_column=_optional_timestamp_column()
+    )
     draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     # Consent withdrawn: the file is deleted, the entry stays as record until removed.
     consent_revoked_by: str | None = None
@@ -246,6 +257,81 @@ class ImageCandidate(SQLModel, table=True):
     content_hash: str
     model: str
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+
+class InfoGraphic(SQLModel, table=True):
+    """Texts of the info graphic of a briefing (SPEC_social 14.1), one per briefing.
+
+    Written by a person or suggested by the AI (then labelled until a person edits them). The
+    facts are not stored here: they always come from the briefing. `story` optionally holds a
+    shorter set of the same fields for the 9:16 story format.
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True, unique=True)
+    headline: str = ""
+    subline: str = ""
+    intro: str = ""
+    points: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    closing: str = ""
+    story: dict[str, JsonValue] | None = Field(default=None, sa_column=Column(JSON))
+    variant: str = "zentriert"
+    is_ai_suggestion: bool = False
+    edited_by_human: bool = False
+    updated_by: str = ""
+    updated_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+
+class InfoGraphicCheck(SQLModel, table=True):
+    """Check result on the texts of an info graphic (like `CheckResult` for posts)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    graphic_id: int = Field(foreign_key="infographic.id", index=True)
+    check_key: str
+    outcome: Outcome
+    reason: str
+    excerpt: str | None = None
+    is_ai_assessment: bool = False
+    requires_confirmation: bool = False
+    consent_required: bool = False
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
+
+
+class CarouselPage(SQLModel, table=True):
+    """One page of an Instagram carousel post (SPEC_social 14.2), in the order of `position`.
+
+    `kind` "info": an info graphic page with its own texts (optional background image and
+    facts block); "image": an image of the briefing (own photo, AI image, AI-edited photo).
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    position: int
+    kind: str = "info"
+    texts: dict[str, JsonValue] = Field(default_factory=dict, sa_column=Column(JSON))
+    # Image of the page (no foreign key: a deleted image shows as an error on the page).
+    asset_id: int | None = None
+    show_facts: bool = False
+    variant: str = "zentriert"
+    is_ai_suggestion: bool = False
+    edited_by_human: bool = False
+
+
+class CarouselCheck(SQLModel, table=True):
+    """Check result on the pages of a carousel (like `CheckResult` for the post text)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    page: int | None = None
+    check_key: str
+    outcome: Outcome
+    reason: str
+    is_ai_assessment: bool = False
+    requires_confirmation: bool = False
+    consent_required: bool = False
+    confirmed_by: str | None = None
+    confirmed_at: datetime | None = Field(default=None, sa_column=_optional_timestamp_column())
 
 
 class RevisionTarget(StrEnum):

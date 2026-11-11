@@ -88,6 +88,16 @@ const SHOTS = {
     }],
     ["audit-anweisung", "/social/briefings/{briefing}/audit", { fullPage: true }],
   ],
+  B7: [
+    ["info-grafik", "/social/briefings/{approved_briefing}?info_background={background_asset}#info-grafik", { selector: "#info-grafik" }],
+    ["info-grafik-leer", "/social/briefings/{briefing}#info-grafik", { selector: "#info-grafik" }],
+  ],
+  B8: [
+    ["foto-bearbeiten", "/social/briefings/{briefing}#photo-edit-{photo}", { selector: "#bilder" }],
+  ],
+  B9: [
+    ["karussell", "/social/briefings/{briefing}#carousel-{image_draft}", { selector: "#carousel-{image_draft}" }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
@@ -202,6 +212,19 @@ async function seed(withImages) {
     }
   }
 
+  // Info graphic texts for the approved briefing (B7).
+  await post(`/social/briefings/${ids.approved_briefing}/info-graphic`, {
+    headline: "Winter-Schnupperwochen",
+    subline: "Zwei Wochen alle Kurse ausprobieren",
+    intro: "Neugierig auf unsere Kurse? In den Schnupperwochen kannst du alles testen.",
+    points: "Alle Kurse inklusive\nOhne Vertragsbindung\nPersönliche Einweisung",
+    closing: "Melde dich einfach am Empfang!",
+    variant: "farbfeld",
+  });
+  const infoPage = await (await fetch(`${BASE}/social/briefings/${ids.approved_briefing}`)).text();
+  for (const m of infoPage.matchAll(/\/social\/info-graphic-checks\/(\d+)\/confirm/g)) await post(m[0]);
+  ids.background_asset = (infoPage.match(/name="info_background"[\s\S]*?<option value="(\d+)"/) || [])[1] || "color";
+
   const campaign = await post("/social/campaigns/demo");
   ids.campaign = campaign.split("/").pop() || "1";
   ids.image_briefing = ids.briefing;
@@ -229,6 +252,12 @@ async function seed(withImages) {
       const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
       const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];
       if (candidate) await post(`/social/drafts/${ids.hint_draft}/images/${candidate}/choose`);
+      // An own photo edited with AI (B8): the result is a new image labelled "KI-bearbeitet".
+      const assetsPage = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      ids.photo = (assetsPage.match(/id="asset-(\d+)"/) || [])[1];
+      if (ids.photo) await post(`/social/assets/${ids.photo}/edit`, { quick: "Wärmeres Licht", image_format: "4:5" });
+      // A carousel for the Instagram post (B9), suggested by the (offline) AI.
+      await post(`/social/drafts/${ids.image_draft}/carousel/suggest`);
       // A revision by instruction, so the audit trail shows one (B6).
       await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
     }

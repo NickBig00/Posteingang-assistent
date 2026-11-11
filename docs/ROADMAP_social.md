@@ -169,7 +169,7 @@ versionierter Prompt, ein Retry, Audit je Überarbeitung.
 
 **Akzeptanz:** Tests nur mit Fake-Anbieter; neue Version läuft durch alle Prüfungen.
 
-## [ ] B7 – Info-Grafik mit Texten
+## [x] B7 – Info-Grafik mit Texten
 
 Vorlage „Info-Grafik“ (SPEC_social 14.1) mit eigenen oder KI-vorgeschlagenen Texten, Prüfungen,
 Gestaltungsvarianten, Formaten und JPEG-Export.
@@ -177,7 +177,7 @@ Gestaltungsvarianten, Formaten und JPEG-Export.
 **Akzeptanz:** Tests für Faktentreue, Prüfungen, Layout (nichts abgeschnitten); Beispielgrafiken
 im PR (u. a. eine Vortragsankündigung mit ✓-Liste).
 
-## [ ] B8 – Eigene Fotos mit KI bearbeiten
+## [x] B8 – Eigene Fotos mit KI bearbeiten
 
 `edit` im Bild-Interface, Bearbeitung per Anweisung und Schnellauswahl, Kennzeichnung
 „KI-bearbeitet“, Original bleibt, Einwilligung bei Personen, Kostenbremse, Audit, Löschkonzept
@@ -185,7 +185,7 @@ im PR (u. a. eine Vortragsankündigung mit ✓-Liste).
 
 **Akzeptanz:** Tests nur mit Fake; Kennzeichnung und Löschen getestet; Screenshots.
 
-## [ ] B9 – Karussell-Beiträge für Instagram
+## [x] B9 – Karussell-Beiträge für Instagram
 
 Mehrseitige Beiträge gemäß SPEC_social 14.2: Seiten aus Info-Grafiken und Bildern, Reihenfolge,
 Vorschau, KI-Vorschlag für die Seitenaufteilung, Prüfungen je Seite, Download als ZIP.
@@ -203,7 +203,8 @@ im PR.
   Person aufheben lässt; in `docs/SPEC_social.md` (Abschnitte 2, 6, 11) übernommen.
 - [ ] **Begriffsliste Gesundheitsbezug für Handwerk:** In S9 vorläufig als kurze Liste in
   `profiles/handwerk.yaml` angelegt (SPEC Kapitel 4.1 sieht für Handwerk keine vor).
-  Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert.
+  Entscheidung, ob sie bleibt, steht noch aus; bis dahin bleibt die Liste unverändert
+  (Product Owner, November 2026: vorerst lassen, Handwerk ist eine spätere Ausbaustufe).
 - [x] **Evaluation mit echtem Modell (Fitness, OpenAI):** erneuter Lauf nach PR #22
   (`docs/evaluation/social_fitness_openai.md`): Fakten 100 %, Längen 100 %,
   Gesundheitsversprechen 15 von 15, Personen 8 von 8, keine Fehlalarme, Anrede 100 %.
@@ -242,3 +243,13 @@ im PR.
   ein Test mit NVDA oder VoiceOver durch einen Menschen steht aus.
 - [ ] **Kostenschätzung KI-Bilder:** Standardwert `IMAGE_COST_PER_IMAGE_EUR=0.05` ist eine
   Annahme; vor echtem Einsatz mit der aktuellen Preisliste des Anbieters abgleichen.
+- [x] **Mitgliedername im Bild-Prompt (B5):** entschieden: wie bei Beiträgen aufhebbar durch die
+  bestätigte Einwilligung der Person (Audit ohne Namen).
+- [x] **Bestätigung der Bild-Hinweise (B5):** entschieden: erst bestätigen, dann erzeugen, dann
+  freigeben – ohne Bestätigung geht nichts an den Bildanbieter.
+- [ ] **Parameter des Bildmodells (B4/B8):** Qualität „medium“, Größen 1024×1024/1024×1536 und
+  `images.edit` sind ohne echten API-Aufruf nicht gegen das aktuelle Modell geprüft.
+- [x] **Karussell ohne Faktenseite (B9):** entschieden: keine Pflicht; ob eine Seite die Fakten
+  zeigt, entscheidet der Mensch.
+- [x] **Grafiktext-Prüfung bei Anrede:** entschieden: Warnungen zur Anrede im Grafiktext brauchen
+  wie bei Beiträgen keine Bestätigung; Gesundheits- und Personenhinweise schon.

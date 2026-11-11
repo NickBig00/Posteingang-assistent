@@ -21,7 +21,9 @@ from app.core.audit import write_human_audit_entry
 from app.core.models import AuditOutput, utcnow
 from app.core.retention import retention_days
 from app.social.audit import briefing_audit_trail
+from app.social.carousel import delete_carousel
 from app.social.images import delete_image_data
+from app.social.infographic import delete_info_graphic
 from app.social.models import (
     Asset,
     Briefing,
@@ -71,6 +73,8 @@ def delete_briefing(session: Session, briefing_id: int, user: str, reason: str =
     }
     files |= delete_image_data(session, [d for d in draft_ids if d is not None])
     delete_revisions(session, briefing_id=briefing_id)
+    delete_info_graphic(session, briefing_id)
+    delete_carousel(session, [d for d in draft_ids if d is not None])
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id).in_(draft_ids)),
@@ -127,6 +131,7 @@ def delete_draft(session: Session, draft_id: int, user: str) -> bool:
     ai_assets = session.exec(select(Asset).where(Asset.draft_id == draft_id)).all()
     files = delete_image_data(session, [draft_id]) | {a.stored_path for a in ai_assets}
     delete_revisions(session, draft_ids=[draft_id])
+    delete_carousel(session, [draft_id])
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id) == draft_id),

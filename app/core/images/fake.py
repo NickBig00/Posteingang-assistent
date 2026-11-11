@@ -6,9 +6,9 @@ The placeholder shows neither people nor text, like the rules require for AI ima
 import hashlib
 import io
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 
-from app.core.image_formats import FORMAT_SPECS, ImageFormat
+from app.core.image_formats import FORMAT_SPECS, ImageFormat, fit_to_format, open_image
 from app.core.images.base import GeneratedImage, ImageBatch, ImageProvider
 
 FAKE_MODEL = "fake-image-v1"
@@ -37,12 +37,26 @@ def placeholder(prompt: str, fmt: ImageFormat, variant: int) -> bytes:
     return buffer.getvalue()
 
 
+def edited(image: bytes, instruction: str, fmt: ImageFormat) -> bytes:
+    """Deterministic stand-in for an AI edit: brighter, slightly tinted, in the target format."""
+    seed = hashlib.sha256(instruction.encode()).digest()
+    picture = fit_to_format(open_image(image), fmt)
+    picture = picture.resize((picture.width // _SCALE, picture.height // _SCALE))
+    picture = ImageEnhance.Brightness(picture).enhance(1.12 + seed[0] / 255 * 0.1)
+    tint = Image.new("RGB", picture.size, (255, 200 + seed[1] % 40, 150 + seed[2] % 60))
+    picture = Image.blend(picture, tint, 0.12)
+    buffer = io.BytesIO()
+    picture.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
 class FakeImageProvider(ImageProvider):
     name = "fake"
 
     def __init__(self, cost_per_image_eur: float = 0.0) -> None:
         self.cost_per_image_eur = cost_per_image_eur
         self.calls: list[str] = []
+        self.edits: list[tuple[str, str]] = []
 
     def generate(self, *, prompt: str, fmt: ImageFormat, count: int) -> ImageBatch:
         self.calls.append(prompt)
@@ -52,4 +66,15 @@ class FakeImageProvider(ImageProvider):
             model=FAKE_MODEL,
             params={"provider": "fake", "format": fmt.value, "count": count},
             cost_estimate_eur=round(self.cost_per_image_eur * count, 4),
+        )
+
+    def edit(
+        self, *, image: bytes, media_type: str, instruction: str, fmt: ImageFormat
+    ) -> ImageBatch:
+        self.edits.append((instruction, media_type))
+        return ImageBatch(
+            images=[GeneratedImage(edited(image, instruction, fmt), "image/png")],
+            model=FAKE_MODEL,
+            params={"provider": "fake", "format": fmt.value, "count": 1, "operation": "edit"},
+            cost_estimate_eur=round(self.cost_per_image_eur, 4),
         )
