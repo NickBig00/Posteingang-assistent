@@ -32,7 +32,18 @@ KEY_VARIABLE = "OPENAI_API_KEY"
 # Tasks whose answer must be a JSON object: JSON mode guarantees syntactically valid
 # JSON; the schema itself is still checked strictly against the Pydantic models.
 JSON_TASKS: frozenset[LLMTask] = frozenset(
-    {"classify", "extract", "post_draft", "post_assess", "image_prompt"}
+    {
+        "classify",
+        "extract",
+        "post_draft",
+        "post_assess",
+        "image_prompt",
+        "post_revise",
+        "image_prompt_revise",
+        "graphic_text",
+        "graphic_text_revise",
+        "carousel_plan",
+    }
 )
 MAX_TOKENS: dict[LLMTask, int] = {
     "classify": 2000,
@@ -42,6 +53,11 @@ MAX_TOKENS: dict[LLMTask, int] = {
     "post_draft": 4000,
     "post_assess": 4000,
     "image_prompt": 2000,
+    "post_revise": 4000,
+    "image_prompt_revise": 2000,
+    "graphic_text": 3000,
+    "graphic_text_revise": 3000,
+    "carousel_plan": 3000,
 }
 
 

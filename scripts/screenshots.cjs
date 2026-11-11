@@ -69,6 +69,18 @@ const SHOTS = {
     ["bild-hinweise", "/social/briefings/{briefing}#images-{hint_draft}", { selector: "#images-{hint_draft}" }],
     ["bild-hinweise-freigabe", "/social/briefings/{briefing}#draft-{hint_draft}", { selector: "#draft-{hint_draft}" }],
   ],
+  B6: [
+    ["text-ueberarbeiten", "/social/briefings/{briefing}", {
+      selector: "#draft-{image_draft}",
+      before: async (page, ids) => {
+        await page.click(`#revise-${ids.image_draft} summary`);
+        await page.fill(`#instruction-${ids.image_draft}`, "Satz 2 klingt wie ein Heilversprechen, bitte neutraler formulieren");
+        await page.click(`#image-revise-${ids.image_draft} summary`);
+        await page.fill(`#image-instruction-${ids.image_draft}`, "Bitte ohne Pflanzen, mehr Bewegung zeigen");
+      },
+    }],
+    ["audit-anweisung", "/social/briefings/{briefing}/audit", { fullPage: true }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
@@ -189,6 +201,7 @@ async function seed(withImages) {
   if (withImages) {
     const first = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
     const draft = (first.match(/id="draft-(\d+)"/) || [])[1];
+    ids.image_draft = draft;
     if (draft) {
       await post(`/social/drafts/${draft}/images/suggest`, { image_format: "4:5" });
       const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
@@ -205,6 +218,8 @@ async function seed(withImages) {
       const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
       const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];
       if (candidate) await post(`/social/drafts/${ids.hint_draft}/images/${candidate}/choose`);
+      // A revision by instruction, so the audit trail shows one (B6).
+      await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
     }
   }
   return ids;

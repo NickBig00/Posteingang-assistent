@@ -162,7 +162,7 @@ Hinweise umstellen; Fehler nur für Fakten und Mitgliedernamen (bzw. sensible Be
 **Akzeptanz:** Tests, dass Hinweise die Freigabe bis zur Bestätigung blockieren und die
 Bestätigung im Audit steht; Fehler weiterhin blockieren.
 
-## [ ] B6 – Überarbeiten per Anweisung
+## [x] B6 – Überarbeiten per Anweisung
 
 Feld „Was soll anders werden?“ für Beitragstexte, Bild-Prompts und Bilder (SPEC_social 13.8);
 versionierter Prompt, ein Retry, Audit je Überarbeitung.

@@ -1,5 +1,6 @@
 {# AI image suggestions for one draft (SPEC_social 13.3); rendered only when switched on. #}
 {% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
 {% set st = image_states.get(d.id) %}
 {% set editable = d.status.value in ("draft", "in_review", "needs_manual_review") %}
 {% set default_format = channel_formats[d.channel].value %}
@@ -46,6 +47,13 @@
       <button type="submit" class="btn btn-primary btn-sm">{{ ui.icon("sparkles") }}{{ "Neu erzeugen" if st.candidates else "Varianten erzeugen" }}</button>
     </div>
   </form>
+  {% if st.proposal.prompt %}
+  <details class="mt-3" id="image-revise-{{ d.id }}">
+    <summary class="btn btn-ghost btn-sm cursor-pointer">{{ ui.icon("sparkles") }}Bild per Anweisung ändern</summary>
+    {% set regenerate %}<button type="submit" name="regenerate" value="true" class="btn btn-primary btn-sm">Überarbeiten und neu erzeugen</button>{% endset %}
+    {{ revise_form("/social/drafts/" ~ d.id ~ "/images/revise", "image-instruction-" ~ d.id, image_quick_picks, "Nur Prompt überarbeiten", regenerate, "Neu erzeugen zählt für die Kostenbremse.") }}
+  </details>
+  {% endif %}
   {% if st.stored_hints %}
   <div class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3" id="image-hints-{{ d.id }}" data-image-hints>
     <p class="text-sm font-semibold">Hinweise zum Bild – vor der Freigabe bestätigen</p>

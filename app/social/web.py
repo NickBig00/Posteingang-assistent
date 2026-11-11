@@ -1,5 +1,6 @@
 """Web routes of the social media module (SPEC_social section 8)."""
 
+import json
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -10,6 +11,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, Upl
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from sqlmodel import Session, col, select
 
+from app.core.audit import audit_outputs
 from app.core.db import get_session
 from app.core.image_formats import (
     FORMAT_SPECS,
@@ -117,6 +119,15 @@ from app.social.review import (
     reject_draft,
     reopen_draft,
 )
+from app.social.revisions import (
+    IMAGE_QUICK_PICKS,
+    POST_QUICK_PICKS,
+    REQUEST_STEP,
+    RevisionError,
+    revise_image,
+    revise_image_prompt,
+    revise_post,
+)
 from app.social.sensitive import SENSITIVE_CHECK_LABELS
 from app.social.status import latest_review
 
@@ -135,6 +146,8 @@ templates.env.globals["channel_formats"] = CHANNEL_IMAGE_FORMATS
 templates.env.globals["format_specs"] = FORMAT_SPECS
 templates.env.globals["ai_image_label"] = AI_IMAGE_LABEL
 templates.env.globals["hint_labels"] = HINT_LABELS
+templates.env.globals["post_quick_picks"] = POST_QUICK_PICKS
+templates.env.globals["image_quick_picks"] = IMAGE_QUICK_PICKS
 templates.env.globals["fact_labels"] = FACT_LABELS
 templates.env.globals["address_form_labels"] = ADDRESS_FORM_LABELS
 templates.env.globals["light_ok_label"] = "Prüfungen ok"
@@ -522,6 +535,26 @@ def draft_edit(
     )
 
 
+@router.post("/social/drafts/{draft_id}/revise", response_model=None)
+def draft_revise(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    user: UserDep,
+    draft_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """ "Was soll anders werden?": the AI revises the post text; all checks run again."""
+    draft = _draft_or_404(session, draft_id)
+    try:
+        revise_post(session, config, client, draft, quick or instruction, user)
+    except RevisionError as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _back(draft)
+
+
 @router.post("/social/drafts/{draft_id}/reject", response_model=None)
 def draft_reject(
     request: Request, session: SessionDep, config: ConfigDep, user: UserDep, draft_id: int
@@ -747,6 +780,33 @@ def image_discard(
     return _images_back(draft)
 
 
+@router.post("/social/drafts/{draft_id}/images/revise", response_model=None)
+def image_revise(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    client: ClientDep,
+    provider: ImageProviderDep,
+    user: UserDep,
+    storage: StorageDep,
+    draft_id: int,
+    instruction: Annotated[str, Form()] = "",
+    quick: Annotated[str, Form()] = "",
+    regenerate: Annotated[bool, Form()] = False,
+) -> HTMLResponse | RedirectResponse:
+    """Revise the image prompt by instruction, optionally generating new variants at once."""
+    draft = _images_draft(session, draft_id)
+    text = quick or instruction
+    try:
+        if regenerate:
+            revise_image(session, config, client, provider, draft, text, user, storage)
+        else:
+            revise_image_prompt(session, config, client, draft, text, user)
+    except (RevisionError, ImageSuggestionError, ImageError) as error:
+        return _render_briefing(request, session, config, draft.briefing_id, str(error), 422)
+    return _images_back(draft)
+
+
 @router.post("/social/image-hints/{hint_id}/confirm", response_model=None)
 def image_hint_confirm(
     request: Request, session: SessionDep, config: ConfigDep, user: UserDep, hint_id: int
@@ -787,10 +847,21 @@ def briefing_audit(
     """Chronological trail of all AI steps and human actions of a briefing."""
     briefing = _briefing_or_404(session, briefing_id)
     entries = briefing_audit_trail(session, briefing_id)
+    # Instructions of revisions in plain text (deletable audit output; gone after deletion).
+    outputs = audit_outputs(session, [e.id for e in entries if e.id and e.step == REQUEST_STEP])
+    instructions = {
+        entry_id: json.loads(text).get("instruction", "") for entry_id, text in outputs.items()
+    }
     return templates.TemplateResponse(
         request,
         "social_audit.html",
-        {"briefing": briefing, "entries": entries, "config": config, **_labels(config)},
+        {
+            "briefing": briefing,
+            "entries": entries,
+            "instructions": instructions,
+            "config": config,
+            **_labels(config),
+        },
     )
 
 

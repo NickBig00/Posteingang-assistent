@@ -960,6 +960,12 @@
         "onScreen": true
       },
       {
+        "tag": "button",
+        "label": "Bild entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "input",
         "label": "Bild hochladen",
         "visible": true,
@@ -996,8 +1002,38 @@
         "onScreen": true
       },
       {
+        "tag": "a",
+        "label": "Foto hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "KI-Bild erzeugen (im Entwurf Instagram-B",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "input",
         "label": "graphic_headline",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "datum",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "uhrzeit",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "ort",
         "visible": true,
         "onScreen": true
       },
@@ -1010,6 +1046,12 @@
       {
         "tag": "summary",
         "label": "Bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Von KI überarbeiten lassen",
         "visible": true,
         "onScreen": true
       },
@@ -1028,6 +1070,12 @@
       {
         "tag": "button",
         "label": "Neu erzeugen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Bild per Anweisung ändern",
         "visible": true,
         "onScreen": true
       },
@@ -1092,20 +1140,44 @@
         "onScreen": true
       },
       {
+        "tag": "summary",
+        "label": "Von KI überarbeiten lassen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Frau beim Rückentraining auf einer Matte",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "select",
-        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
+        "label": "Format",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Bild vorschlagen",
+        "label": "Varianten erzeugen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Bild per Anweisung ändern",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Freigeben",
+        "label": "Geprüft – bestätigen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Geprüft – bestätigen",
         "visible": true,
         "onScreen": true
       },
@@ -1239,8 +1311,32 @@
         "onScreen": true
       },
       {
+        "tag": "a",
+        "label": "Foto hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "KI-Bild erzeugen (im Entwurf Instagram-B",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "input",
         "label": "graphic_headline",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "preis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "zeitraum",
         "visible": true,
         "onScreen": true
       },
@@ -1448,7 +1544,7 @@
   {
     "viewport": "Laptop 1366×900",
     "name": "Kalender Woche",
-    "url": "/social/calendar?view=week&date=2026-11-09",
+    "url": "/social/calendar?view=week&date=2026-11-17",
     "violations": [],
     "stops": [
       {
@@ -1643,7 +1739,7 @@
   {
     "viewport": "Laptop 1366×900",
     "name": "Kalender Monat",
-    "url": "/social/calendar?view=month&date=2026-11-09",
+    "url": "/social/calendar?view=month&date=2026-11-17",
     "violations": [],
     "stops": [
       {
@@ -2196,7 +2292,7 @@
   {
     "viewport": "Tablet 820×1180",
     "name": "Kalender Woche",
-    "url": "/social/calendar?view=week&date=2026-11-09",
+    "url": "/social/calendar?view=week&date=2026-11-17",
     "violations": [],
     "stops": [],
     "overflow": false
@@ -2204,7 +2300,7 @@
   {
     "viewport": "Tablet 820×1180",
     "name": "Kalender Monat",
-    "url": "/social/calendar?view=month&date=2026-11-09",
+    "url": "/social/calendar?view=month&date=2026-11-17",
     "violations": [],
     "stops": [],
     "overflow": false

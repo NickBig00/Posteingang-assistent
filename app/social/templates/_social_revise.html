@@ -1,0 +1,19 @@
+{# "Was soll anders werden?" – revision by instruction (SPEC_social 13.8). #}
+{% macro revise_form(action, id, picks, submit_label, extra_buttons=None, hint="") %}
+<form method="post" action="{{ action }}" class="mt-3 space-y-2" data-loading="KI überarbeitet …" data-revise>
+  <label class="label" for="{{ id }}">Was soll anders werden?</label>
+  <textarea id="{{ id }}" name="instruction" rows="2" maxlength="500" class="input text-sm"
+            placeholder="In eigenen Worten, z. B. „Satz 2 neutraler formulieren“"></textarea>
+  <div class="flex flex-wrap items-center gap-2">
+    <button type="submit" class="btn btn-secondary btn-sm">{{ submit_label }}</button>
+    {% if extra_buttons %}{{ extra_buttons }}{% endif %}
+  </div>
+  {% if picks %}
+  <div class="flex flex-wrap items-center gap-1.5 text-xs">
+    <span class="text-ink-subtle">Schnellauswahl:</span>
+    {% for p in picks %}<button type="submit" name="quick" value="{{ p }}" class="badge badge-neutral cursor-pointer hover:bg-surface-sunken">{{ p }}</button>{% endfor %}
+  </div>
+  {% endif %}
+  <p class="hint">Das Ergebnis ist wieder ein KI-Vorschlag und läuft durch alle Prüfungen.{{ " " ~ hint if hint else "" }} Die Anweisung steht im Audit-Verlauf.</p>
+</form>
+{% endmacro %}

@@ -246,6 +246,37 @@ class ImageCandidate(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
 
 
+class RevisionTarget(StrEnum):
+    POST_TEXT = "post_text"
+    GRAPHIC_TEXT = "graphic_text"
+    IMAGE_PROMPT = "image_prompt"
+    IMAGE = "image"
+
+
+REVISION_TARGET_LABELS: dict[RevisionTarget, str] = {
+    RevisionTarget.POST_TEXT: "Beitragstext",
+    RevisionTarget.GRAPHIC_TEXT: "Grafiktext",
+    RevisionTarget.IMAGE_PROMPT: "Bild-Prompt",
+    RevisionTarget.IMAGE: "Bild",
+}
+
+
+class RevisionRequest(SQLModel, table=True):
+    """A person's instruction "Was soll anders werden?" and the version it produced."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True)
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
+    target: RevisionTarget
+    instruction: str
+    # Running number of the revision per target (1 = first revision).
+    version: int = 1
+    # True when the AI delivered a valid new version; False keeps the previous one.
+    succeeded: bool = False
+    created_by: str
+    created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+
+
 class PostReview(SQLModel, table=True):
     """Human decision on a draft (approve or reject)."""
 

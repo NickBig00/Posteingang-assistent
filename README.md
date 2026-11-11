@@ -89,6 +89,15 @@ Mitgliederliste verhindern die Erzeugung. Die gewählte Variante
 ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
 hochgeladenes Bild gelöscht.
 
+### Überarbeiten per Anweisung (Social Media)
+
+Bei Beitragstexten und KI-Bildern gibt es das Feld **„Was soll anders werden?“** (eigene Worte
+oder Schnellauswahl). Die KI liefert eine neue Version (versionierte Prompts
+`prompts/social/post_revise_v1.md`, `image_prompt_revise_v1.md`, ein Retry); sie ist wieder ein
+KI-Vorschlag und läuft durch alle Prüfungen bzw. den Bild-Prompt-Check. Bei ungültiger Ausgabe
+bleibt der bisherige Stand. Jede Anweisung steht im Audit (wer, wann, Hash; Klartext in der
+löschbaren Audit-Ausgabe); „Überarbeiten und neu erzeugen“ zählt für die Kostenbremse.
+
 ### Grafiken aus Vorlagen (Social Media)
 
 Im Briefing erzeugt „Grafik aus Vorlage“ deterministisch per Code (Pillow, Schrift Inter, kein
