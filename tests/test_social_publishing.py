@@ -16,6 +16,7 @@ from app.core.image_formats import FORMAT_SPECS, ImageExportError, ImageFormat, 
 from app.core.models import AuditEntry
 from app.main import app
 from app.social.assets import save_asset
+from app.social.briefing_image import BriefingImageError, set_briefing_image
 from app.social.briefings import create_briefing
 from app.social.calendar import (
     EXTERNAL_STEP,
@@ -32,6 +33,7 @@ from app.social.models import (
     CHANNEL_IMAGE_FORMATS,
     Briefing,
     Channel,
+    ImageSource,
     PostDraft,
     PostStatus,
 )
@@ -136,54 +138,60 @@ def _asset(session: Session, draft: PostDraft, storage: Path, **flags: bool) -> 
     return asset.id
 
 
+def _with_image(
+    session: Session, raw_dir: Path, channel: Channel = Channel.INSTAGRAM_POST, **flags: bool
+) -> tuple[PostDraft, int]:
+    draft = _briefing_with_draft(session, channel)
+    asset_id = _asset(session, draft, raw_dir, **flags)
+    set_briefing_image(session, draft.briefing_id, ImageSource.UPLOAD, asset_id, "demo")
+    return draft, asset_id
+
+
 def test_jpeg_download_after_approval(
     social_client: TestClient, session: Session, raw_dir: Path
 ) -> None:
-    draft = _approved(session, Channel.INSTAGRAM_STORY)
-    asset_id = _asset(session, draft, raw_dir)
+    """The download is the rendered post image of the briefing in the channel's format."""
+    draft, _ = _with_image(session, raw_dir, Channel.INSTAGRAM_STORY)
+    approve_draft(session, draft, "demo")
 
-    response = social_client.get(f"/social/drafts/{draft.id}/image.jpg?asset={asset_id}")
+    response = social_client.get(f"/social/drafts/{draft.id}/image.jpg")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/jpeg"
+    assert "attachment" in response.headers["content-disposition"]
     assert "9x16.jpg" in response.headers["content-disposition"]
     assert Image.open(io.BytesIO(response.content)).size == (1080, 1920)
     page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
-    assert f"/social/drafts/{draft.id}/image.jpg?asset={asset_id}" in page
+    assert f"/social/drafts/{draft.id}/image.jpg" in page
 
 
 def test_no_jpeg_download_before_approval(
     social_client: TestClient, session: Session, raw_dir: Path
 ) -> None:
+    draft, _ = _with_image(session, raw_dir)
+
+    assert social_client.get(f"/social/drafts/{draft.id}/image.jpg").status_code == 409
+    # The preview of exactly this image is always visible.
+    preview = social_client.get(f"/social/drafts/{draft.id}/preview.jpg")
+    assert preview.status_code == 200 and "inline" in preview.headers["content-disposition"]
+
+
+def test_persons_without_consent_block_the_approval(
+    social_client: TestClient, session: Session, raw_dir: Path
+) -> None:
+    draft, _ = _with_image(session, raw_dir, shows_persons=True)
+
+    assert social_client.post(f"/social/drafts/{draft.id}/approve").status_code == 409
+    assert social_client.get(f"/social/drafts/{draft.id}/image.jpg").status_code == 409
+
+
+def test_image_of_another_briefing_cannot_be_chosen(session: Session, raw_dir: Path) -> None:
     draft = _briefing_with_draft(session)
-    asset_id = _asset(session, draft, raw_dir)
-
-    response = social_client.get(f"/social/drafts/{draft.id}/image.jpg?asset={asset_id}")
-
-    assert response.status_code == 409
-
-
-def test_no_jpeg_of_persons_without_consent(
-    social_client: TestClient, session: Session, raw_dir: Path
-) -> None:
-    draft = _approved(session)
-    asset_id = _asset(session, draft, raw_dir, shows_persons=True)
-
-    response = social_client.get(f"/social/drafts/{draft.id}/image.jpg?asset={asset_id}")
-
-    assert response.status_code == 409
-
-
-def test_no_jpeg_of_another_briefing(
-    social_client: TestClient, session: Session, raw_dir: Path
-) -> None:
-    draft = _approved(session)
-    other = _approved(session)
+    other = _briefing_with_draft(session)
     asset_id = _asset(session, other, raw_dir)
 
-    response = social_client.get(f"/social/drafts/{draft.id}/image.jpg?asset={asset_id}")
-
-    assert response.status_code == 404
+    with pytest.raises(BriefingImageError):
+        set_briefing_image(session, draft.briefing_id, ImageSource.UPLOAD, asset_id, "demo")
 
 
 # --- "eingeplant (extern)" ---
@@ -295,18 +303,17 @@ def test_long_text_is_cut_with_more(social_client: TestClient, session: Session)
     assert "<details" in preview and "mehr</span>" in preview
 
 
-def test_preview_shows_an_approved_image(
+def test_preview_shows_the_post_image(
     social_client: TestClient, session: Session, raw_dir: Path
 ) -> None:
-    draft = _briefing_with_draft(session)
-    asset_id = _asset(session, draft, raw_dir)
-    hidden = _asset_with_name(session, draft, raw_dir)
+    draft, _ = _with_image(session, raw_dir)
+    _asset_with_name(session, draft, raw_dir)
 
     page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
     preview = page.split('data-preview="instagram_post"', 1)[1].split("</figure>", 1)[0]
 
-    assert f'src="/social/assets/{asset_id}"' in preview
-    assert f'src="/social/assets/{hidden}"' not in preview
+    assert f'src="/social/drafts/{draft.id}/preview.jpg"' in preview
+    assert "/social/assets/" not in preview
 
 
 def _asset_with_name(session: Session, draft: PostDraft, storage: Path) -> int:

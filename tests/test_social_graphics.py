@@ -1,6 +1,9 @@
-"""Graphics from templates (ROADMAP_social B3): fact fidelity, formats, JPEG export."""
+"""Text on the image with only a headline (U6): replaces the former template graphic (B3).
 
-import dataclasses
+The info graphic with a headline and the facts is what "Grafik aus Vorlage" used to be: the
+same fact fidelity, formats, JPEG export, logo and readable brand colours.
+"""
+
 import io
 from collections.abc import Iterator
 from datetime import date, time
@@ -16,21 +19,12 @@ from app.core.image_formats import FORMAT_SPECS, ImageFormat
 from app.core.profiles import PROFILES_DIR, ProfileError
 from app.core.theme import WHITE, contrast_ratio, parse_hex
 from app.main import app
-from app.social.assets import save_asset
 from app.social.briefings import create_briefing
-from app.social.drafts import generate_drafts
-from app.social.facts import BriefingFacts, formatted_facts
-from app.social.graphics import (
-    GraphicError,
-    graphic_text,
-    layout_for,
-    render_graphic,
-    verify_graphic_text,
-)
+from app.social.facts import BriefingFacts
+from app.social.infographic import InfoGraphicError, InfoTexts, render_info_graphic
 from app.social.llm.client import SocialLLMClient
 from app.social.models import Briefing, Channel
 from app.social.profiles import DEFAULT_BRAND_PROFILES_DIR, SocialConfig, load_social_config
-from app.social.review import approve_draft
 from app.social.web import get_social_client, get_social_config
 from tests.social_helpers import course_input, demo_config, scripted
 
@@ -74,90 +68,34 @@ def _png(size: tuple[int, int] = (640, 480)) -> bytes:
     return buffer.getvalue()
 
 
-# --- text and fact check ---
+HEADLINE = InfoTexts(headline="Rücken-Fit")
 
 
-def test_every_fact_appears_exactly_in_display_spelling() -> None:
-    text = graphic_text(CONFIG, _briefing(facts=ALL_FACTS))
-
-    for key, value in formatted_facts(ALL_FACTS).items():
-        assert sum(value in line for line in text.lines) >= 1, key
-    verify_graphic_text(text, ALL_FACTS, CONFIG)  # does not raise
-
-
-@pytest.mark.parametrize(
-    ("occasion", "layout", "first"),
-    [
-        ("kurs", "ankuendigung", "Datum"),
-        ("aktion", "angebot", "Preis"),
-        ("oeffnungszeiten", "hinweis", "Telefonnummer"),
-        ("team", "standard", "Datum"),
-    ],
-)
-def test_template_per_occasion_type(occasion: str, layout: str, first: str) -> None:
-    text = graphic_text(CONFIG, _briefing(occasion, ALL_FACTS, "fitness"))
-
-    assert layout_for(occasion) == layout
-    assert text.facts[0][0] == first
+def _render(
+    config: SocialConfig = CONFIG,
+    briefing: Briefing | None = None,
+    fmt: ImageFormat = ImageFormat.PORTRAIT,
+    texts: InfoTexts = HEADLINE,
+    background: bytes | None = None,
+) -> bytes:
+    return render_info_graphic(config, briefing or _briefing(), texts, fmt, background=background)
 
 
-def test_headline_defaults_to_the_occasion() -> None:
-    assert graphic_text(CONFIG, _briefing()).headline == "Kurs"
-    assert graphic_text(CONFIG, _briefing(), "  Rücken-Fit   am Abend ").headline == (
-        "Rücken-Fit am Abend"
-    )
-
-
-def _tampered(field: str, value: object) -> None:
-    text = graphic_text(CONFIG, _briefing())
-    verify_graphic_text(dataclasses.replace(text, **{field: value}), COURSE, CONFIG)
+# --- fact check ---
 
 
 @pytest.mark.parametrize(
-    ("facts", "message"),
-    [
-        ([("Datum", "13.11.2026"), ("Uhrzeit", "18:30 Uhr"), ("Ort", "Kursraum 2")], "Datum"),
-        ([("Datum", "12.11.2026"), ("Uhrzeit", "19:30 Uhr"), ("Ort", "Kursraum 2")], "Uhrzeit"),
-        ([("Datum", "12.11.2026"), ("Uhrzeit", "18:30 Uhr")], "Ort"),
-        (
-            [
-                ("Datum", "12.11.2026"),
-                ("Datum", "12.11.2026"),
-                ("Uhrzeit", "18:30 Uhr"),
-                ("Ort", "Kursraum 2"),
-            ],
-            "genau einmal",
-        ),
-    ],
+    "headline",
+    ["Neu ab 01.12.2026", "Start um 19:00 Uhr", "Nur 9,99 €", "Ruf an: 0987 654321"],
 )
-def test_changed_missing_or_doubled_facts_are_rejected(
-    facts: list[tuple[str, str]], message: str
-) -> None:
-    with pytest.raises(GraphicError, match=message):
-        _tampered("facts", facts)
+def test_headline_must_not_add_facts(headline: str) -> None:
+    with pytest.raises(InfoGraphicError):
+        _render(texts=InfoTexts(headline=headline))
 
 
-@pytest.mark.parametrize(
-    ("headline", "message"),
-    [
-        ("Auch am 19.11. dabei", "19.11."),
-        ("Ab 20 Uhr geöffnet", "Uhrzeit"),
-        ("Nur 9,90 € im Monat", "Preis"),
-        ("Anrufen: 0987 654321", "Telefonnummer"),
-        ("Schnäppchen-Kurs", "Schnäppchen"),
-        ("Eine viel zu lange Überschrift für diese Grafik hier", "zu lang"),
-    ],
-)
-def test_headline_must_not_add_facts_or_forbidden_terms(headline: str, message: str) -> None:
-    text = graphic_text(CONFIG, _briefing(), headline)
-
-    with pytest.raises(GraphicError, match=message):
-        verify_graphic_text(text, COURSE, CONFIG)
-
-
-def test_rendering_refuses_a_failing_fact_check() -> None:
-    with pytest.raises(GraphicError):
-        render_graphic(CONFIG, _briefing(), ImageFormat.SQUARE, headline="Neu ab 01.12.2026")
+def test_headline_alone_is_enough() -> None:
+    """Without list, intro or closing: the old template (headline plus facts)."""
+    assert _render(texts=InfoTexts(headline="Kurs"))
 
 
 # --- rendering ---
@@ -166,9 +104,7 @@ def test_rendering_refuses_a_failing_fact_check() -> None:
 @pytest.mark.parametrize("fmt", list(ImageFormat))
 @pytest.mark.parametrize("background", [None, "photo"])
 def test_formats_and_jpeg_export(fmt: ImageFormat, background: str | None) -> None:
-    content = _png() if background else None
-
-    jpeg, _ = render_graphic(CONFIG, _briefing(), fmt, background=content)
+    jpeg = _render(fmt=fmt, background=_png() if background else None)
 
     image = Image.open(io.BytesIO(jpeg))
     spec = FORMAT_SPECS[fmt]
@@ -177,10 +113,7 @@ def test_formats_and_jpeg_export(fmt: ImageFormat, background: str | None) -> No
 
 
 def test_rendering_is_deterministic() -> None:
-    first, _ = render_graphic(CONFIG, _briefing(), ImageFormat.PORTRAIT)
-    second, _ = render_graphic(CONFIG, _briefing(), ImageFormat.PORTRAIT)
-
-    assert first == second
+    assert _render() == _render()
 
 
 def test_long_place_wraps_instead_of_being_cut() -> None:
@@ -189,10 +122,7 @@ def test_long_place_wraps_instead_of_being_cut() -> None:
     )
     facts = BriefingFacts(datum=date(2026, 11, 12), uhrzeit=time(18, 30), ort=long_place)
 
-    jpeg, text = render_graphic(CONFIG, _briefing(facts=facts), ImageFormat.STORY)
-
-    assert f"Ort: {long_place}" in text.lines
-    assert jpeg
+    assert _render(briefing=_briefing(facts=facts), fmt=ImageFormat.STORY)
 
 
 def _facts_for(config: SocialConfig, occasion: str) -> BriefingFacts:
@@ -218,8 +148,13 @@ def test_every_occasion_type_of_both_industries_renders(config: SocialConfig) ->
     area = config.brand.areas[0].key
     for occasion in config.industry.occasion_types:
         briefing = _briefing(occasion.key, _facts_for(config, occasion.key), area)
-        jpeg, _ = render_graphic(config, briefing, ImageFormat.PORTRAIT)
-        assert jpeg, occasion.key
+        texts = InfoTexts(headline=occasion.label)
+        assert _render(config, briefing, texts=texts), occasion.key
+
+
+def test_all_facts_fit_on_every_format() -> None:
+    for fmt in ImageFormat:
+        assert _render(briefing=_briefing(facts=ALL_FACTS), fmt=fmt)
 
 
 @pytest.mark.parametrize("config", [CONFIG, HANDWERK], ids=["fitness", "handwerk"])
@@ -240,87 +175,12 @@ def graphic_client(client: TestClient) -> Iterator[TestClient]:
     yield client
 
 
-def _stored(session: Session) -> Briefing:
-    return create_briefing(session, CONFIG, course_input(channels=[Channel.FACEBOOK]), "demo")
+def test_template_graphic_route_is_gone(graphic_client: TestClient, session: Session) -> None:
+    briefing = create_briefing(session, CONFIG, course_input(channels=[Channel.FACEBOOK]), "demo")
 
-
-def test_graphic_route_and_page(
-    graphic_client: TestClient, session: Session, raw_dir: Path
-) -> None:
-    briefing = _stored(session)
-    asset = save_asset(
-        session,
-        briefing,
-        "foto.png",
-        _png(),
-        shows_persons=False,
-        consent_confirmed=False,
-        user="demo",
-        storage=raw_dir,
-    )
-
+    assert graphic_client.get(f"/social/briefings/{briefing.id}/graphic.jpg").status_code == 404
     page = graphic_client.get(f"/social/briefings/{briefing.id}").text
-    assert "Grafik aus Vorlage" in page and "data-graphic-preview" in page
-    assert "Datum: 03.11.2026" in page
-
-    url = (
-        f"/social/briefings/{briefing.id}/graphic.jpg?format=9:16&background={asset.id}&download=1"
-    )
-    # Publishing material: the download needs a released post of the briefing.
-    assert graphic_client.get(url).status_code == 409
-    assert "data-graphic-locked" in page
-    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(scripted()), briefing)
-    approve_draft(session, draft, "demo")
-    assert "data-graphic-download" in graphic_client.get(f"/social/briefings/{briefing.id}").text
-    response = graphic_client.get(url)
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "image/jpeg"
-    assert "attachment" in response.headers["content-disposition"]
-    assert Image.open(io.BytesIO(response.content)).size == (1080, 1920)
-
-
-def test_graphic_route_rejects_invented_facts(graphic_client: TestClient, session: Session) -> None:
-    briefing = _stored(session)
-
-    response = graphic_client.get(
-        f"/social/briefings/{briefing.id}/graphic.jpg?headline=Neu%20ab%2001.12.2026"
-    )
-    page = graphic_client.get(
-        f"/social/briefings/{briefing.id}?graphic_headline=Neu%20ab%2001.12.2026"
-    ).text
-
-    assert response.status_code == 422
-    assert "data-graphic-problems" in page and "data-graphic-preview" not in page
-
-
-def test_background_of_another_briefing_or_without_consent_is_refused(
-    graphic_client: TestClient, session: Session, raw_dir: Path
-) -> None:
-    briefing, other = _stored(session), _stored(session)
-    foreign = save_asset(
-        session,
-        other,
-        "foto.png",
-        _png(),
-        shows_persons=False,
-        consent_confirmed=False,
-        user="demo",
-        storage=raw_dir,
-    )
-    persons = save_asset(
-        session,
-        briefing,
-        "gruppe.png",
-        _png((600, 400)),
-        shows_persons=True,
-        consent_confirmed=False,
-        user="demo",
-        storage=raw_dir,
-    )
-
-    for asset in (foreign, persons):
-        url = f"/social/briefings/{briefing.id}/graphic.jpg?background={asset.id}"
-        assert graphic_client.get(url).status_code == 404
+    assert "Grafik aus Vorlage" not in page
 
 
 # --- logo from the brand profile ---
@@ -342,12 +202,10 @@ def _brand_with_logo(tmp_path: Path, logo: str | None = "logo.png", create: bool
 def test_logo_replaces_the_brand_name(tmp_path: Path) -> None:
     config = load_social_config(PROFILES_DIR / "fitness.yaml", _brand_with_logo(tmp_path))
 
-    text = graphic_text(config, _briefing())
-    with_logo, _ = render_graphic(config, _briefing(), ImageFormat.SQUARE)
-    without_logo, _ = render_graphic(CONFIG, _briefing(), ImageFormat.SQUARE)
+    with_logo = _render(config, fmt=ImageFormat.SQUARE)
+    without_logo = _render(CONFIG, fmt=ImageFormat.SQUARE)
 
-    assert text.logo and text.brand == ""
-    assert CONFIG.brand.name not in text.lines
+    assert config.logo_path is not None
     assert with_logo != without_logo
 
 

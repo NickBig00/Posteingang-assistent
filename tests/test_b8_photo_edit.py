@@ -20,10 +20,11 @@ from app.core.llm.fake import FakeProvider
 from app.core.models import AuditEntry
 from app.main import app
 from app.social.assets import consent_blockers, delete_asset, revoke_consent, save_asset
+from app.social.briefing_image import briefing_image
 from app.social.briefings import create_briefing
 from app.social.drafts import generate_drafts
 from app.social.llm.client import SocialLLMClient
-from app.social.models import Asset, Briefing, Channel
+from app.social.models import Asset, Briefing, Channel, PostDraft
 from app.social.photo_edit import (
     EDIT_SAFETY_SUFFIX,
     EDIT_STEP,
@@ -295,10 +296,16 @@ def test_edit_in_the_ui_and_labelled_download(
     ).text
     assert "data-ai-edited" in page and "KI-bearbeitet" in page
 
+    # The edited photo is chosen at once and labelled in the file name of the post image.
     edited = session.exec(select(Asset).where(Asset.ai_edited)).one()
-    graphic = web.get(f"{url}/graphic.jpg?background={edited.id}")
-    assert graphic.status_code == 200
-    assert "ki-bearbeitet" in graphic.headers["content-disposition"]
+    image = briefing_image(session, briefing.id or 0)
+    assert image is not None and image.asset_id == edited.id
+    draft = PostDraft(briefing_id=briefing.id or 0, channel=Channel.INSTAGRAM_POST, text="x")
+    session.add(draft)
+    session.commit()
+    preview = web.get(f"/social/drafts/{draft.id}/preview.jpg")
+    assert preview.status_code == 200
+    assert "ki-bearbeitet" in preview.headers["content-disposition"]
 
 
 def test_edit_route_is_hidden_when_switched_off(

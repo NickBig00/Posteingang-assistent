@@ -52,3 +52,16 @@ def scripted(**answers: list[str]) -> FakeProvider:
         return queues[task].popleft()
 
     return FakeProvider(respond)
+
+
+def png_bytes(
+    colour: tuple[int, int, int] = (30, 140, 120), size: tuple[int, int] = (64, 80)
+) -> bytes:
+    """A small, readable PNG (the post image renders it)."""
+    import io  # noqa: PLC0415
+
+    from PIL import Image  # noqa: PLC0415
+
+    buffer = io.BytesIO()
+    Image.new("RGB", size, colour).save(buffer, format="PNG")
+    return buffer.getvalue()

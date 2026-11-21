@@ -11,7 +11,7 @@
         <p class="flex flex-wrap items-center gap-2"><span class="truncate font-medium">{{ a.filename }}</span>
           {% if a.ai_generated %}{{ ui.ai_badge(ai_image_label) }}{% endif %}
           {% if a.ai_edited %}{{ ui.ai_badge(ai_edited_label) }}{% endif %}</p>
-        {% if a.ai_generated %}<p class="text-xs text-ink-subtle">Gewählte KI-Variante für Entwurf {{ a.draft_id }}; wird mit dem Beitrag freigegeben.</p>{% endif %}
+        {% if a.ai_generated %}<p class="text-xs text-ink-subtle">KI-Bild des Briefings; wird mit den Beiträgen freigegeben.</p>{% endif %}
         {% if a.ai_edited %}<p class="text-xs text-ink-subtle" data-ai-edited>Mit KI bearbeitet aus {{ "„" ~ asset_names[a.source_asset_id] ~ "“" if a.source_asset_id in asset_names else "einem inzwischen entfernten Original" }}; das Original bleibt unverändert.</p>{% endif %}
         {% if a.edit_hint and not a.consent_revoked_at %}
         <div class="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs" data-edit-hint>

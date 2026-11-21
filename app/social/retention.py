@@ -34,6 +34,7 @@ from app.social.models import (
     PostStatus,
     as_utc,
 )
+from app.social.post_image import delete_briefing_image
 from app.social.revisions import delete_revisions
 
 logger = logging.getLogger(__name__)
@@ -71,10 +72,12 @@ def delete_briefing(session: Session, briefing_id: int, user: str, reason: str =
         a.stored_path
         for a in session.exec(select(Asset).where(Asset.briefing_id == briefing_id)).all()
     }
-    files |= delete_image_data(session, [d for d in draft_ids if d is not None])
+    ids = [d for d in draft_ids if d is not None]
+    files |= delete_image_data(session, briefing_id=briefing_id, draft_ids=ids)
     delete_revisions(session, briefing_id=briefing_id)
     delete_info_graphic(session, briefing_id)
-    delete_carousel(session, [d for d in draft_ids if d is not None])
+    delete_carousel(session, briefing_id=briefing_id, draft_ids=ids)
+    delete_briefing_image(session, briefing_id)
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id).in_(draft_ids)),
@@ -127,11 +130,11 @@ def delete_draft(session: Session, draft_id: int, user: str) -> bool:
         for e in briefing_audit_trail(session, briefing_id)
         if e.id is not None and e.model_params.get("draft_id") == draft_id
     ]
-    # AI images belong to the draft: proposals, open variants and the chosen image go too.
+    # Images belong to the briefing since U6; only rows from before (per draft) go with it.
     ai_assets = session.exec(select(Asset).where(Asset.draft_id == draft_id)).all()
-    files = delete_image_data(session, [draft_id]) | {a.stored_path for a in ai_assets}
+    files = delete_image_data(session, draft_ids=[draft_id]) | {a.stored_path for a in ai_assets}
     delete_revisions(session, draft_ids=[draft_id])
-    delete_carousel(session, [draft_id])
+    delete_carousel(session, draft_ids=[draft_id])
     statements = [
         delete(AuditOutput).where(col(AuditOutput.audit_entry_id).in_(entry_ids)),
         delete(CheckResult).where(col(CheckResult.draft_id) == draft_id),

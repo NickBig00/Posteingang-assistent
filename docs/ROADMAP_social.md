@@ -205,7 +205,7 @@ keine Bilder je Kanal im Datenmodell, „Bild von Schritt 1 übernehmen“ in Ka
 für Instagram und Facebook, „Text aufs Bild“ standardmäßig nur bei Farbfläche. Reihenfolge: erst
 die Bild-Zuordnung (Logik), dann die neue Seite, dann der Feinschliff.
 
-## [ ] U6 – Ein Bild je Briefing (Logik)
+## [x] U6 – Ein Bild je Briefing (Logik)
 
 Briefing-Bild, KI-Bild je Briefing, `post_image()` als einzige Quelle für Vorschau, Download und
 Karussell-Seite 1, Freigabe-Bindung, Migration der Demo-Daten. „Grafik aus Vorlage“ in die
@@ -304,3 +304,14 @@ gepostet würde (zeigt auf die Vorschau).
   zeigt, entscheidet der Mensch.
 - [x] **Grafiktext-Prüfung bei Anrede:** entschieden: Warnungen zur Anrede im Grafiktext brauchen
   wie bei Beiträgen keine Bestätigung; Gesundheits- und Personenhinweise schon.
+- [ ] **Bild nach der ersten Freigabe fest (U6):** Annahme: Solange ein Beitrag des Briefings
+  freigegeben, geplant oder veröffentlicht ist, lassen sich Bild, Text aufs Bild und Karussell
+  nicht ändern (sonst änderte sich ein freigegebener Beitrag unbemerkt). Zu entscheiden, ob statt
+  der Sperre eine Änderung die freigegebenen Beiträge zurück in die Prüfung schicken soll.
+- [ ] **Einwilligung nur für genutzte Bilder (U6):** Annahme: Die Freigabe prüft nur die Bilder,
+  die der Beitrag nutzt (Beitragsbild, Karussell-Seiten), nicht jedes hochgeladene Foto. Ein
+  Widerruf wirkt auf alle Einträge mit demselben Foto (gleicher Inhalts-Hash), auch in anderen
+  Briefings.
+- [ ] **Facebook-Raster (U6):** Facebook zeigt mehrere Fotos als Raster; das erste Bild bestimmt
+  das Layout, Bilder im Raster werden zugeschnitten. Karussell-Download für Facebook wie für
+  Instagram in 4:5 (1080×1350); vor echtem Einsatz an einem Testbeitrag prüfen.

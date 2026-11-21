@@ -1,9 +1,8 @@
-{# Carousel of an Instagram post (SPEC_social 14.2): pages, order, preview, checks, ZIP. #}
+{# Carousel pages of the briefing (SPEC_social 14.2): used by Instagram/Facebook posts with "Mehrere Bilder". #}
 {% import "_ui.html" as ui %}
-{% set c = carousels.get(d.id) %}
-{% set editable = d.status.value in ("draft", "in_review", "needs_manual_review") %}
-{% set released = d.status.value in ("approved", "scheduled", "published") %}
-<div class="mt-4 rounded-lg border border-line p-4" id="carousel-{{ d.id }}" data-carousel>
+{% set c = carousel %}
+{% set editable = not image_locked %}
+<div class="mt-4 rounded-lg border border-line p-4" id="karussell" data-carousel>
   <div class="flex flex-wrap items-center justify-between gap-2">
     <h4 class="flex items-center gap-2 text-sm font-semibold">{{ ui.icon("image") }}Karussell (mehrere Seiten)
       {% if c.light %}{% set light = c.light %}{% include "_light.html" %}{% endif %}</h4>
@@ -12,7 +11,7 @@
   <p class="mt-1 text-xs text-ink-muted">Optional: Seiten aus Info-Grafiken und Bildern, z. B. Titel, Themen als ✓-Liste, Termin und Anmeldung. Wird mit dem Beitrag freigegeben.</p>
 
   {% if editable %}
-  <form method="post" action="/social/drafts/{{ d.id }}/carousel/suggest" class="mt-2" data-loading="Seiten werden vorgeschlagen …"
+  <form method="post" action="/social/briefings/{{ briefing.id }}/carousel/suggest" class="mt-2" data-loading="Seiten werden vorgeschlagen …"
         {% if c.pages %}onsubmit="return confirm('Die bisherigen Seiten durch einen KI-Vorschlag ersetzen?')"{% endif %}>
     <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon("sparkles") }}Seitenaufteilung vorschlagen</button>
   </form>
@@ -25,7 +24,7 @@
       {% if item.problems %}
       <div class="flex aspect-[4/5] items-center justify-center rounded-lg bg-red-50 p-2 text-center text-xs text-red-800 ring-1 ring-red-200">{{ item.problems | join(" ") }}</div>
       {% else %}
-      <img src="/social/carousel-pages/{{ p.id }}.jpg?format=4:5" alt="Seite {{ loop.index }}: {{ item.texts.headline if p.kind == 'info' else 'Bild' }}" class="aspect-[4/5] w-full rounded-lg object-cover ring-1 ring-line" loading="lazy">
+      <img src="/social/carousel-pages/{{ p.id }}.jpg?format=4:5" alt="Seite {{ loop.index }}: {{ item.texts.headline if p.kind == 'info' else ('Beitragsbild' if p.kind == 'cover' else 'Bild') }}" class="aspect-[4/5] w-full rounded-lg object-cover ring-1 ring-line" loading="lazy">
       {% endif %}
       <div class="mt-1 flex items-center justify-between gap-1 text-xs">
         <span class="font-medium">Seite {{ loop.index }}</span>
@@ -44,7 +43,7 @@
   </ol>
 
   {% if editable %}
-  {% for item in c.pages %}{% set p = item.page %}
+  {% for item in c.pages %}{% set p = item.page %}{% if p.kind != "cover" %}
   <details class="mt-2" id="page-{{ p.id }}">
     <summary class="cursor-pointer text-sm font-medium">Seite {{ loop.index }} bearbeiten</summary>
     <form method="post" action="/social/carousel-pages/{{ p.id }}" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
@@ -67,17 +66,17 @@
       {% else %}<input type="hidden" name="variant" value="{{ p.variant }}">{% endif %}
       <div class="sm:col-span-2"><button type="submit" class="btn btn-secondary btn-sm">Seite speichern und prüfen</button></div>
     </form>
-  </details>
+  </details>{% endif %}
   {% endfor %}
   {% endif %}
   {% endif %}
 
   {% if editable and c.pages | length < c.max_pages %}
-  <details class="mt-2" id="carousel-add-{{ d.id }}">
+  <details class="mt-2" id="carousel-add">
     <summary class="btn btn-ghost btn-sm cursor-pointer">+ Seite hinzufügen</summary>
-    <form method="post" action="/social/drafts/{{ d.id }}/carousel/pages" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
+    <form method="post" action="/social/briefings/{{ briefing.id }}/carousel/pages" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
       <label class="field">Art
-        <select name="kind" class="input mt-1"><option value="info">Info-Grafik (Text)</option>{% if usable_assets %}<option value="image">Bild</option>{% endif %}</select></label>
+        <select name="kind" class="input mt-1"><option value="info">Info-Grafik (Text)</option><option value="cover">Beitragsbild</option>{% if usable_assets %}<option value="image">Bild</option>{% endif %}</select></label>
       <label class="field">Bild bzw. Hintergrund
         <select name="asset" class="input mt-1"><option value="">Farbfläche (nur Info-Grafik)</option>
           {% for a in usable_assets %}<option value="{{ a.id }}">{{ ("KI-Bild" if a.ai_generated else ("KI-bearbeitet" if a.ai_edited else "Foto")) ~ " „" ~ a.filename | truncate(22, true, "…") ~ "“" }}</option>{% endfor %}</select></label>
@@ -110,10 +109,7 @@
   </div>
   {% endif %}
 
-  {% if released and c.pages | length >= 2 %}
-  <div class="mt-3 flex flex-wrap items-center gap-2" data-carousel-download>
-    {% for f in c.formats %}<a href="/social/drafts/{{ d.id }}/carousel.zip?format={{ f.value }}" class="btn btn-secondary btn-sm" download>{{ ui.icon("download") }}Karussell als ZIP ({{ f.value }})</a>{% endfor %}
-  </div>
+  {% if c.pages | length >= 2 %}
   {% if c.ai_pages %}<p class="mt-1 text-xs font-medium text-violet-800">Seite {{ c.ai_pages | join(", ") }} mit KI-Bild: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
   {% endif %}
 </div>

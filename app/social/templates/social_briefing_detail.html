@@ -43,8 +43,10 @@
   {% include "_social_assets.html" %}
 </div>
 
-{% include "_social_graphic.html" %}
+{% include "_social_briefing_image.html" %}
+{% if images_enabled %}{% include "_social_ai_images.html" %}{% endif %}
 {% include "_social_info_graphic.html" %}
+{% include "_social_carousel.html" %}
 
 <h2 class="mb-3 text-base font-semibold">Entwürfe je Kanal</h2>
 <div class="space-y-6">
@@ -90,8 +92,12 @@
         </details>
         {% endif %}
 
-        {% if images_enabled %}{% include "_social_ai_images.html" %}{% endif %}
-        {% if d.id in carousels %}{% include "_social_carousel.html" %}{% endif %}
+        {% if d.channel in carousel_channels and d.status.value in ("draft", "in_review", "needs_manual_review") %}
+        <form method="post" action="/social/drafts/{{ d.id }}/carousel" class="mt-3 flex items-center gap-2 text-sm" data-carousel-toggle>
+          <span>Mehrere Bilder (Karussell):</span>
+          <button type="submit" name="enabled" value="{{ 'false' if d.carousel_enabled else 'true' }}" class="btn btn-secondary btn-sm">{{ "Ausschalten" if d.carousel_enabled else "Einschalten" }}</button>
+        </form>
+        {% endif %}
         {% include "_social_checks.html" %}
         {% include "_social_actions.html" %}
       </div>

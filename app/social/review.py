@@ -13,13 +13,12 @@ from app.core.approval import ReviewDecision
 from app.core.audit import write_human_audit_entry
 from app.core.models import utcnow
 from app.core.outcomes import Outcome
-from app.social.assets import consent_blockers
 from app.social.carousel import carousel_blockers
 from app.social.checking import run_checks
-from app.social.images import image_hint_blockers
 from app.social.llm.client import SocialLLMClient
 from app.social.models import POST_STATUS_LABELS, CheckResult, PostDraft, PostReview, PostStatus
-from app.social.profiles import HASHTAG_PATTERN, SocialConfig
+from app.social.post_image import post_image_blockers
+from app.social.profiles import HASHTAG_PATTERN, SocialConfig, load_social_config
 from app.social.status import ALLOWED_TRANSITIONS, transition
 
 CONFIRM_STEP = "social.confirm_warning"
@@ -41,8 +40,14 @@ def check_results(session: Session, draft_id: int) -> list[CheckResult]:
     return list(session.exec(statement).all())
 
 
-def approval_blockers(session: Session, draft: PostDraft) -> list[str]:
-    """Reasons why the draft cannot be approved yet (empty list: approval possible)."""
+def approval_blockers(
+    session: Session, draft: PostDraft, config: SocialConfig | None = None
+) -> list[str]:
+    """Reasons why the draft cannot be approved yet (empty list: approval possible).
+
+    Includes the post image (renders, checks of the graphic text, AI hints, consent of the
+    images in use) and the carousel pages if the post uses them (SPEC_social 14.3).
+    """
     if draft.id is None:
         return ["Entwurf ist nicht gespeichert."]
     blockers: list[str] = []
@@ -59,10 +64,9 @@ def approval_blockers(session: Session, draft: PostDraft) -> list[str]:
             blockers.append(f"Fehler: {result.reason}")
         elif result.requires_confirmation and result.confirmed_at is None:
             blockers.append(f"Warnung noch nicht bestätigt: {result.reason}")
-    blockers += consent_blockers(session, draft.briefing_id)
-    blockers += image_hint_blockers(session, draft)
+    blockers += post_image_blockers(session, config or load_social_config(), draft)
     blockers += carousel_blockers(session, draft)
-    return blockers
+    return list(dict.fromkeys(blockers))
 
 
 def _audit(session: Session, draft: PostDraft, step: str, user: str, **details: JsonValue) -> None:
@@ -122,8 +126,10 @@ def confirm_person_consent(session: Session, result: CheckResult, user: str) -> 
     return result
 
 
-def approve_draft(session: Session, draft: PostDraft, user: str) -> PostReview:
-    blockers = approval_blockers(session, draft)
+def approve_draft(
+    session: Session, draft: PostDraft, user: str, config: SocialConfig | None = None
+) -> PostReview:
+    blockers = approval_blockers(session, draft, config)
     if blockers:
         raise ReviewNotAllowedError("Freigabe nicht möglich: " + " ".join(blockers))
     if draft.id is None:

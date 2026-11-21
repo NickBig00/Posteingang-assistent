@@ -8,7 +8,7 @@
 {% set fmt = channel_formats[d.channel].value %}
 {% set limit = limits.get(d.channel.value, 200) %}
 {% set text = d.full_text %}
-{% set images = draft_images[d.id] %}{% set image = images[0] if images else none %}
+{% set pi = post_images[d.id] %}{% set image = chosen_asset if briefing_image and not pi.problems else none %}{% set image_src = pi.src %}
 {% set name = config.brand.name %}
 
 {% macro body_text(text, limit, more_label) -%}
@@ -28,7 +28,7 @@
   <div class="rounded-card border border-dashed border-line-strong p-6 text-center text-xs text-ink-subtle">Noch kein Text.</div>
   {% elif d.channel.value == "instagram_story" %}
   <div class="relative mx-auto w-48 overflow-hidden rounded-2xl bg-slate-800 {{ ratios[fmt] }}">
-    {% if image %}<img src="/social/assets/{{ image.id }}" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">{% endif %}
+    {% if briefing_image and not pi.problems %}<img src="{{ image_src }}" alt="" class="absolute inset-0 h-full w-full object-cover opacity-80">{% endif %}
     <div class="absolute inset-x-0 top-0 flex items-center gap-2 p-2 text-[10px] font-semibold text-white">
       <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-on">{{ name[:1] }}</span>{{ name | truncate(22, true, "…") }}</div>
     <div class="absolute inset-x-2 bottom-3 rounded-lg bg-black/60 p-2 text-[11px] leading-snug text-white">{{ text | truncate(limit, true, "…") }}</div>
@@ -44,8 +44,8 @@
     </div>
     {% if d.channel.value != "instagram_post" %}<div class="px-3 pb-2">{{ body_text(text, limit, "Mehr anzeigen" if d.channel.value == "facebook" else "…mehr") }}</div>{% endif %}
     <div class="{{ ratios[fmt] }} w-full bg-surface-sunken">
-      {% if image %}<div class="relative h-full w-full"><img src="/social/assets/{{ image.id }}" alt="Vorschaubild: {{ image.filename }}" class="h-full w-full object-cover">
-        {% if image.ai_generated %}<span class="absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{{ ai_image_label }}</span>{% endif %}</div>
+      {% if briefing_image and not pi.problems %}<div class="relative h-full w-full"><img src="{{ image_src }}" alt="Beitragsbild" class="h-full w-full object-cover" data-post-image>
+        {% if image and image.ai_generated %}<span class="absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{{ ai_image_label }}</span>{% endif %}</div>
       {% else %}<div class="flex h-full w-full flex-col items-center justify-center gap-1 text-xs text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}Kein Bild</div>{% endif %}
     </div>
     {% if d.channel.value == "instagram_post" %}

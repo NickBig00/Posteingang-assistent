@@ -24,20 +24,17 @@
 
       <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="mt-4 grid gap-3 sm:grid-cols-2" data-loading="Wird geprüft …">
         <label class="field font-medium sm:col-span-2">Überschrift
-          <input type="text" name="headline" maxlength="60" value="{{ info.texts.headline }}" class="input mt-1" required placeholder="z. B. Vortrag: Bewegung im Büroalltag"></label>
+          <input type="text" name="headline" maxlength="60" value="{{ info.texts.headline }}" class="input mt-1" required placeholder="z. B. Starker Rücken"></label>
         <label class="field font-medium sm:col-span-2">Unterzeile <span class="font-normal text-ink-subtle">(optional)</span>
           <input type="text" name="subline" maxlength="90" value="{{ info.texts.subline }}" class="input mt-1"></label>
         <label class="field font-medium sm:col-span-2">Einleitung <span class="font-normal text-ink-subtle">(1–2 Sätze, optional)</span>
           <textarea name="intro" rows="2" maxlength="260" class="input mt-1">{{ info.texts.intro }}</textarea></label>
-        <label class="field font-medium">Aufzählung <span class="font-normal text-ink-subtle">(3–6 Punkte, einer je Zeile)</span>
+        <label class="field font-medium">Aufzählung <span class="font-normal text-ink-subtle">(bis 6 Punkte, einer je Zeile, optional)</span>
           <textarea name="points" rows="5" class="input mt-1">{{ info.texts.points | join("\n") }}</textarea></label>
         <div class="space-y-3">
           <label class="field font-medium">Schlusssatz <span class="font-normal text-ink-subtle">(optional)</span>
             <input type="text" name="closing" maxlength="140" value="{{ info.texts.closing }}" class="input mt-1"></label>
-          <label class="field font-medium">Gestaltung
-            <select name="variant" class="input mt-1">
-              {% for key, label in info.variants.items() %}<option value="{{ key }}" {% if key == info.variant %}selected{% endif %}>{{ label }}</option>{% endfor %}
-            </select></label>
+
         </div>
         <details class="sm:col-span-2" {% if info.story %}open{% endif %}>
           <summary class="cursor-pointer text-sm font-medium">Kürzerer Text für die Story (9:16, optional)</summary>
@@ -80,36 +77,13 @@
 
     <div>
       {% if g %}
-      <form method="get" action="/social/briefings/{{ briefing.id }}#info-grafik" class="space-y-2 text-sm">
-        <label class="field font-medium">Format
-          <select name="info_format" class="input mt-1">
-            {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == info.format %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
-          </select></label>
-        <label class="field font-medium">Hintergrund
-          <select name="info_background" class="input mt-1">
-            <option value="color" {% if info.background == "color" %}selected{% endif %}>Farbfläche in Markenfarbe</option>
-            {% for a in usable_assets %}<option value="{{ a.id }}" {% if info.background == a.id | string %}selected{% endif %}>{{ ("KI-Bild" if a.ai_generated else ("KI-bearbeitet" if a.ai_edited else "Foto")) ~ " „" ~ a.filename | truncate(24, true, "…") ~ "“" }}</option>{% endfor %}
-          </select></label>
-        {% if info.available_facts %}
-        <fieldset><legend class="font-medium">Fakten</legend>
-          <div class="mt-1 flex flex-wrap gap-x-3">{% for key, label in info.available_facts %}
-            <label class="flex items-center gap-1.5"><input type="checkbox" class="checkbox" name="info_facts" value="{{ key }}" {% if key in info.fact_keys %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
-        </fieldset>
-        {% endif %}
-        <button type="submit" class="btn btn-secondary btn-sm">Vorschau aktualisieren</button>
-      </form>
+      <p class="text-xs text-ink-subtle">Vorschau auf Farbfläche; das fertige Beitragsbild zeigt die Vorschau je Kanal.</p>
       {% if info.errors or info.problems %}
       <div class="mt-3" data-info-problems>{% call ui.alert("", "error", "alert") %}<p class="font-semibold">Keine Grafik:</p>
         <ul class="ml-4 list-disc">{% for p in info.errors + info.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endcall %}</div>
       {% else %}
       <img src="{{ info.src }}" alt="Vorschau der Info-Grafik: {{ info.texts.headline }}" class="mt-3 w-full rounded-lg ring-1 ring-line" loading="lazy" data-info-preview>
-      {% if info.downloadable and not info.blockers %}
-      <a href="{{ info.src }}&amp;download=1" class="btn btn-primary btn-sm mt-3 w-full" data-info-download>{{ ui.icon("download") }}Info-Grafik als JPEG</a>
-      {% elif not info.downloadable %}
-      <p class="mt-3 text-xs text-ink-subtle">Download nach der Freigabe eines Beitrags dieses Briefings.</p>
-      {% else %}
-      <ul class="mt-3 list-disc pl-4 text-xs text-ink-muted" data-info-blockers>{% for b in info.blockers %}<li>{{ b }}</li>{% endfor %}</ul>
-      {% endif %}
+      {% if info.blockers %}<ul class="mt-3 list-disc pl-4 text-xs text-ink-muted" data-info-blockers>{% for b in info.blockers %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
       {% if info.ai_background %}<p class="mt-2 text-xs font-medium text-violet-800">Hintergrund mit KI erstellt: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
       {% endif %}
       {% else %}

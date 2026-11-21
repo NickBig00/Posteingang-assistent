@@ -19,10 +19,19 @@ from app.social.assets import (
     delete_asset,
     save_asset,
 )
+from app.social.briefing_image import set_briefing_image
 from app.social.briefings import create_briefing
 from app.social.drafts import generate_drafts
 from app.social.llm.client import SocialLLMClient
-from app.social.models import Asset, Briefing, Channel, CheckResult, PostDraft, PostStatus
+from app.social.models import (
+    Asset,
+    Briefing,
+    Channel,
+    CheckResult,
+    ImageSource,
+    PostDraft,
+    PostStatus,
+)
 from app.social.review import (
     EDIT_STEP,
     REOPEN_STEP,
@@ -38,10 +47,10 @@ from app.social.review import (
 )
 from app.social.status import ALLOWED_TRANSITIONS, MissingReviewError, transition
 from app.social.web import get_social_client, get_social_config
-from tests.social_helpers import course_input, demo_config, scripted
+from tests.social_helpers import course_input, demo_config, png_bytes, scripted
 
 CONFIG = demo_config()
-PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+PNG = png_bytes()
 JPG = b"\xff\xd8\xff\xe0" + b"\x00" * 32
 
 
@@ -236,6 +245,10 @@ def test_image_with_persons_needs_consent(session: Session, raw_dir: Path) -> No
     assert consent_blockers(session, briefing.id or 0) == [
         "Bild „kurs.png“ zeigt Personen – die Einwilligung ist nicht bestätigt."
     ]
+    # Only the images the post uses block its approval (SPEC_social 14.3).
+    approval = approval_blockers(session, draft)
+    assert not any("Einwilligung" in b for b in approval)
+    set_briefing_image(session, briefing.id or 0, ImageSource.UPLOAD, asset.id, "demo")
     with pytest.raises(ReviewNotAllowedError, match="Einwilligung ist nicht bestätigt"):
         approve_draft(session, draft, "demo")
 

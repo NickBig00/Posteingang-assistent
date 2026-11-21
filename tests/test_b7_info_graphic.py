@@ -115,6 +115,12 @@ def _save(
 # --- texts and facts ---
 
 
+def test_headline_alone_is_valid() -> None:
+    """The list is optional since U6 (the info graphic replaces the template graphic)."""
+    assert validate_texts(InfoTexts(headline="Starker Rücken")) == []
+    assert validate_texts(InfoTexts(headline="Starker Rücken", points=["Nur", "zwei"])) == []
+
+
 def test_points_are_parsed_one_per_line_without_bullets() -> None:
     assert parse_points("- Eins\n✓ Zwei\r\n\n• Drei ") == ["Eins", "Zwei", "Drei"]
 
@@ -123,8 +129,7 @@ def test_points_are_parsed_one_per_line_without_bullets() -> None:
     ("change", "message"),
     [
         ({"headline": ""}, "Überschrift"),
-        ({"points": ["Nur", "zwei"]}, "3 bis 6"),
-        ({"points": [f"Punkt {n}" for n in range(7)]}, "3 bis 6"),
+        ({"points": [f"Punkt {n}" for n in range(7)]}, "0 bis 6"),
         ({"intro": "x" * 261}, "Einleitung"),
     ],
 )
@@ -347,20 +352,25 @@ def test_full_flow_in_the_ui(web: TestClient, session: Session) -> None:
     graphic = get_info_graphic(session, briefing.id or 0)
     assert graphic is not None and graphic.variant == "farbfeld"
 
-    preview = web.get(f"{url}/info-graphic.jpg?format=4:5&variant=farbfeld")
+    preview = web.get(f"{url}/info-graphic.jpg?format=4:5")
     assert preview.status_code == 200
     assert Image.open(io.BytesIO(preview.content)).size == (1080, 1350)
-    assert web.get(f"{url}/info-graphic.jpg?download=1").status_code == 409
-
+    # The text on the image is part of the post image: colour fill, "Text aufs Bild" yes.
+    web.post(f"{url}/image", data={"source": "color"})
     session.expire_all()
     from app.social.models import CheckResult, PostDraft
 
     draft = session.exec(select(PostDraft).where(PostDraft.briefing_id == briefing.id)).one()
+    assert web.get(f"/social/drafts/{draft.id}/image.jpg").status_code == 409
+
     for result in session.exec(select(CheckResult).where(CheckResult.draft_id == draft.id)).all():
         if result.requires_confirmation:
             confirm_warning(session, result, "demo")
+    for check in graphic_checks(session, graphic.id or 0):
+        if check.requires_confirmation and check.confirmed_at is None:
+            confirm_check(session, check, "demo")
     approve_draft(session, draft, "demo")
-    download = web.get(f"{url}/info-graphic.jpg?download=1&format=1:1")
+    download = web.get(f"/social/drafts/{draft.id}/image.jpg")
     assert download.status_code == 200
     assert "attachment" in download.headers["content-disposition"]
 
@@ -370,10 +380,10 @@ def test_invalid_texts_show_the_reason(web: TestClient, session: Session) -> Non
 
     response = web.post(
         f"/social/briefings/{briefing.id}/info-graphic",
-        data={"headline": "Vortrag", "points": "Nur einer"},
+        data={"headline": "Vortrag", "points": "\n".join(f"Punkt {n}" for n in range(7))},
     )
 
-    assert response.status_code == 422 and "3 bis 6" in response.text
+    assert response.status_code == 422 and "0 bis 6" in response.text
 
 
 def test_foreign_fact_in_the_text_shows_no_preview(web: TestClient, session: Session) -> None:

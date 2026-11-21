@@ -75,22 +75,27 @@ def derived_assets(session: Session, asset: Asset) -> list[Asset]:
     return result
 
 
-def consent_blockers(session: Session, briefing_id: int) -> list[str]:
+def asset_blockers(asset: Asset) -> list[str]:
+    """Reasons why a post that uses this image cannot be approved (consent, AI-edit hint)."""
     blockers = []
-    for asset in briefing_assets(session, briefing_id):
-        if asset.edit_hint and asset.edit_hint_confirmed_at is None and is_usable(asset):
-            blockers.append(
-                f"Hinweis zum KI-bearbeiteten Bild „{asset.filename}“ noch nicht bestätigt."
-            )
-        if asset.consent_revoked_at is not None:
-            blockers.append(
-                f"Für Bild „{asset.filename}“ wurde die Einwilligung widerrufen – Bild entfernen."
-            )
-        elif asset.shows_persons and not asset.consent_confirmed:
-            blockers.append(
-                f"Bild „{asset.filename}“ zeigt Personen – die Einwilligung ist nicht bestätigt."
-            )
+    if asset.edit_hint and asset.edit_hint_confirmed_at is None and is_usable(asset):
+        blockers.append(
+            f"Hinweis zum KI-bearbeiteten Bild „{asset.filename}“ noch nicht bestätigt."
+        )
+    if asset.consent_revoked_at is not None:
+        blockers.append(
+            f"Für Bild „{asset.filename}“ wurde die Einwilligung widerrufen – Bild entfernen."
+        )
+    elif asset.shows_persons and not asset.consent_confirmed:
+        blockers.append(
+            f"Bild „{asset.filename}“ zeigt Personen – die Einwilligung ist nicht bestätigt."
+        )
     return blockers
+
+
+def consent_blockers(session: Session, briefing_id: int) -> list[str]:
+    """Blockers of all images of a briefing (the approval checks only the images in use)."""
+    return [b for asset in briefing_assets(session, briefing_id) for b in asset_blockers(asset)]
 
 
 def _audit(session: Session, asset: Asset, step: str, user: str) -> None:
@@ -191,11 +196,25 @@ def revoke_consent(session: Session, asset: Asset, user: str) -> Revocation:
     asset.consent_confirmed = False
     asset.consent_revoked_by, asset.consent_revoked_at = user, utcnow()
     session.add(asset)
+    # The same photo in other briefings (e.g. taken over in a campaign, "Wie Schritt 1"):
+    # the withdrawal applies to every briefing that uses it.
+    copies = [
+        other
+        for other in session.exec(
+            select(Asset).where(Asset.content_hash == asset.content_hash)
+        ).all()
+        if other.id != asset.id and other.consent_revoked_at is None
+    ]
+    for other in copies:
+        other.consent_confirmed = False
+        other.consent_revoked_by, other.consent_revoked_at = user, utcnow()
+        session.add(other)
     session.commit()
     session.refresh(asset)
+    briefing_ids = sorted({asset.briefing_id, *(c.briefing_id for c in copies)})
     drafts = session.exec(
         select(PostDraft)
-        .where(PostDraft.briefing_id == asset.briefing_id)
+        .where(col(PostDraft.briefing_id).in_(briefing_ids))
         .order_by(col(PostDraft.id))
     ).all()
     back, published = [], []
@@ -208,7 +227,8 @@ def revoke_consent(session: Session, asset: Asset, user: str) -> Revocation:
             published.append(draft)
     _remove_file(session, asset.stored_path, exclude_id=asset.id)
     # AI-edited versions show the same people: the withdrawal applies to them as well.
-    derived = derived_assets(session, asset)
+    derived = [d for source in (asset, *copies) for d in derived_assets(session, source)]
+    derived = list({d.id: d for d in derived if d.consent_revoked_at is None}.values())
     for child in derived:
         child.consent_confirmed = False
         child.consent_revoked_by, child.consent_revoked_at = user, utcnow()
@@ -227,6 +247,7 @@ def revoke_consent(session: Session, asset: Asset, user: str) -> Revocation:
             "back_to_review": [d.id for d in back],
             "published": [d.id for d in published],
             "derived_assets": [c.id for c in derived],
+            "copies": [c.id for c in copies],
         },
     )
     return Revocation(back_to_review=back, published=published)

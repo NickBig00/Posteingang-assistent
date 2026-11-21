@@ -47,20 +47,20 @@
   <div class="mt-2 flex flex-wrap items-center gap-2">
     <button type="button" class="btn btn-primary btn-sm" data-copy="{{ d.full_text }}">{{ ui.icon("copy") }}<span data-copy-label>Text kopieren</span></button>
     <a href="/social/drafts/{{ d.id }}/export" class="btn btn-secondary btn-sm">{{ ui.icon("doc") }}Als Textdatei</a>
-    {% for a in draft_images[d.id] %}
-    <a href="/social/drafts/{{ d.id }}/image.jpg?asset={{ a.id }}" class="btn btn-secondary btn-sm" download
-       data-jpeg-download>{{ ui.icon("download") }}{% if a.ai_generated %}KI-Bild{% elif a.ai_edited %}KI-bearbeitetes Bild{% else %}Bild „{{ a.filename | truncate(18, true, "…") }}“{% endif %} als JPEG ({{ channel_formats[d.channel].value }})</a>
-    {% endfor %}
+    {% if briefing_image and not post_images[d.id].problems %}
+    <a href="/social/drafts/{{ d.id }}/image.jpg" class="btn btn-secondary btn-sm" download data-jpeg-download>{{ ui.icon("download") }}Bild herunterladen ({{ channel_formats[d.channel].value }})</a>
+    {% endif %}
+    {% if d.carousel_enabled %}<a href="/social/drafts/{{ d.id }}/carousel.zip" class="btn btn-secondary btn-sm" download data-carousel-download>{{ ui.icon("download") }}Karussell als ZIP</a>{% endif %}
   </div>
-  {% if draft_images[d.id] | selectattr("ai_edited") | list %}
+  {% if chosen_asset and chosen_asset.ai_edited %}
   <div class="mt-2" data-ai-edited-notice>{% call ui.alert("", "ai") %}<strong>KI-bearbeitetes Bild beim Posten kennzeichnen:</strong> Mindestens ein Foto wurde mit KI verändert.
     Setzen Sie auf der Plattform die KI-Kennzeichnung, wenn Sie es verwenden.{% endcall %}</div>
   {% endif %}
-  {% if draft_images[d.id] | selectattr("ai_generated") | list %}
+  {% if chosen_asset and chosen_asset.ai_generated %}
   <div class="mt-2">{% call ui.alert("", "ai") %}<strong>Beim Posten als KI-generiert kennzeichnen:</strong> Das Bild wurde mit KI erzeugt.
     Setzen Sie auf der Plattform die Kennzeichnung (z. B. „Mit KI erstellt“ bzw. „KI-Info“) oder erwähnen Sie es im Text.{% endcall %}</div>
   {% endif %}
-  {% if not draft_images[d.id] %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild zum Download: Bild hochladen (und ggf. Einwilligung bestätigen).</p>{% endif %}
+  {% if not briefing_image %}<p class="mt-2 text-xs text-ink-subtle">Kein Bild gewählt: Der Beitrag wird nur mit Text veröffentlicht.</p>{% endif %}
 </div>
 {% endif %}
 

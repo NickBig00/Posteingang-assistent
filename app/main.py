@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from sqlmodel import Session
 
 from app.core.config import app_title, enabled_modules
 from app.core.db import engine, init_db
@@ -23,6 +24,7 @@ from app.inbox import web as inbox_web
 from app.inbox.overview import inbox_overview
 from app.social import web as social_web
 from app.social.overview import social_overview
+from app.social.post_image import migrate_briefing_images
 from app.social.profiles import profile_brand_color
 
 # Available modules in navigation order: key -> (routes, sidebar entries, start page figures).
@@ -45,6 +47,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     setup_logging()
     log_configuration_problems()
     init_db(engine)
+    if "social" in enabled_modules(list(MODULES)):
+        # One-time move of demo data from images per draft to one image per briefing (U6).
+        with Session(engine) as session:
+            migrate_briefing_images(session)
     yield
 
 
