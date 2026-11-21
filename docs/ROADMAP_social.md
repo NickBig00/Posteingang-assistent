@@ -197,11 +197,52 @@ im PR.
 
 ## Nächste Ausbaustufe: Beitrag in einem Ablauf (Briefing-Seite neu gestalten)
 
-Entwurf, Entscheidungen und Meilensteine U6–U8 stehen in `docs/SPEC_beitrag_ablauf.md`
-(Praxistest nach B4–B9: Seite zu kompliziert; ein Bild je Briefing, Reiter je Kanal, Schritte
-Text → Bild → Prüfen und Freigeben, Vorschau zeigt genau das, was gepostet wird). Die nächste
-Session übernimmt sie wie beschrieben in `docs/SPEC_social.md`, `docs/SPEC.md` und diese
-Roadmap und löscht danach die Entwurfsdatei.
+Spezifikation: `docs/SPEC_social.md` Abschnitte 8.1 und 14.3, `docs/SPEC.md` Abschnitt 10.2
+(Praxistest nach B4–B9: Seite zu kompliziert). Entscheidungen des Product Owners (November 2026):
+ein Bild je Briefing für alle Kanäle, „Grafik aus Vorlage“ geht in der Info-Grafik auf, das
+fertige Bild ist das Beitragsbild, Reiter je Kanal mit drei Schritten plus Veröffentlichen,
+keine Bilder je Kanal im Datenmodell, „Bild von Schritt 1 übernehmen“ in Kampagnen, Karussell
+für Instagram und Facebook, „Text aufs Bild“ standardmäßig nur bei Farbfläche. Reihenfolge: erst
+die Bild-Zuordnung (Logik), dann die neue Seite, dann der Feinschliff.
+
+## [ ] U6 – Ein Bild je Briefing (Logik)
+
+Briefing-Bild, KI-Bild je Briefing, `post_image()` als einzige Quelle für Vorschau, Download und
+Karussell-Seite 1, Freigabe-Bindung, Migration der Demo-Daten. „Grafik aus Vorlage“ in die
+Info-Grafik überführen. Karussell je Briefing, auch für Facebook. Kampagnen: „Bild von Schritt 1
+übernehmen“.
+
+**Akzeptanz:** Tests (Fake-Anbieter) für Bildwahl, gerendertes Beitragsbild je Kanalformat,
+Kennzeichnung, Einwilligung, Hinweise vor dem Erzeugen, Kostenbremse je Briefing, Karussell für
+Instagram und Facebook, Übernahme von Schritt 1 (Kopie, Fakten aus dem eigenen Briefing),
+Migration und Löschkonzept; bestehende Tests angepasst und grün.
+
+## [ ] U7 – Briefing-Seite als Ablauf
+
+Kopf, Reiter je Kanal, Schritte ①–④, Checkliste „Noch offen“, sticky Vorschau, neue Komponenten
+in `_ui.html` und auf `/design` (`ui.tabs`, `ui.step`, `ui.choice_cards`, `ui.toggle`,
+`ui.popover`, `ui.checklist`, `ui.chips`, `ui.dropzone`, `ui.thumb_grid`, `ui.sticky_footer`),
+Live-Vorschau per HTMX.
+
+**Akzeptanz:** Tests der Routen und Teil-Templates; Screenshots Laptop und Tablet
+(`scripts/screenshots.cjs`, Abschnitt U7) im PR; a11y-Prüfung ohne Verstöße.
+
+## [ ] U8 – Feinschliff und Usability-Test
+
+Bewegung, Ladezustände, Toasts, Fokusführung, Texte. Usability-Test mit mindestens einer Person,
+die die App nicht kennt; sie bekommt nur die Aufgaben (kein Hinweis auf Knöpfe):
+
+1. „Mach aus diesem Briefing einen Instagram-Beitrag mit eigenem Foto und der Überschrift
+   ‚Starker Rücken‘ auf dem Bild.“
+2. „Lass die KI ein anderes Bild erzeugen und nimm das.“
+3. „Ändere den Text so, dass er kürzer ist.“
+4. „Gib den Beitrag frei.“ (inklusive offener Hinweise)
+5. „Lade Bild und Text für Instagram herunter.“
+
+Ziel: alle Aufgaben ohne Hilfe, jede in unter zwei Minuten; die Person kann jederzeit sagen, was
+gepostet würde (zeigt auf die Vorschau).
+
+**Akzeptanz:** alle fünf Aufgaben ohne Hilfe gelöst; Messung, Befunde und Anpassungen im PR.
 
 ---
 

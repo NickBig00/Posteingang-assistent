@@ -111,6 +111,9 @@ Ruhig, modern und übersichtlich, damit die Mitarbeitenden im Büro im Alltag ge
 - **Responsiv:** gut nutzbar auf Laptop und Tablet
 - **Barrierefreiheit:** ausreichende Kontraste, sichtbarer Fokus, bedienbar per Tastatur
 - **KI-Kennzeichnung** überall gleich gestaltet und gut sichtbar
+- **Abläufe statt Formularsammlungen:** Seiten folgen der Reihenfolge der Arbeit (z. B. Social Media: Text → Bild → Prüfen → Veröffentlichen, `docs/SPEC_social.md` 8.1); was noch fehlt, steht in einer kurzen Checkliste
+- **Raum statt Rahmen:** nummerierte Schritte mit viel Weißraum und feiner Linie links statt vieler Karten; höchstens drei Schriftgrößen je Spalte (Schritt-Überschrift 18 px, Text 15–16 px, Hilfe 13 px)
+- **Flüssig:** kleine Schritte ohne Seiten-Neuladung (HTMX), Übergänge 150–200 ms, `prefers-reduced-motion` wird respektiert; Ladezustände als Platzhalter genau dort, wo das Ergebnis erscheint; kurze Toasts für erledigte Aktionen, Fehler direkt am Feld; sinnvolle Fokusführung nach Aktionen
 
 ### 10.3 Review
 

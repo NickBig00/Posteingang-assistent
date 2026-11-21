@@ -114,10 +114,12 @@ Regeln:
 - `Campaign` (optional): Name, Zeitraum, zugehörige Briefings
 - `PostDraft`: Briefing-Bezug, Kanal, Text, Hashtags, Status, geplanter Termin, als KI-Vorschlag gekennzeichnet
 - `CheckResult`: Entwurf-Bezug, Prüfung, Ergebnis (`ok`/`warning`/`error`), Begründung, Textstelle
-- `Asset`: hochgeladenes Bild, Einwilligung bestätigt ja/nein, durch wen, wann; Kennzeichen `ai_generated` bzw. `ai_edited` und bei KI-Bearbeitung `source_asset_id` (Original, Abschnitt 13.6)
-- `GraphicText` (Abschnitt 14.1): Texte der Info-Grafik je Briefing, optional kürzerer Story-Text; KI-Vorschlag ja/nein, von Mensch bearbeitet; Prüfergebnisse wie `CheckResult`
+- `Asset`: hochgeladenes Bild, Einwilligung bestätigt ja/nein, durch wen, wann; Kennzeichen `ai_generated` bzw. `ai_edited` und bei KI-Bearbeitung `source_asset_id` (Original, Abschnitt 13.6); bei Übernahme aus einem anderen Briefing `copied_from_asset_id`
+- `BriefingImage` (Abschnitt 14.3): **ein Bild je Briefing** für alle Kanäle: Quelle (`upload` | `ai` | `color`), gewähltes `Asset`, „Text aufs Bild“ ja/nein, wer, wann
+- `InfoGraphic` (Abschnitt 14.1): Texte der Info-Grafik („Text aufs Bild“) je Briefing, optional kürzerer Story-Text, Gestaltung, gewählte Fakten; KI-Vorschlag ja/nein, von Mensch bearbeitet; Prüfergebnisse wie `CheckResult`
+- `ImageProposal`, `PromptHint`, `ImageCandidate` (Abschnitt 13): Bild-Prompt, Hinweise und Varianten **je Briefing** (`draft_id` nur noch bei Altdaten)
 - `RevisionRequest` (Abschnitt 13.8): Ziel (Entwurf, Grafiktext, Bild-Prompt, Bild), Anweisung, Ersteller, Zeitpunkt
-- `CarouselPage` (Abschnitt 14.2): Entwurf, Position, Art (Info-Grafik oder Bild), Verweis auf `GraphicText` bzw. `Asset`
+- `CarouselPage` (Abschnitt 14.2): Briefing, Position, Art (Beitragsbild, Info-Grafik oder Bild), Texte bzw. Verweis auf `Asset`; je Beitrag der Schalter `PostDraft.carousel_enabled`
 - Freigaben und Audit-Einträge über die bestehenden Strukturen in `core`
 
 ## 8. Oberfläche
@@ -125,9 +127,63 @@ Regeln:
 - **Social Media** als eigener Navigationspunkt
 - **Übersicht:** Entwürfe nach Status, Ampel aus den Prüfungen
 - **Neues Briefing:** Formular mit Anlass-Typ, Stichpunkten, Fakten, Kanälen, Bild
-- **Entwurf-Detail:** Briefing links, Entwürfe je Kanal rechts mit markierten Prüfergebnissen; Bearbeiten, Freigeben, Verwerfen; Text kopieren
+- **Briefing-Seite als Ablauf** (Abschnitt 8.1): Reiter je Kanal, Schritte ① Text → ② Bild → ③ Prüfen und freigeben → ④ Veröffentlichen, immer sichtbare Vorschau des fertigen Beitrags
 - **Kalender:** Wochen- und Monatsansicht der geplanten Beiträge
 - **Export:** Text kopieren, Beitrag als Textdatei, Kalender als `.ics`
+
+### 8.1 Briefing-Seite als Ablauf
+
+Ergebnis des Praxistests nach B4–B9 (November 2026): Die alte Briefing-Seite hatte vier Stellen für
+ein Bild, zwei fast gleiche Grafik-Bereiche, eine Vorschau, die nicht das Gepostete zeigte, und
+keine Übersicht über das, was noch fehlt. Ziel: Wer die App zum ersten Mal sieht, erstellt ohne
+Erklärung einen fertigen Beitrag mit Bild und Text und weiß jederzeit, was gepostet wird und was
+noch fehlt. Die Seite wirkt ruhig, modern und flüssig.
+
+**Grundsätze** (im Zweifel weglassen oder einklappen):
+
+1. **Der Ablauf ist die Seite:** Text → Bild → Prüfen und Freigeben → Veröffentlichen. Außerhalb
+   davon stehen nur Briefing-Daten und Audit.
+2. **Ein Bild je Briefing** für alle Kanäle (Abschnitt 14.3).
+3. **Was du siehst, wird gepostet:** eine immer sichtbare Vorschau zeigt fertiges Bild (mit Text,
+   falls gewählt) und Beitragstext; Download und Freigabe beziehen sich genau darauf.
+4. **Eine Frage pro Schritt** („Welches Bild?“, „Text aufs Bild?“) statt Fachbegriffe.
+5. **Immer klar, was fehlt:** Checkliste „Noch offen“; jeder Punkt springt an die Stelle.
+6. **Fortgeschrittenes eingeklappt:** Bild-Prompt, Faktenauswahl, Story-Text, Gestaltung,
+   Karussell, Audit, Löschen.
+7. **Keine Seiten-Neuladung für kleine Schritte:** HTMX-Teilbereiche, Ladeanzeige genau dort, wo
+   das Ergebnis erscheint.
+8. **Kennzeichnung sichtbar, aber dezent** über `ui.ai_badge()`.
+9. **Deutsch, kurz, freundlich:** Hilfetexte höchstens ein Satz, lieber gute Platzhalter.
+
+**Aufbau:**
+
+- **Kopf:** Anlass, Bereich, Datum, Uhrzeit, Ort; „Briefing anzeigen“ (eingeklappt: Stichpunkte,
+  Fakten, Kanäle, Wunschtermin); Menü „⋯“ mit Audit-Verlauf und „Briefing löschen“.
+- **Reiter je Kanal** mit Status-Symbol (`●` offen, `!` Fehler/manuelle Bearbeitung, `✓`
+  freigegeben, `◷` geplant, `✓✓` veröffentlicht, durchgestrichen verworfen); der Reiter bleibt
+  über das URL-Fragment (`#instagram_post`) aktiv; Pfeiltasten wechseln (WAI-ARIA-Tabs).
+- **Checkliste „Noch offen“:** die Freigabe-Blocker plus „Bild wählen“ (nur Hinweis, ein Beitrag
+  ohne Bild bleibt möglich); sonst grüne Zeile „Bereit zur Freigabe“.
+- **① Text:** Beitragstext direkt editierbar, „Speichern“ nur bei Änderungen aktiv; Hashtags als
+  Chips; „✨ Anders formulieren …“ (13.8) als Popover; Badge „KI-Vorschlag“ bzw. „von Mensch
+  bearbeitet“. Ohne Text: Platzhalter „Die KI hat keinen Text geliefert – schreib ihn hier selbst.“
+- **② Bild** (für das ganze Briefing, in jedem Reiter gleich): Frage „Welches Bild?“ mit den Karten
+  **Eigenes Foto** (Upload, danach die Fragen „Personen zu sehen?“ und „Einwilligung liegt vor?“,
+  Kacheln der Fotos, „✨ Mit KI bearbeiten …“), **KI-Bild** (Feld „Was soll zu sehen sein?“,
+  Hinweise direkt darunter, „Bilder erzeugen“ erst nach Bestätigung aller Hinweise, Varianten als
+  Kacheln), **Farbfläche** und in Kampagnen ab Schritt 2 **„Wie Schritt 1“** (Abschnitt 14.3).
+  Frage „Text aufs Bild?“ (Standard: Ja bei Farbfläche, sonst Nein); bei Ja die Felder der
+  Info-Grafik kompakt (nur die Überschrift ist Pflicht), „✨ Text vorschlagen“, Live-Vorschau beim
+  Tippen. „Mehr“: Gestaltung, Fakten auf dem Bild, Story-Text, „Mehrere Bilder (Karussell)“.
+- **③ Prüfen und freigeben:** eine Liste aller Prüfergebnisse von Beitragstext, Bildtext,
+  Bild-Hinweisen, Einwilligungen und Karussell (Fehler → offene Warnungen → bestätigt → ok
+  eingeklappt), Bestätigen direkt am Punkt; der Hinweis zu Gesundheitswerbung als eine Zeile
+  darüber. „Freigeben“ unter der Vorschau (mobil im fixierten Fuß), nur aktiv, wenn nichts offen ist.
+- **④ Veröffentlichen** (nach der Freigabe): „Text kopieren“, „Bild herunterladen“ (gerendertes
+  Beitragsbild bzw. ZIP beim Karussell; KI-Kennzeichnungshinweis am Knopf), „Termin planen“,
+  „eingeplant (extern)“, „Als veröffentlicht markieren“.
+- **Laptop:** Schritte links, Vorschau rechts (sticky). **Tablet/schmal:** eine Spalte, Vorschau
+  oben als kompakte Karte, „Freigeben“ im fixierten Fuß.
 
 ## 9. Qualitätsmessung
 
@@ -177,11 +233,11 @@ Zu einem Beitrag optional passende Bilder erzeugen: Stimmungs- und Hintergrundbi
 
 ### 13.3 Ablauf
 
-1. Im Entwurf auf „Bild vorschlagen“ klicken.
+1. Im Schritt „Bild“ die Karte „KI-Bild“ wählen (das Bild gilt für das ganze Briefing, Abschnitt 14.3).
 2. Das LLM formuliert aus Briefing und Bildstil des Markenprofils einen Bild-Prompt. Der Prompt ist in der Oberfläche sichtbar und bearbeitbar.
 3. Es werden 2–3 Varianten im gewählten Format erzeugt (1:1, 4:5, 9:16 für Stories).
 4. Der Mensch wählt eine Variante, erzeugt neu oder verwirft.
-5. Das gewählte Bild wird dem Beitrag zugeordnet und mit dem Beitrag freigegeben.
+5. Das gewählte Bild wird das Bild des Briefings und mit jedem Beitrag freigegeben.
 
 ### 13.4 Bildstil im Markenprofil
 
@@ -198,7 +254,7 @@ Prüfungen helfen dabei; sie blockieren nur, wo es unten ausdrücklich steht.
 - **Keine Nachbildung echter, erkennbarer Personen** (Mitarbeitende, Mitglieder, Prominente).
 - **Kennzeichnung:** KI-Bilder werden gespeichert mit Kennzeichen „KI-generiert“, in der Oberfläche als solche markiert. Beim Download erscheint der Hinweis, das Bild beim Posten als KI-generiert zu kennzeichnen.
 - **Audit:** Bild-Prompt, Modell, Parameter, Anzahl Varianten und Kosten-Schätzung je Erzeugung; Bestätigungen von Hinweisen ebenso.
-- **Kostenbremse:** maximale Anzahl Erzeugungen pro Beitrag und pro Tag, konfigurierbar.
+- **Kostenbremse:** maximale Anzahl Erzeugungen und KI-Bearbeitungen **je Briefing** (`IMAGE_MAX_PER_POST`, Scope `briefing:{id}`) und pro Tag, konfigurierbar.
 - **Löschkonzept:** Erzeugte Bilder werden wie hochgeladene Bilder behandelt (Aufbewahrung, Löschen, Audit nur mit Hashes).
 
 **Hinweise, die ein Mensch vor der Freigabe bestätigt** (Bestätigung im Audit-Log):
@@ -252,32 +308,45 @@ Reihenfolge bei Bild-Prompts: **erst bestätigen, dann erzeugen, dann freigeben.
 - **Fehlermeldungen:** Die Oberfläche und das Audit zeigen den echten Grund einer Ablehnung durch den Anbieter (z. B. unbekanntes Modell, Abrechnungslimit, Inhaltsfilter); „nicht erreichbar“ nur bei Verbindungsfehlern. API-Schlüssel erscheinen nie in Meldungen.
 - **Ungültiger API-Schlüssel** (z. B. Nicht-ASCII-Zeichen aus einem Platzhalter) führt nicht zu einem Serverfehler, sondern zu einer klaren Meldung.
 - **Modellname:** `.env.example` und README nennen kein festes Modell, sondern beschreiben, wie man die verfügbaren Modelle abfragt. Die Parameter der Anfrage (Qualität, Größe, Anzahl) werden gegen das aktuelle Modell geprüft.
-- **Bedienung:** Unter „Hintergrund“ der Grafik führt ein Link „KI-Bild erzeugen“ bzw. „Foto mit KI bearbeiten“ zur passenden Stelle. Der Wunschtermin im Briefing-Formular ist kurz erklärt (nur Orientierung, kein Kalendertermin).
+- **Bedienung:** KI-Bild und „Foto mit KI bearbeiten“ stehen im Schritt „Bild“ (Abschnitt 8.1). Der Wunschtermin im Briefing-Formular ist kurz erklärt (nur Orientierung, kein Kalendertermin).
 
-## 14. Grafiken aus Vorlagen
+## 14. Grafiken mit Text („Text aufs Bild“)
 
-- Deterministische Grafiken mit Text (Kursankündigung, Aktion, Öffnungszeiten, Veranstaltung): Hintergrund (eigenes Foto, KI-Bild oder Farbfläche) plus Logo, Markenfarben, Schrift und Fakten aus dem Briefing
+- Die frühere „Grafik aus Vorlage“ ist in der Info-Grafik aufgegangen (Abschnitt 14.1): mit nur Überschrift und Fakten entspricht sie der alten Vorlage. Es gibt keinen eigenen Bereich und keinen eigenen Download mehr.
+- Deterministische Grafiken mit Text: Hintergrund (eigenes Foto, KI-Bild oder Farbfläche) plus Logo, Markenfarben, Schrift und Fakten aus dem Briefing
 - Rendering per Code (z. B. Pillow oder HTML→PNG), kein LLM
 - Vorlagen je Anlass-Typ, Farben und Schrift aus dem Markenprofil
 - Text in der Grafik muss exakt den Fakten aus dem Briefing entsprechen (Prüfung analog zur Faktenprüfung)
 - Formate 1:1, 4:5, 9:16; Export als JPEG
 - Markenprofil, Abschnitt `design:`: `primary_color`, `accent_color` (Hex), `font` (mitgelieferte Schrift Inter) und optional `logo` (Dateiname einer PNG- oder JPG-Datei neben dem Markenprofil; ohne Logo erscheint der Markenname als Schriftzug)
-- Die Vorschau ist jederzeit sichtbar; der Download ist erst möglich, wenn mindestens ein Beitrag des Briefings freigegeben ist
+- Die Vorschau ist jederzeit sichtbar; heruntergeladen wird das gerenderte Beitragsbild je Beitrag, erst nach dessen Freigabe (Abschnitt 14.3)
 - Vorlagen ohne Überschrift zeigen den Anlass nur einmal; welche Fakten in die Grafik kommen, ist auswählbar (mindestens einer, sofern das Briefing Fakten hat); im Hochformat mit Farbfläche nutzt der Textblock den Raum besser
 
 ### 14.1 Info-Grafik
 
-- Vorlage **„Info-Grafik“** neben den bestehenden Vorlagen: Überschrift, Unterzeile, Einleitung (1–2 Sätze), Aufzählung (3–6 Punkte, als ✓-Liste), Schlusssatz, darunter automatisch die Fakten aus dem Briefing (Datum, Uhrzeit, Ort, Preis …).
+- **Info-Grafik** („Text aufs Bild“): Überschrift (Pflicht), optional Unterzeile, Einleitung (1–2 Sätze), Aufzählung (bis 6 Punkte, als ✓-Liste) und Schlusssatz, darunter automatisch die gewählten Fakten aus dem Briefing (Standard: alle).
 - Die Texte können **vom Menschen geschrieben** oder **von der KI vorgeschlagen** werden (Knopf „Text für Grafik vorschlagen“, Grundlage: Briefing und Beitragsentwurf). KI-Vorschläge sind als KI-Vorschlag gekennzeichnet und frei bearbeitbar; per Anweisung überarbeitbar (13.8).
 - Gezeichnet wird **per Code** über dem Hintergrund (eigenes Foto, KI-bearbeitetes Foto, KI-Bild oder Farbfläche), mit halbtransparenter Fläche für Lesbarkeit. Bei viel Text wird die Schrift kleiner; zu viel Text wird mit Meldung abgelehnt statt abgeschnitten.
 - Formate 1:1, 4:5, 9:16. Gestaltungsvarianten als Auswahl: Text zentriert, Text in Farbfeld unten, Foto oben/Text unten.
 - Die **Fakten** bleiben deterministisch und werden exakt geprüft (keine anderen Daten, Uhrzeiten, Preise, Telefonnummern im Grafiktext).
-- Die übrigen Texte laufen durch dieselben Prüfungen wie Beiträge (Gesundheitsversprechen, verbotene Begriffe, Personen, Anrede); Ergebnis als Hinweise, die der Mensch vor dem Download bestätigt; Fehler (Fakten, Mitgliedernamen ohne Einwilligung, Heilversprechen in sensiblen Bereichen) verhindern die Grafik.
+- Die übrigen Texte laufen durch dieselben Prüfungen wie Beiträge (Gesundheitsversprechen, verbotene Begriffe, Personen, Anrede); Ergebnis als Hinweise, die der Mensch vor der Freigabe des Beitrags bestätigt; Fehler (Fakten, Mitgliedernamen ohne Einwilligung, Heilversprechen in sensiblen Bereichen) verhindern die Grafik.
 - **Pflege der Texte:** ein Grafiktext **je Briefing** für alle Kanäle; für die **Story** kann optional ein kürzerer eigener Text hinterlegt werden (sonst gilt der Briefing-Text; passt er nicht ins 9:16-Format, kommt eine Meldung – nie abschneiden).
 
-### 14.2 Karussell-Beiträge für Instagram
+### 14.2 Karussell-Beiträge (Instagram und Facebook)
 
-- Ein Instagram-Beitrag kann aus **mehreren Seiten** bestehen (2–10), z. B. Seite 1 Titel mit Bild, Seite 2 Themen als ✓-Liste, Seite 3 Termin und Anmeldung.
+- Ein Instagram- oder Facebook-Beitrag kann aus **mehreren Seiten** bestehen (2–10), z. B. Seite 1 Titel mit Bild, Seite 2 Themen als ✓-Liste, Seite 3 Termin und Anmeldung.
+- Die Seiten gelten **für das Briefing**; je Beitrag schaltet „Mehrere Bilder“ das Karussell ein oder aus (nur Instagram-Beitrag und Facebook-Beitrag). Seite 1 ist standardmäßig das Beitragsbild (14.3). Die Prüfungen der Seiten blockieren die Freigabe jedes Beitrags, der das Karussell nutzt.
+- Darstellung in der Vorschau wie auf der Plattform: Instagram zum Durchwischen, Facebook als Bildraster (das erste Bild bestimmt das Raster; Facebook schneidet die Bilder darin zu). Format beider Kanäle 4:5.
 - Jede Seite ist eine Info-Grafik oder ein Bild (eigenes Foto, KI-Bild, KI-bearbeitetes Foto); gleiche Prüfungen und Kennzeichnung je Seite; Fakten werden auf allen Seiten exakt geprüft.
 - Reihenfolge per Oberfläche änderbar; Vorschau als Karussell; Download als ZIP mit nummerierten JPEGs (`01.jpg`, `02.jpg`, …) im Format 4:5 oder 1:1, wie alle Downloads erst nach der Freigabe des Beitrags.
 - Die KI kann eine Seitenaufteilung aus Briefing und Beitragstext vorschlagen (KI-Vorschlag, bearbeitbar).
+
+### 14.3 Ein Bild je Briefing und gerendertes Beitragsbild
+
+- **Ein Bild je Briefing** für alle Kanäle; das Format wählt die App je Kanal (Instagram-Beitrag und Facebook 4:5, Story 9:16, LinkedIn 1:1, Abschnitt 12). Bilder je Kanal gibt es erst, wenn sie gebraucht werden.
+- Quelle: eigenes Foto (auch KI-bearbeitet), KI-Bild oder Farbfläche in Markenfarbe; dazu „Text aufs Bild“ ja/nein (Standard: Ja bei Farbfläche, sonst Nein). Eine Farbfläche ohne Text ist kein Beitragsbild.
+- **Das fertige Bild ist das Beitragsbild:** Mit Text ist es die Info-Grafik über dem gewählten Bild (bzw. der Farbfläche), sonst das gewählte Bild im Kanalformat. Eine einzige Funktion rendert es für Vorschau, Download und Karussell-Seite 1.
+- **Freigabe-Bindung:** Die Freigabe eines Beitrags verlangt, dass sein Beitragsbild (falls gesetzt) rendert und dessen Prüfungen erledigt sind (Bildtext, Hinweise zum KI-Bild bzw. zur KI-Bearbeitung, Einwilligung). Geprüft werden die Bilder, die der Beitrag nutzt (Beitragsbild, Karussell-Seiten), nicht jedes hochgeladene Foto. Download erst nach der Freigabe.
+- **Nach der ersten Freigabe ist das Bildmaterial fest:** Solange ein Beitrag des Briefings freigegeben, geplant oder veröffentlicht ist, lassen sich Bild, Text aufs Bild und Karussell nicht ändern (sonst änderte sich ein freigegebener Beitrag unbemerkt). Zum Ändern den Beitrag verwerfen und wieder öffnen.
+- **Kampagnen – „Wie Schritt 1“:** Ab Schritt 2 übernimmt ein Klick Bildquelle, Bild und – falls gewählt – den Text aufs Bild aus Schritt 1 als **Kopie** (danach unabhängig änderbar). Die Fakten kommen immer aus dem eigenen Briefing und werden wie immer geprüft; Hinweise zum übernommenen KI-Bild müssen erneut bestätigt werden. Einwilligungen gelten für dasselbe Foto weiter, ein Widerruf wirkt auf alle Briefings, die das Foto nutzen. Die Übernahme steht im Audit beider Briefings.
+- **Migration bestehender Demo-Daten:** Ist je Entwurf ein KI-Bild gewählt, wird das des ersten Entwurfs das Briefing-Bild; sonst das erste nutzbare hochgeladene Foto; sonst keins.
