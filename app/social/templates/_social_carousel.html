@@ -1,0 +1,119 @@
+{# Carousel of an Instagram post (SPEC_social 14.2): pages, order, preview, checks, ZIP. #}
+{% import "_ui.html" as ui %}
+{% set c = carousels.get(d.id) %}
+{% set editable = d.status.value in ("draft", "in_review", "needs_manual_review") %}
+{% set released = d.status.value in ("approved", "scheduled", "published") %}
+<div class="mt-4 rounded-lg border border-line p-4" id="carousel-{{ d.id }}" data-carousel>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h4 class="flex items-center gap-2 text-sm font-semibold">{{ ui.icon("image") }}Karussell (mehrere Seiten)
+      {% if c.light %}{% set light = c.light %}{% include "_light.html" %}{% endif %}</h4>
+    <span class="text-xs text-ink-subtle">{{ c.pages | length }} von höchstens {{ c.max_pages }} Seiten</span>
+  </div>
+  <p class="mt-1 text-xs text-ink-muted">Optional: Seiten aus Info-Grafiken und Bildern, z. B. Titel, Themen als ✓-Liste, Termin und Anmeldung. Wird mit dem Beitrag freigegeben.</p>
+
+  {% if editable %}
+  <form method="post" action="/social/drafts/{{ d.id }}/carousel/suggest" class="mt-2" data-loading="Seiten werden vorgeschlagen …"
+        {% if c.pages %}onsubmit="return confirm('Die bisherigen Seiten durch einen KI-Vorschlag ersetzen?')"{% endif %}>
+    <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon("sparkles") }}Seitenaufteilung vorschlagen</button>
+  </form>
+  {% endif %}
+
+  {% if c.pages %}
+  <ol class="mt-3 flex snap-x gap-3 overflow-x-auto pb-2" aria-label="Vorschau des Karussells" data-carousel-preview>
+    {% for item in c.pages %}{% set p = item.page %}
+    <li class="w-44 shrink-0 snap-start">
+      {% if item.problems %}
+      <div class="flex aspect-[4/5] items-center justify-center rounded-lg bg-red-50 p-2 text-center text-xs text-red-800 ring-1 ring-red-200">{{ item.problems | join(" ") }}</div>
+      {% else %}
+      <img src="/social/carousel-pages/{{ p.id }}.jpg?format=4:5" alt="Seite {{ loop.index }}: {{ item.texts.headline if p.kind == 'info' else 'Bild' }}" class="aspect-[4/5] w-full rounded-lg object-cover ring-1 ring-line" loading="lazy">
+      {% endif %}
+      <div class="mt-1 flex items-center justify-between gap-1 text-xs">
+        <span class="font-medium">Seite {{ loop.index }}</span>
+        {% if p.is_ai_suggestion and not p.edited_by_human %}{{ ui.ai_badge() }}{% endif %}
+        {% if loop.index in c.ai_pages %}<span class="badge badge-ai">KI-Bild</span>{% endif %}
+      </div>
+      {% if editable %}
+      <div class="mt-1 flex flex-wrap gap-1">
+        {% if not loop.first %}<form method="post" action="/social/carousel-pages/{{ p.id }}/move"><input type="hidden" name="direction" value="-1"><button type="submit" class="btn btn-ghost btn-sm px-2" aria-label="Seite {{ loop.index }} nach vorne">←</button></form>{% endif %}
+        {% if not loop.last %}<form method="post" action="/social/carousel-pages/{{ p.id }}/move"><input type="hidden" name="direction" value="1"><button type="submit" class="btn btn-ghost btn-sm px-2" aria-label="Seite {{ loop.index }} nach hinten">→</button></form>{% endif %}
+        <form method="post" action="/social/carousel-pages/{{ p.id }}/delete"><button type="submit" class="btn btn-ghost btn-sm px-2 text-red-700" aria-label="Seite {{ loop.index }} entfernen">{{ ui.icon("trash") }}</button></form>
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+
+  {% if editable %}
+  {% for item in c.pages %}{% set p = item.page %}
+  <details class="mt-2" id="page-{{ p.id }}">
+    <summary class="cursor-pointer text-sm font-medium">Seite {{ loop.index }} bearbeiten</summary>
+    <form method="post" action="/social/carousel-pages/{{ p.id }}" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
+      {% if p.kind == "info" %}
+      <label class="field sm:col-span-2">Überschrift <input type="text" name="headline" maxlength="60" value="{{ item.texts.headline }}" class="input mt-1"></label>
+      <label class="field sm:col-span-2">Unterzeile <input type="text" name="subline" maxlength="90" value="{{ item.texts.subline }}" class="input mt-1"></label>
+      <label class="field">Einleitung <textarea name="intro" rows="2" maxlength="260" class="input mt-1">{{ item.texts.intro }}</textarea></label>
+      <label class="field">Punkte (0–6, einer je Zeile) <textarea name="points" rows="3" class="input mt-1">{{ item.texts.points | join("\n") }}</textarea></label>
+      <label class="field">Schlusssatz <input type="text" name="closing" maxlength="140" value="{{ item.texts.closing }}" class="input mt-1"></label>
+      <label class="flex items-center gap-2 self-end text-sm"><input type="checkbox" class="checkbox" name="show_facts" value="true" {% if p.show_facts %}checked{% endif %}> Fakten aus dem Briefing auf dieser Seite</label>
+      {% endif %}
+      <label class="field">{{ "Hintergrund" if p.kind == "info" else "Bild" }}
+        <select name="asset" class="input mt-1">
+          {% if p.kind == "info" %}<option value="">Farbfläche in Markenfarbe</option>{% endif %}
+          {% for a in usable_assets %}<option value="{{ a.id }}" {% if p.asset_id == a.id %}selected{% endif %}>{{ ("KI-Bild" if a.ai_generated else ("KI-bearbeitet" if a.ai_edited else "Foto")) ~ " „" ~ a.filename | truncate(22, true, "…") ~ "“" }}</option>{% endfor %}
+        </select></label>
+      {% if p.kind == "info" %}
+      <label class="field">Gestaltung
+        <select name="variant" class="input mt-1">{% for key, label in info.variants.items() %}<option value="{{ key }}" {% if key == p.variant %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      {% else %}<input type="hidden" name="variant" value="{{ p.variant }}">{% endif %}
+      <div class="sm:col-span-2"><button type="submit" class="btn btn-secondary btn-sm">Seite speichern und prüfen</button></div>
+    </form>
+  </details>
+  {% endfor %}
+  {% endif %}
+  {% endif %}
+
+  {% if editable and c.pages | length < c.max_pages %}
+  <details class="mt-2" id="carousel-add-{{ d.id }}">
+    <summary class="btn btn-ghost btn-sm cursor-pointer">+ Seite hinzufügen</summary>
+    <form method="post" action="/social/drafts/{{ d.id }}/carousel/pages" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
+      <label class="field">Art
+        <select name="kind" class="input mt-1"><option value="info">Info-Grafik (Text)</option>{% if usable_assets %}<option value="image">Bild</option>{% endif %}</select></label>
+      <label class="field">Bild bzw. Hintergrund
+        <select name="asset" class="input mt-1"><option value="">Farbfläche (nur Info-Grafik)</option>
+          {% for a in usable_assets %}<option value="{{ a.id }}">{{ ("KI-Bild" if a.ai_generated else ("KI-bearbeitet" if a.ai_edited else "Foto")) ~ " „" ~ a.filename | truncate(22, true, "…") ~ "“" }}</option>{% endfor %}</select></label>
+      <label class="field sm:col-span-2">Überschrift (Info-Grafik) <input type="text" name="headline" maxlength="60" class="input mt-1"></label>
+      <label class="field">Punkte (0–6, einer je Zeile) <textarea name="points" rows="3" class="input mt-1"></textarea></label>
+      <label class="field">Schlusssatz <input type="text" name="closing" maxlength="140" class="input mt-1"></label>
+      <label class="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" class="checkbox" name="show_facts" value="true"> Fakten aus dem Briefing auf dieser Seite</label>
+      <input type="hidden" name="variant" value="zentriert">
+      <div class="sm:col-span-2"><button type="submit" class="btn btn-secondary btn-sm">Seite hinzufügen</button></div>
+    </form>
+  </details>
+  {% endif %}
+
+  {% if c.results %}
+  <div class="mt-3 border-t border-line pt-2">
+    <p class="text-sm font-semibold">Prüfungen der Seiten</p>
+    <ul class="mt-1 space-y-1 text-sm">
+      {% for r in c.results %}{% if r.outcome.value != "ok" %}{% set light = r.outcome.value %}
+      <li><span class="inline-flex flex-wrap items-baseline gap-x-2">{% with light_ok_label = "ok" %}{% include "_light.html" %}{% endwith %}
+        <span class="text-ink-subtle">{{ ("Seite " ~ r.page ~ " · ") if r.page else "" }}{{ check_labels.get(r.check_key, r.check_key) }}:</span> <span>{{ r.reason }}</span>
+        {% if r.is_ai_assessment %}{{ ui.ai_badge("KI-Einschätzung") }}{% endif %}</span>
+        {% if r.requires_confirmation or r.consent_required %}
+          {% if r.confirmed_at %}<span class="badge badge-ok">✓ bestätigt von {{ r.confirmed_by }}</span>
+          {% elif editable %}<form method="post" action="/social/carousel-checks/{{ r.id }}/confirm" class="ml-1 inline"><button type="submit" class="btn {{ 'btn-danger' if r.consent_required else 'btn-secondary border-amber-400' }} btn-sm">{{ "Einwilligung der Person liegt vor" if r.consent_required else "Geprüft – bestätigen" }}</button></form>{% endif %}
+        {% endif %}
+      </li>
+      {% endif %}{% endfor %}
+      {% if not (c.results | rejectattr("outcome.value", "equalto", "ok") | list) %}<li class="text-ink-subtle">✓ Fakten und Texte aller Seiten geprüft – keine Auffälligkeiten.</li>{% endif %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if released and c.pages | length >= 2 %}
+  <div class="mt-3 flex flex-wrap items-center gap-2" data-carousel-download>
+    {% for f in c.formats %}<a href="/social/drafts/{{ d.id }}/carousel.zip?format={{ f.value }}" class="btn btn-secondary btn-sm" download>{{ ui.icon("download") }}Karussell als ZIP ({{ f.value }})</a>{% endfor %}
+  </div>
+  {% if c.ai_pages %}<p class="mt-1 text-xs font-medium text-violet-800">Seite {{ c.ai_pages | join(", ") }} mit KI-Bild: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
+  {% endif %}
+</div>

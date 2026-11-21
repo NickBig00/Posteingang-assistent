@@ -90,6 +90,17 @@ der Person. Die gewählte Variante
 ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
 hochgeladenes Bild gelöscht.
 
+### Eigene Fotos mit KI bearbeiten (optional)
+
+Bei eingeschalteter Bildfunktion lässt sich ein hochgeladenes Foto per Anweisung bearbeiten
+(„Hintergrund heller“, „Auf 9:16 erweitern“ … oder eigene Worte). Ergebnis ist ein **neues Bild**
+mit Kennzeichen „KI-bearbeitet“; das Original bleibt. Über das Bild-Interface (`edit`, beim
+OpenAI-Anbieter `images.edit`) mit Schalter, Kostenbremse (Tageslimit über alle Bildaufrufe) und
+Audit (Anweisung als Hash). Fotos mit Personen nur mit bestätigter Einwilligung; Anweisungen, die
+Personen oder Ergebnisse verfälschen könnten (z. B. „schlanker“), geben einen Hinweis, der vor der
+Freigabe bestätigt werden muss. Ein Widerruf der Einwilligung gilt auch für alle bearbeiteten
+Versionen.
+
 ### Überarbeiten per Anweisung (Social Media)
 
 Bei Beitragstexten und KI-Bildern gibt es das Feld **„Was soll anders werden?“** (eigene Worte
@@ -107,6 +118,29 @@ LLM) eine Grafik je Anlass-Typ (Ankündigung, Aktion mit Preis, Hinweis, Standar
 Markenprofil und die Fakten aus dem Briefing. Vor dem Rendern prüft der Code: jeder Fakt genau
 einmal in Anzeige-Schreibweise, kein anderes Datum, keine andere Uhrzeit, kein anderer Preis,
 keine andere Telefonnummer, keine verbotenen Begriffe. Formate 1:1, 4:5, 9:16; Export als JPEG.
+
+### Info-Grafik (Social Media)
+
+Je Briefing eine **Info-Grafik**: Überschrift, Unterzeile, Einleitung, ✓-Liste (3–6 Punkte) und
+Schlusssatz über einem Foto, KI-Bild oder einer Farbfläche; darunter setzt der Code die
+ausgewählten Fakten des Briefings. Die Texte schreibt ein Mensch oder die KI schlägt sie vor
+(„Text für Grafik vorschlagen“, `prompts/social/graphic_text_v1.md`; Fakten werden vor dem Senden
+maskiert); sie laufen durch dieselben Prüfungen wie Beiträge. Fremde Daten, Uhrzeiten, Preise oder
+Telefonnummern im Text sind Fehler, Warnungen müssen vor dem Download bestätigt werden.
+Gestaltung „Text zentriert“, „Text in Farbfeld unten“ oder „Foto oben, Text unten“; Formate 1:1,
+4:5, 9:16 (optional mit kürzerem Story-Text). Die Schrift wird bei viel Text kleiner; was
+trotzdem nicht passt, wird mit Meldung abgelehnt, nie abgeschnitten. Beispielgrafiken:
+`uv run python scripts/example_graphics.py`.
+
+### Karussell-Beiträge (Instagram)
+
+Ein Instagram-Beitrag kann aus 2–10 Seiten bestehen: Info-Grafik-Seiten (eigene Texte,
+optional Hintergrundbild und Faktenblock) oder Bilder des Briefings. „Seitenaufteilung
+vorschlagen“ liefert einen KI-Vorschlag (`prompts/social/carousel_plan_v1.md`, ohne Fakten),
+der frei bearbeitbar ist. Reihenfolge per Pfeil, Vorschau als Bildleiste. Jede Seite wird
+geprüft (Fakten exakt, keine fremden Daten, verbotene Begriffe, Gesundheitsversprechen,
+Personen, Anrede, Einwilligung bei Bildern); Fehler und unbestätigte Warnungen blockieren die
+Freigabe des Beitrags. Nach der Freigabe: Download als ZIP mit `01.jpg`, `02.jpg`, … in 4:5 oder 1:1.
 
 ### Module ein- und ausschalten
 

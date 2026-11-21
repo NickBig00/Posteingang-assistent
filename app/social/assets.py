@@ -56,9 +56,32 @@ def usable_assets(session: Session, briefing_id: int) -> list[Asset]:
     return [a for a in briefing_assets(session, briefing_id) if is_usable(a)]
 
 
+def derived_assets(session: Session, asset: Asset) -> list[Asset]:
+    """All images edited with AI from `asset`, also indirectly (an edit of an edit)."""
+    result: list[Asset] = []
+    seen: set[int | None] = {asset.id}
+    frontier = [asset.id]
+    while frontier:
+        children = [
+            child
+            for child in session.exec(
+                select(Asset).where(col(Asset.source_asset_id).in_(frontier))
+            ).all()
+            if child.id not in seen
+        ]
+        seen |= {child.id for child in children}
+        result += children
+        frontier = [child.id for child in children]
+    return result
+
+
 def consent_blockers(session: Session, briefing_id: int) -> list[str]:
     blockers = []
     for asset in briefing_assets(session, briefing_id):
+        if asset.edit_hint and asset.edit_hint_confirmed_at is None and is_usable(asset):
+            blockers.append(
+                f"Hinweis zum KI-bearbeiteten Bild „{asset.filename}“ noch nicht bestätigt."
+            )
         if asset.consent_revoked_at is not None:
             blockers.append(
                 f"Für Bild „{asset.filename}“ wurde die Einwilligung widerrufen – Bild entfernen."
@@ -184,6 +207,15 @@ def revoke_consent(session: Session, asset: Asset, user: str) -> Revocation:
         elif draft.status is PostStatus.PUBLISHED:
             published.append(draft)
     _remove_file(session, asset.stored_path, exclude_id=asset.id)
+    # AI-edited versions show the same people: the withdrawal applies to them as well.
+    derived = derived_assets(session, asset)
+    for child in derived:
+        child.consent_confirmed = False
+        child.consent_revoked_by, child.consent_revoked_at = user, utcnow()
+        session.add(child)
+    session.commit()
+    for child in derived:
+        _remove_file(session, child.stored_path, exclude_id=child.id)
     write_human_audit_entry(
         session,
         item_id=None,
@@ -194,6 +226,7 @@ def revoke_consent(session: Session, asset: Asset, user: str) -> Revocation:
             "asset_id": asset.id,
             "back_to_review": [d.id for d in back],
             "published": [d.id for d in published],
+            "derived_assets": [c.id for c in derived],
         },
     )
     return Revocation(back_to_review=back, published=published)

@@ -8,7 +8,13 @@ from app.core.llm.prompts import PROMPTS_DIR, PromptTemplate, load_prompt
 from app.social.channels import CHANNEL_SPECS
 from app.social.facts import FACT_LABELS, BriefingFacts, FactKey, formatted_facts
 from app.social.llm import fake_heuristics as _fake_heuristics  # noqa: F401 - offline demo
-from app.social.llm.schemas import AssessmentOutput, DraftOutput, ImagePromptOutput
+from app.social.llm.schemas import (
+    AssessmentOutput,
+    CarouselPlanOutput,
+    DraftOutput,
+    GraphicTextOutput,
+    ImagePromptOutput,
+)
 from app.social.models import CHANNEL_LABELS, Channel
 from app.social.profiles import ADDRESS_FORM_LABELS, SocialConfig
 
@@ -19,6 +25,9 @@ PROMPT_VERSIONS: dict[LLMTask, str] = {
     "image_prompt": "v1",
     "post_revise": "v1",
     "image_prompt_revise": "v1",
+    "graphic_text": "v1",
+    "graphic_text_revise": "v1",
+    "carousel_plan": "v1",
 }
 
 
@@ -197,4 +206,76 @@ class SocialLLMClient:
             mood=style.mood if style else config.brand.area(area_key).tone,
             motifs=style.motifs if style else "passend zum Anlass",
             exclusions=style.exclusions if style else [],
+        )
+
+    def graphic_text(
+        self,
+        config: SocialConfig,
+        *,
+        area_key: str,
+        occasion_key: str,
+        notes: str,
+        post_text: str,
+    ) -> LLMCall[GraphicTextOutput]:
+        """Texts for the info graphic from key points and post draft (no facts are sent)."""
+        brand = config.brand
+        area = brand.area(area_key)
+        return self._structured(
+            "graphic_text",
+            GraphicTextOutput,
+            brand_name=brand.name,
+            area_label=area.label,
+            tone=area.tone,
+            address_form_label=ADDRESS_FORM_LABELS[area.address_form],
+            forbidden_terms=brand.forbidden_terms,
+            occasion_label=config.industry.occasion_type(occasion_key).label,
+            notes=notes,
+            post_text=post_text,
+        )
+
+    def revise_graphic_text(
+        self,
+        config: SocialConfig,
+        *,
+        area_key: str,
+        texts: dict[str, object],
+        instruction: str,
+    ) -> LLMCall[GraphicTextOutput]:
+        """New version of the info graphic texts following a person's instruction."""
+        brand = config.brand
+        area = brand.area(area_key)
+        return self._structured(
+            "graphic_text_revise",
+            GraphicTextOutput,
+            brand_name=brand.name,
+            tone=area.tone,
+            address_form_label=ADDRESS_FORM_LABELS[area.address_form],
+            forbidden_terms=brand.forbidden_terms,
+            instruction=instruction,
+            **texts,
+        )
+
+    def carousel_plan(
+        self,
+        config: SocialConfig,
+        *,
+        area_key: str,
+        occasion_key: str,
+        notes: str,
+        post_text: str,
+    ) -> LLMCall[CarouselPlanOutput]:
+        """Suggested split into carousel pages (no facts are sent; code adds them)."""
+        brand = config.brand
+        area = brand.area(area_key)
+        return self._structured(
+            "carousel_plan",
+            CarouselPlanOutput,
+            brand_name=brand.name,
+            area_label=area.label,
+            tone=area.tone,
+            address_form_label=ADDRESS_FORM_LABELS[area.address_form],
+            forbidden_terms=brand.forbidden_terms,
+            occasion_label=config.industry.occasion_type(occasion_key).label,
+            notes=notes,
+            post_text=post_text,
         )

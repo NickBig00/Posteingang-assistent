@@ -15,10 +15,12 @@
         <label class="field font-medium">Hintergrund
           <select name="graphic_background" class="input mt-1">
             <option value="color" {% if graphic.background == "color" %}selected{% endif %}>Farbfläche in Markenfarbe</option>
-            {% for a in usable_assets %}<option value="{{ a.id }}" {% if graphic.background == a.id | string %}selected{% endif %}>{{ "KI-Bild (KI-generiert)" if a.ai_generated else "Foto „" ~ a.filename ~ "“" }}</option>{% endfor %}
+            {% for a in usable_assets %}<option value="{{ a.id }}" {% if graphic.background == a.id | string %}selected{% endif %}>{{ "KI-Bild (KI-generiert)" if a.ai_generated else ("KI-bearbeitet „" ~ a.filename ~ "“" if a.ai_edited else "Foto „" ~ a.filename ~ "“") }}</option>{% endfor %}
           </select>
           <span class="mt-1 flex flex-wrap gap-x-3 text-xs font-normal" data-background-links>
             <a href="#bilder" class="text-brand-text underline">Foto hochladen</a>
+            {% set photos = usable_assets | rejectattr("ai_generated") | list %}
+            {% if images_enabled and photos %}<a href="#photo-edit-{{ photos[0].id }}" class="text-brand-text underline">Foto mit KI bearbeiten</a>{% endif %}
             {% if images_enabled and drafts %}<a href="#images-{{ drafts[0].id }}" class="text-brand-text underline">KI-Bild erzeugen (im Entwurf {{ channel_labels[drafts[0].channel] }})</a>{% endif %}
           </span></label>
         <label class="field font-medium sm:col-span-2">Überschrift <span class="font-normal text-ink-subtle">(optional, höchstens 40 Zeichen; sonst der Anlass)</span>
@@ -56,7 +58,7 @@
       {% else %}
       <p class="mt-3 text-xs text-ink-subtle" data-graphic-locked>Download nach der Freigabe eines Beitrags dieses Briefings.</p>
       {% endif %}
-      {% if graphic.ai_background %}<p class="mt-2 text-xs font-medium text-violet-800">Hintergrund ist KI-generiert: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
+      {% if graphic.ai_background %}<p class="mt-2 text-xs font-medium text-violet-800">Hintergrund mit KI erstellt bzw. bearbeitet: beim Posten als KI-generiert kennzeichnen.</p>{% endif %}
       {% endif %}
     </div>
   </div>
