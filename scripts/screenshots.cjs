@@ -106,6 +106,20 @@ const SHOTS = {
     ["briefing-tablet-oben", "/social/briefings/{briefing}#facebook", { viewport: TABLET }],
     ["design-system-ablauf", "/design", { selector: "section:has(#flow)" }],
   ],
+  U8: [
+    ["toast-freigegeben", "/social/briefings/{approved_briefing}?toast=freigegeben#instagram_post", {}],
+    ["ki-bild-ladezustand", "/social/briefings/{briefing}#ki-bild", {
+      before: async (page) => {
+        await page.evaluate(() => {
+          const skeleton = document.querySelector('[data-skeleton-for="ki-bild-form"]');
+          skeleton.hidden = false;
+          const old = skeleton.parentElement.querySelector("[data-skeleton-hide]");
+          if (old) old.hidden = true;
+          skeleton.scrollIntoView({ block: "center" });
+        });
+      },
+    }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.

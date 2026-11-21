@@ -32,6 +32,15 @@
     if (!form.matches("form[data-loading]") || event.defaultPrevented) return;
     const button = event.submitter || form.querySelector("button[type=submit], button:not([type])");
     form.setAttribute("aria-busy", "true");
+    // Placeholder exactly where the result will appear (e.g. three tiles for AI images).
+    if (form.id) {
+      const skeleton = document.querySelector('[data-skeleton-for="' + form.id + '"]');
+      if (skeleton) {
+        skeleton.hidden = false;
+        const old = skeleton.parentElement.querySelector("[data-skeleton-hide]");
+        if (old) old.hidden = true;
+      }
+    }
     if (button) {
       // Keep the clicked button's name/value in the request before disabling it.
       if (button.name) {
@@ -106,6 +115,12 @@
     if (target && !target.matches("[data-tab-target]")) {
       target.scrollIntoView({ block: "center" });
       target.classList.add("flash");
+      // Focus moves on to where the result is (e.g. the first new image after generating).
+      const next = Array.from(
+        target.querySelectorAll("button:not([disabled]), a[href], textarea, input:not([type=hidden])"),
+      ).find(function (el) { return el.offsetParent !== null; });
+      if (next) next.focus({ preventScroll: true });
+      else if (target.tabIndex >= 0) target.focus({ preventScroll: true });
     }
     tabs.addEventListener("click", function (event) {
       const tab = event.target.closest("[data-tab-target]");
@@ -232,9 +247,46 @@
     });
   }
 
+  // Toasts close by themselves after a few seconds (the close button stays).
+  function initToasts() {
+    document.querySelectorAll("[data-toast]").forEach(function (toast) {
+      setTimeout(function () { toast.remove(); }, 5000);
+    });
+    // The toast parameter is a one-off: keep it out of reloads and bookmarks.
+    if (location.search.indexOf("toast=") >= 0) {
+      const url = new URL(location.href);
+      url.searchParams.delete("toast");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+  }
+
+  // Live preview: dim the preview while a new image is rendered.
+  document.addEventListener("htmx:beforeRequest", function (event) {
+    if (event.target.matches("[data-live-form]")) document.body.classList.add("is-updating");
+  });
+  document.addEventListener("htmx:afterSettle", function () {
+    document.querySelectorAll("img[data-post-image]").forEach(function (img) {
+      if (img.complete) document.body.classList.remove("is-updating");
+      else img.addEventListener("load", function () { document.body.classList.remove("is-updating"); }, { once: true });
+    });
+  });
+
+  // A link into a hidden choice panel (e.g. #ki-bild after "Vorschlag von der KI") selects it.
+  function openChoiceOfHash() {
+    const hash = decodeURIComponent(location.hash.slice(1));
+    const target = hash && document.getElementById(hash);
+    const panel = target && target.closest("[data-choice-panel]");
+    if (!panel) return;
+    const scope = panel.closest("[data-choice-scope]") || document;
+    const radio = scope.querySelector('[data-choice][value="' + panel.dataset.choicePanel + '"]');
+    if (radio) radio.checked = true;
+  }
+
   function initFlow() {
-    initTabs();
+    initToasts();
+    openChoiceOfHash();
     document.querySelectorAll("[data-choice-cards]").forEach(syncChoice);
+    initTabs();
     initDirtyForms();
     initDropzones();
   }

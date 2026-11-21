@@ -22,7 +22,7 @@
 {%- endmacro %}
 
 {% macro image_box() -%}
-<div class="{{ ratios[fmt] }} relative w-full bg-surface-sunken">
+<div class="{{ ratios[fmt] }} relative w-full bg-surface-sunken" data-preview-frame>
   {% if has_image %}<img id="post-image-{{ d.id }}" src="{{ pi.src }}" alt="Beitragsbild {{ channel_labels[d.channel] }}" class="h-full w-full object-cover" data-post-image>
   {% if chosen_asset and (chosen_asset.ai_generated or chosen_asset.ai_edited) %}<span class="absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{{ ai_image_label if chosen_asset.ai_generated else ai_edited_label }}</span>{% endif %}
   {% else %}<div id="post-image-{{ d.id }}" class="flex h-full w-full flex-col items-center justify-center gap-1 p-4 text-center text-xs text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}{{ pi.problems[0] if pi.problems else "Noch kein Bild" }}</div>{% endif %}

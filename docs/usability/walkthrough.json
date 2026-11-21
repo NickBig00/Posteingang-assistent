@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Instagram-Beitrag mit eigenem Foto und Überschrift „Starker Rücken“ auf dem Bild",
+    "ok": true,
+    "clicks": 4,
+    "seconds": 3.779,
+    "error": ""
+  },
+  {
+    "name": "Die KI ein anderes Bild erzeugen lassen und nehmen",
+    "ok": true,
+    "clicks": 5,
+    "seconds": 7.144,
+    "error": ""
+  },
+  {
+    "name": "Den Text kürzer machen",
+    "ok": true,
+    "clicks": 2,
+    "seconds": 2.011,
+    "error": ""
+  },
+  {
+    "name": "Den Beitrag freigeben (mit offenen Hinweisen)",
+    "ok": true,
+    "clicks": 1,
+    "seconds": 1.614,
+    "error": ""
+  },
+  {
+    "name": "Bild und Text für Instagram herunterladen",
+    "ok": true,
+    "clicks": 2,
+    "seconds": 0.157,
+    "error": ""
+  }
+]
