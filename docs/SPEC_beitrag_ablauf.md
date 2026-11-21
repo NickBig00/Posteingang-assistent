@@ -72,6 +72,10 @@ Grundsätze (für jede Gestaltungsentscheidung gilt: im Zweifel weglassen oder e
 | E4 | **Reiter je Kanal** statt Entwürfe untereinander. | Vorschlag, vom Product Owner angenommen |
 | E5 | **Drei Schritte je Kanal**: ① Text, ② Bild, ③ Prüfen und Freigeben; danach ④ Veröffentlichen. Schritt ② ist für alle Kanäle gleich (E1) und wird in jedem Reiter angezeigt. | Vorschlag, vom Product Owner angenommen |
 | E6 | **Umsetzung erst in einer neuen Session**, nach diesem Dokument. | Product Owner |
+| E7 | **Keine Bilder je Kanal im Datenmodell vorbereiten.** Ein eigenes Bild je Kanal kommt erst, wenn es gebraucht wird. | Product Owner |
+| E8 | **Kampagnen: „Bild von Schritt 1 übernehmen“** gibt es (Abschnitt 6.4). | Product Owner |
+| E9 | **Mehrere Bilder je Beitrag für Instagram und Facebook** (Karussell aus B9 auch für Facebook), siehe Abschnitt 6.3. | Product Owner |
+| E10 | **„Text aufs Bild“** steht standardmäßig auf „Ja“ bei Farbfläche, sonst auf „Nein“. | Product Owner |
 
 ## 4. Neue Seitenstruktur (Briefing-Seite)
 
@@ -191,11 +195,26 @@ aller Reiter.
   Miniatur-Vorschauen statt Auswahlliste.
 - **Fakten auf dem Bild:** Kontrollkästchen je Fakt (Standard: alle).
 - **Story-Text** (kürzer, 9:16) – nur sichtbar, wenn der Kanal Story gewählt ist.
-- **Mehrere Seiten (Karussell)** – nur im Reiter Instagram-Beitrag (B9). Wird aktiviert,
-  ersetzt eine Seitenleiste die Einzelbild-Vorschau; Seite 1 ist standardmäßig das
-  Briefing-Bild.
+- **Mehrere Bilder (Karussell)** – in den Reitern Instagram-Beitrag und Facebook-Beitrag
+  (E9; Story und LinkedIn nicht). Wird es aktiviert, ersetzt eine Seitenleiste die
+  Einzelbild-Vorschau; Seite 1 ist standardmäßig das Briefing-Bild. Die Seiten gelten für
+  das Briefing (E1), ein- und ausschaltbar je Kanal. Die Vorschau zeigt sie so, wie die
+  Plattform sie darstellt: bei Instagram zum Durchwischen, bei Facebook als Bildraster
+  (Facebook zeigt mehrere Fotos in einem Beitrag als Raster bzw. Galerie; vor der Umsetzung
+  die aktuelle Darstellung und das empfohlene Format prüfen und im PR festhalten).
+  Download je Kanal als ZIP mit nummerierten JPEGs im Kanalformat.
 
-### 6.4 Was im Hintergrund gilt (Technik, unverändert in der Sache)
+### 6.4 Kampagnen: Bild von Schritt 1 übernehmen (E8)
+
+- In Briefings, die zu einer Kampagne gehören, bietet Frage 1 zusätzlich die Karte
+  **„Wie Schritt 1“** an (nur ab Schritt 2, nur wenn Schritt 1 ein Bild hat).
+- Übernommen werden Bildquelle, Bild und – wenn gewählt – der Text aufs Bild als
+  **Kopie** (danach unabhängig änderbar). Die Fakten kommen immer aus dem eigenen Briefing,
+  nie aus Schritt 1; sie werden wie immer geprüft.
+- Einwilligungen gelten weiter für dasselbe Foto; ein Widerruf wirkt auf alle Briefings,
+  die das Foto nutzen. Die Übernahme steht im Audit beider Briefings.
+
+### 6.5 Was im Hintergrund gilt (Technik, unverändert in der Sache)
 
 - Bildquellen, Kennzeichnung, Einwilligung, Kostenbremse, Hinweise, Audit und Löschkonzept
   wie in SPEC_social §13–14 und B4–B9.
@@ -236,7 +255,7 @@ aller Reiter.
 | „Grafik aus Vorlage“ (`_social_graphic.html`) | **entfällt** (E2); Info-Grafik mit nur Überschrift |
 | „Info-Grafik“ (`_social_info_graphic.html`) | ② „Text aufs Bild? Ja“ |
 | je Entwurf „KI-Bild“ (`_social_ai_images.html`) | ② „KI-Bild“ (einmal je Briefing, E1) |
-| je Entwurf „Karussell“ | ② „Mehr → Mehrere Seiten“ im Reiter Instagram |
+| je Entwurf „Karussell“ | ② „Mehr → Mehrere Bilder“ in den Reitern Instagram und Facebook |
 | je Entwurf Text, „Bearbeiten“, „Von KI überarbeiten lassen“ | ① Text |
 | je Entwurf „Prüfungen“ (`_social_checks.html`) | ③ gemeinsame Liste |
 | je Entwurf Aktionen (`_social_actions.html`) | ③ Freigeben/Verwerfen, ④ Veröffentlichen, Menü „⋯“ |
@@ -267,6 +286,12 @@ geschnitten (Teil-Templates je Schritt, damit HTMX sie einzeln austauschen kann)
   Beitragsbild (falls gesetzt) rendert und seine Prüfungen (Bildtext, Bild-Hinweise,
   Einwilligung) erledigt sind. Damit ersetzt die Freigabe die heutige eigene
   Download-Sperre der Info-Grafik (Download weiterhin erst nach Freigabe).
+- **Karussell je Briefing:** `CarouselPage` bekommt `briefing_id` als Bezug (Seiten gelten
+  für das Briefing); je Kanal ein Schalter „mehrere Bilder“ (z. B. Feld `carousel_enabled`
+  am `PostDraft`). Erlaubte Kanäle: Instagram-Beitrag und Facebook-Beitrag. Die Prüfungen
+  der Seiten blockieren die Freigabe jedes Beitrags, der das Karussell nutzt.
+- **Kampagnen:** Übernahme von Schritt 1 kopiert `BriefingImage` und `InfoGraphic`
+  (ohne Fakten) in das neue Briefing; Audit-Eintrag mit beiden Briefing-IDs.
 - **Migration:** `add_missing_columns` für neue Spalten; bestehende Demo-Daten: ist je
   Entwurf ein KI-Bild gewählt, wird das des ersten Entwurfs zum Briefing-Bild; sonst das
   erste nutzbare hochgeladene Foto; sonst keins. Alte „Grafik aus Vorlage“-Einstellungen
@@ -311,10 +336,12 @@ Reihenfolge: erst die Bild-Zuordnung (Logik), dann die neue Seite, dann der Fein
 ### [ ] U6 – Ein Bild je Briefing (Logik)
 Briefing-Bild (Abschnitt 10), KI-Bild je Briefing, `post_image()` als einzige Quelle für
 Vorschau, Download und Karussell-Seite 1, Freigabe-Bindung, Migration der Demo-Daten.
-„Grafik aus Vorlage“ in die Info-Grafik überführen.
+„Grafik aus Vorlage“ in die Info-Grafik überführen. Karussell je Briefing, auch für
+Facebook (E9). Kampagnen: „Bild von Schritt 1 übernehmen“ (E8).
 **Akzeptanz:** Tests (Fake-Anbieter) für Bildwahl, gerendertes Beitragsbild je Kanalformat,
 Kennzeichnung, Einwilligung, Hinweise vor dem Erzeugen, Kostenbremse je Briefing,
-Migration und Löschkonzept; bestehende Tests angepasst und grün.
+Karussell für Instagram und Facebook, Übernahme von Schritt 1 (Kopie, Fakten aus dem eigenen
+Briefing), Migration und Löschkonzept; bestehende Tests angepasst und grün.
 
 ### [ ] U7 – Briefing-Seite als Ablauf
 Kopf, Reiter je Kanal, Schritte ①–④, Checkliste „Noch offen“, sticky Vorschau, neue
@@ -351,13 +378,13 @@ was gepostet würde (zeigt auf die Vorschau). Messung und Beobachtungen im PR vo
 - Nur synthetische Daten im Repository; keine Daten an Dritte durch die Oberfläche
   (kein CDN, alles aus `/static`).
 
-## 15. Offene Fragen (vor oder während U6 klären)
+## 15. Entschiedene Fragen (Product Owner, November 2026)
 
-1. **Kanalspezifische Bilder später:** E1 gilt „erstmal“. Soll das Datenmodell schon jetzt
-   eine optionale Überschreibung je Kanal vorsehen (z. B. eigenes Bild für LinkedIn), ohne
-   sie in der Oberfläche anzubieten? Vorschlag: nein, erst bei Bedarf.
-2. **Kampagnen:** Jeder Kampagnenschritt ist ein eigenes Briefing und hat damit ein eigenes
-   Bild. Soll es „Bild von Schritt 1 übernehmen“ geben?
-3. **Facebook mit Karussell:** Facebook unterstützt ebenfalls mehrere Bilder. Vorerst nur
-   Instagram (wie B9)?
-4. **Standard „Text aufs Bild“:** Vorschlag „Ja“ bei Farbfläche, sonst „Nein“ (6.2). Passt das?
+1. **Bilder je Kanal im Datenmodell vorbereiten?** Nein, erst bei Bedarf (E7).
+2. **Kampagnen „Bild von Schritt 1 übernehmen“?** Ja (E8, Abschnitt 6.4).
+3. **Mehrere Bilder auch für Facebook?** Ja, für Instagram und Facebook (E9, Abschnitt 6.3);
+   die Darstellung auf Facebook (Raster statt Wischen) vor der Umsetzung prüfen.
+4. **Standard „Text aufs Bild“:** „Ja“ bei Farbfläche, sonst „Nein“ (E10).
+
+Weitere offene Punkte, die während der Umsetzung auftauchen, konservativ lösen und im PR als
+offene Frage markieren (CLAUDE.md).
