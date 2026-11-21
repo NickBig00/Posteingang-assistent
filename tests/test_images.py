@@ -115,6 +115,16 @@ class _BrokenProvider(ImageProvider):
     def generate(self, *, prompt: str, fmt: ImageFormat, count: int) -> ImageBatch:  # noqa: ARG002
         raise ImageProviderError("Zeitüberschreitung")
 
+    def edit(
+        self,
+        *,
+        image: bytes,  # noqa: ARG002
+        media_type: str,  # noqa: ARG002
+        instruction: str,  # noqa: ARG002
+        fmt: ImageFormat,  # noqa: ARG002
+    ) -> ImageBatch:
+        raise ImageProviderError("Zeitüberschreitung")
+
 
 def test_provider_error_is_audited_and_not_counted(session: Session, enabled: None) -> None:
     with pytest.raises(ImageProviderError):

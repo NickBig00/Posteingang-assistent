@@ -1,15 +1,25 @@
 {% import "_ui.html" as ui %}
+{% set asset_names = {} %}{% for a in assets %}{% set _ = asset_names.update({a.id: a.filename}) %}{% endfor %}
 <section class="card" id="bilder" aria-labelledby="images-title">
   <div class="card-header"><h2 class="card-title" id="images-title">Bilder</h2>{{ ui.badge(assets | length, "neutral") }}</div>
   <div class="card-body space-y-4">
     {% for a in assets %}
-    <div class="flex gap-3 border-b border-line pb-4 text-sm last:border-b-0 last:pb-0">
+    <div class="flex gap-3 border-b border-line pb-4 text-sm last:border-b-0 last:pb-0" id="asset-{{ a.id }}">
       {% if not a.consent_revoked_at %}<img src="/social/assets/{{ a.id }}" alt="Hochgeladenes Bild {{ a.filename }}" class="h-20 w-20 shrink-0 rounded-lg object-cover ring-1 ring-line">
       {% else %}<span class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}</span>{% endif %}
       <div class="min-w-0 space-y-1.5">
         <p class="flex flex-wrap items-center gap-2"><span class="truncate font-medium">{{ a.filename }}</span>
-          {% if a.ai_generated %}{{ ui.ai_badge(ai_image_label) }}{% endif %}</p>
+          {% if a.ai_generated %}{{ ui.ai_badge(ai_image_label) }}{% endif %}
+          {% if a.ai_edited %}{{ ui.ai_badge(ai_edited_label) }}{% endif %}</p>
         {% if a.ai_generated %}<p class="text-xs text-ink-subtle">Gewählte KI-Variante für Entwurf {{ a.draft_id }}; wird mit dem Beitrag freigegeben.</p>{% endif %}
+        {% if a.ai_edited %}<p class="text-xs text-ink-subtle" data-ai-edited>Mit KI bearbeitet aus {{ "„" ~ asset_names[a.source_asset_id] ~ "“" if a.source_asset_id in asset_names else "einem inzwischen entfernten Original" }}; das Original bleibt unverändert.</p>{% endif %}
+        {% if a.edit_hint and not a.consent_revoked_at %}
+        <div class="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs" data-edit-hint>
+          <p><span class="font-semibold">Hinweis:</span> {{ a.edit_hint }}</p>
+          {% if a.edit_hint_confirmed_at %}<span class="badge badge-ok mt-1">✓ bestätigt von {{ a.edit_hint_confirmed_by }} am {{ a.edit_hint_confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+          {% else %}<form method="post" action="/social/assets/{{ a.id }}/edit-hint/confirm" class="mt-1"><button type="submit" class="btn btn-secondary btn-sm border-amber-400">Geprüft – bestätigen</button></form>{% endif %}
+        </div>
+        {% endif %}
         {% if a.consent_revoked_at %}
           <p class="text-xs font-medium text-red-700">Einwilligung widerrufen von {{ a.consent_revoked_by }} am {{ a.consent_revoked_at.strftime("%d.%m.%Y %H:%M") }} – Bilddatei gelöscht. Eintrag entfernen, um die Beiträge wieder freigeben zu können.</p>
         {% elif a.shows_persons %}
@@ -27,6 +37,28 @@
           {% endif %}
         {% elif not a.ai_generated %}
         <p class="text-xs text-ink-subtle">Keine Personen abgebildet (laut Angabe).</p>
+        {% endif %}
+        {% if images_enabled and not a.ai_generated and not a.consent_revoked_at %}
+        <details id="photo-edit-{{ a.id }}">
+          <summary class="btn btn-ghost btn-sm cursor-pointer px-0">{{ ui.icon("sparkles") }}{{ "Weiter mit KI bearbeiten" if a.ai_edited else "Foto mit KI bearbeiten" }}</summary>
+          {% if a.shows_persons and not a.consent_confirmed %}
+          <p class="mt-1 text-xs font-medium text-red-700">Erst die Einwilligung der abgebildeten Personen bestätigen – das Foto geht beim Bearbeiten an den Bildanbieter.</p>
+          {% else %}
+          <form method="post" action="/social/assets/{{ a.id }}/edit" class="mt-2 space-y-2" data-loading="Foto wird bearbeitet …">
+            <label class="label" for="edit-{{ a.id }}">Was soll anders werden?</label>
+            <textarea id="edit-{{ a.id }}" name="instruction" rows="2" maxlength="500" class="input text-sm" placeholder="z. B. „Kabel am Boden entfernen“"></textarea>
+            <div class="flex flex-wrap items-center gap-2">
+              <select name="image_format" class="input w-auto py-1.5" aria-label="Format des Ergebnisses">
+                {% for f in image_formats %}<option value="{{ f.value }}" {% if f.value == "4:5" %}selected{% endif %}>{{ format_specs[f].label }}</option>{% endfor %}
+              </select>
+              <button type="submit" class="btn btn-secondary btn-sm">Bearbeiten</button>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5 text-xs"><span class="text-ink-subtle">Schnellauswahl:</span>
+              {% for p in photo_quick_picks %}<button type="submit" name="quick" value="{{ p }}" class="badge badge-neutral cursor-pointer hover:bg-surface-sunken">{{ p }}</button>{% endfor %}</div>
+            <p class="hint">Ergebnis ist ein neues Bild mit Kennzeichen „KI-bearbeitet“; das Original bleibt. Personen werden nicht verändert (Körperform, Gesicht). Zählt für die Kostenbremse.</p>
+          </form>
+          {% endif %}
+        </details>
         {% endif %}
         <form method="post" action="/social/assets/{{ a.id }}/delete">
           <button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Bild entfernen</button>

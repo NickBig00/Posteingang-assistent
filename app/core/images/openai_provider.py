@@ -38,6 +38,8 @@ class OpenAIImageConfigError(ProviderConfigError):
 class _ImagesAPI(Protocol):
     def generate(self, **kwargs: object) -> object: ...
 
+    def edit(self, **kwargs: object) -> object: ...
+
 
 def cost_per_image_eur() -> float:
     """Estimated cost of one image in EUR (env `IMAGE_COST_PER_IMAGE_EUR`, default 0.05)."""
@@ -90,6 +92,45 @@ class OpenAIImageProvider(ImageProvider):
             model=self.model,
             params={"provider": "openai", "size": size, "quality": QUALITY, "count": count},
             cost_estimate_eur=round(cost_per_image_eur() * len(images), 4),
+        )
+
+    def edit(
+        self, *, image: bytes, media_type: str, instruction: str, fmt: ImageFormat
+    ) -> ImageBatch:
+        """`images.edit` with the configured model; the photo goes to the provider."""
+        size = SIZES[fmt]
+        suffix = "png" if media_type == "image/png" else "jpg"
+        try:
+            response = self._images.edit(
+                model=self.model,
+                image=(f"foto.{suffix}", image, media_type),
+                prompt=instruction,
+                n=1,
+                size=size,
+                quality=QUALITY,
+            )
+        except (openai.OpenAIError, UnicodeEncodeError) as error:
+            raise ImageProviderError(
+                describe_provider_error(error, SERVICE, KEY_VARIABLE)
+            ) from error
+        images = [
+            GeneratedImage(base64.b64decode(data), "image/png")
+            for item in getattr(response, "data", None) or []
+            if (data := getattr(item, "b64_json", None))
+        ]
+        if not images:
+            raise ImageProviderError("Der Bildanbieter hat kein bearbeitetes Bild geliefert.")
+        return ImageBatch(
+            images=images[:1],
+            model=self.model,
+            params={
+                "provider": "openai",
+                "size": size,
+                "quality": QUALITY,
+                "count": 1,
+                "operation": "edit",
+            },
+            cost_estimate_eur=round(cost_per_image_eur(), 4),
         )
 
 

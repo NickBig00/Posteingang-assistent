@@ -52,3 +52,12 @@ class ImageProvider(ABC):
     @abstractmethod
     def generate(self, *, prompt: str, fmt: ImageFormat, count: int) -> ImageBatch:
         """Generate `count` variants for `prompt` in (roughly) the aspect ratio `fmt`."""
+
+    @abstractmethod
+    def edit(
+        self, *, image: bytes, media_type: str, instruction: str, fmt: ImageFormat
+    ) -> ImageBatch:
+        """Edit an existing photo following `instruction`; one new image in `fmt`.
+
+        The original is never changed: the result is a new image (SPEC_social 13.6).
+        """
