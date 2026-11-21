@@ -195,6 +195,16 @@ im PR.
 
 ---
 
+## Nächste Ausbaustufe: Beitrag in einem Ablauf (Briefing-Seite neu gestalten)
+
+Entwurf, Entscheidungen und Meilensteine U6–U8 stehen in `docs/SPEC_beitrag_ablauf.md`
+(Praxistest nach B4–B9: Seite zu kompliziert; ein Bild je Briefing, Reiter je Kanal, Schritte
+Text → Bild → Prüfen und Freigeben, Vorschau zeigt genau das, was gepostet wird). Die nächste
+Session übernimmt sie wie beschrieben in `docs/SPEC_social.md`, `docs/SPEC.md` und diese
+Roadmap und löscht danach die Entwurfsdatei.
+
+---
+
 ## Offene Punkte
 
 - [x] **Löschkonzept Social Media:** Löschen je Briefing/Kampagne und Aufbewahrungsfrist
