@@ -156,6 +156,30 @@ def save_asset(
     return asset
 
 
+PERSONS_STEP = "social.asset_persons"
+
+
+def set_shows_persons(session: Session, asset: Asset, shows_persons: bool, user: str) -> Asset:
+    """ "Personen zu sehen?" answered after the upload (recorded in the audit trail).
+
+    Saying yes again needs the consent confirmed anew; AI images never show real persons.
+    """
+    if asset.ai_generated:
+        raise AssetError("KI-Bilder zeigen keine echten Personen.")
+    if asset.consent_revoked_at is not None:
+        raise AssetError("Die Einwilligung wurde widerrufen; das Bild darf nicht verwendet werden.")
+    if asset.shows_persons == shows_persons:
+        return asset
+    asset.shows_persons = shows_persons
+    if not shows_persons:
+        asset.consent_confirmed, asset.consent_by, asset.consent_at = False, None, None
+    session.add(asset)
+    session.commit()
+    session.refresh(asset)
+    _audit(session, asset, PERSONS_STEP, user)
+    return asset
+
+
 def confirm_consent(session: Session, asset: Asset, user: str) -> Asset:
     """A person confirms that everyone shown on the image agreed to its publication."""
     if not asset.shows_persons:

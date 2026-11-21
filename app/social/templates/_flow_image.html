@@ -1,0 +1,148 @@
+{# Step ② Bild – one image for the whole briefing, shown in every tab (SPEC_social 8.1, 14.3). #}
+{% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
+{% set bi = briefing_image %}
+{% set selected = (bi.source.value if bi else "upload") %}
+{% set image_state_label = "gesperrt" if image_locked else ("gewählt" if bi and not image_problems else ("bitte prüfen" if bi else "optional")) %}
+{% call ui.step(2, "Bild", "bild", "locked" if image_locked else ("done" if bi and not image_problems else ("error" if image_problems else "open")), image_state_label, '<span class="text-[13px] text-ink-subtle">gilt für alle Kanäle</span>') %}
+{% if image_locked %}
+<p class="text-[13px] text-ink-muted" data-image-locked>Das Bild ist mit einem freigegebenen Beitrag freigegeben. Zum Ändern den Beitrag verwerfen und wieder öffnen.</p>
+{% endif %}
+{% if image_problems %}<div data-image-problems>{% call ui.alert("", "error", "alert") %}{% for p in image_problems %}<p>{{ p }}</p>{% endfor %}{% endcall %}</div>{% endif %}
+
+<div data-choice-scope class="space-y-4">
+  {% set options = [("upload", "Eigenes Foto", "photo", "hochladen oder wählen")] %}
+  {% if images_enabled %}{% set options = options + [("ai", "KI-Bild", "sparkles", "beschreiben, KI erzeugt")] %}{% endif %}
+  {% set options = options + [("color", "Farbfläche", "palette", "in Markenfarbe")] %}
+  {% if copy_source %}{% set options = options + [("copy", "Wie Schritt 1", "layers", "aus der Kampagne")] %}{% endif %}
+  {{ ui.choice_cards("image_source", options, "copy" if bi and bi.copied_from_briefing_id else selected, "Welches Bild?") }}
+
+  {# Own photo #}
+  <div data-choice-panel="upload" class="space-y-3" id="eigenes-foto">
+    {% if not image_locked %}{{ ui.dropzone("/social/briefings/" ~ briefing.id ~ "/assets", "Foto hochladen") }}{% endif %}
+    {% if photos %}
+    {% call ui.thumb_grid() %}
+      {% for a in photos %}
+      {% set badge %}{% if a.ai_edited %}{{ ui.ai_badge(ai_edited_label) }}{% endif %}{% endset %}
+      <div id="asset-{{ a.id }}">{{ ui.thumb("/social/assets/" ~ a.id, "Foto " ~ a.filename, bi and bi.asset_id == a.id, "/social/briefings/" ~ briefing.id ~ "/image", {"source": "upload", "asset": a.id}, badge, image_locked) }}</div>
+      {% endfor %}
+    {% endcall %}
+    {% endif %}
+    {% if chosen_asset and not chosen_asset.ai_generated %}{% set a = chosen_asset %}
+    <div class="space-y-3 rounded-xl bg-surface p-4 ring-1 ring-line" data-photo-questions>
+      <p class="text-sm"><span class="font-medium">{{ a.filename }}</span>{% if a.ai_edited %} · <span data-ai-edited>mit KI bearbeitet, das Original bleibt</span>{% endif %}</p>
+      {% if a.consent_revoked_at %}
+      <p class="text-sm font-medium text-red-700">Einwilligung widerrufen am {{ a.consent_revoked_at.strftime("%d.%m.%Y") }} – bitte ein anderes Bild wählen.</p>
+      {% else %}
+      {{ ui.toggle("/social/assets/" ~ a.id ~ "/persons", "shows_persons", a.shows_persons, "Personen zu sehen?", image_locked) }}
+      {% if a.shows_persons %}
+      <div class="toggle">
+        <span class="toggle-label">Einwilligung liegt vor?</span>
+        {% if a.consent_confirmed %}
+        <span class="badge badge-ok">✓ Ja – bestätigt von {{ a.consent_by }} am {{ a.consent_at.strftime("%d.%m.%Y") }}</span>
+        <form method="post" action="/social/assets/{{ a.id }}/revoke" onsubmit="return confirm('Einwilligung widerrufen? Das Bild wird gelöscht, freigegebene und geplante Beiträge gehen zurück in die Prüfung.')">
+          <button type="submit" class="btn btn-link btn-sm text-red-700">widerrufen</button></form>
+        {% else %}
+        <form method="post" action="/social/assets/{{ a.id }}/consent" onsubmit="return confirm('Liegt die Einwilligung aller abgebildeten Personen vor?')">
+          <span class="segmented"><span class="segment" aria-pressed="true">Nein</span><button type="submit" class="segment">Ja</button></span></form>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% if images_enabled and not image_locked %}
+      {% call ui.popover("Mit KI bearbeiten …", "photo-edit-" ~ a.id) %}
+        {% if a.shows_persons and not a.consent_confirmed %}
+        <p class="text-sm font-medium text-red-700">Erst die Einwilligung der abgebildeten Personen bestätigen – das Foto geht beim Bearbeiten an den Bildanbieter.</p>
+        {% else %}
+        <form method="post" action="/social/assets/{{ a.id }}/edit" class="space-y-2" data-loading="Foto wird bearbeitet …">
+          <label class="label" for="edit-{{ a.id }}">Was soll anders werden?</label>
+          <textarea id="edit-{{ a.id }}" name="instruction" rows="2" maxlength="500" class="input text-sm" placeholder="z. B. „Kabel am Boden entfernen“"></textarea>
+          <input type="hidden" name="image_format" value="4:5">
+          <button type="submit" class="btn btn-secondary btn-sm">Bearbeiten</button>
+          <div class="flex flex-wrap items-center gap-1.5 text-xs"><span class="text-ink-subtle">Schnellauswahl:</span>
+            {% for p in photo_quick_picks %}<button type="submit" name="quick" value="{{ p }}" class="badge badge-neutral cursor-pointer hover:bg-surface-sunken">{{ p }}</button>{% endfor %}</div>
+          <p class="hint">Ergebnis ist ein neues Bild mit Kennzeichen „KI-bearbeitet“; das Original bleibt. Zählt für die Kostenbremse.</p>
+        </form>
+        {% endif %}
+      {% endcall %}
+      {% endif %}
+      {% endif %}
+      {% if not image_locked or a.consent_revoked_at %}
+      <form method="post" action="/social/assets/{{ a.id }}/delete" class="inline"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Foto entfernen</button></form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# AI image #}
+  {% if images_enabled %}<div data-choice-panel="ai">{% include "_flow_ai_image.html" %}</div>{% endif %}
+
+  {# Colour fill #}
+  <div data-choice-panel="color" class="flex flex-wrap items-center gap-3">
+    {% if bi and bi.source.value == "color" %}<span class="badge badge-ok">✓ Farbfläche in Markenfarbe gewählt</span>
+    {% else %}<form method="post" action="/social/briefings/{{ briefing.id }}/image"><input type="hidden" name="source" value="color">
+      <button type="submit" class="btn btn-secondary" {% if image_locked %}disabled{% endif %}>{{ ui.icon("palette") }}Farbfläche verwenden</button></form>{% endif %}
+    <span class="text-[13px] text-ink-subtle">Ruhiger Hintergrund in der Markenfarbe; der Text kommt aufs Bild.</span>
+  </div>
+
+  {# Campaign: same as step 1 #}
+  {% if copy_source %}
+  <div data-choice-panel="copy" class="flex flex-wrap items-center gap-3">
+    {% if bi and bi.copied_from_briefing_id %}<span class="badge badge-ok">✓ Von Schritt 1 übernommen (Kopie, unabhängig änderbar)</span>{% endif %}
+    <form method="post" action="/social/briefings/{{ briefing.id }}/image/copy" data-loading="Wird übernommen …">
+      <button type="submit" class="btn btn-secondary" {% if image_locked %}disabled{% endif %} data-copy-step>{{ ui.icon("layers") }}{{ "Erneut übernehmen" if bi and bi.copied_from_briefing_id else "Bild von Schritt 1 übernehmen" }}</button></form>
+    <span class="text-[13px] text-ink-subtle">Bild und Text aufs Bild als Kopie; die Fakten kommen aus diesem Briefing.</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if bi %}
+<div class="space-y-3 border-t border-line pt-4">
+  {{ ui.toggle("/social/briefings/" ~ briefing.id ~ "/image/text", "with_text", bi.with_text, "Text aufs Bild?", image_locked, attrs='data-with-text') }}
+  {% if bi.with_text %}{% include "_flow_image_text.html" %}{% endif %}
+</div>
+{% if not image_locked %}<form method="post" action="/social/briefings/{{ briefing.id }}/image/clear"><button type="submit" class="btn btn-link btn-sm px-0 text-ink-subtle">Ohne Bild posten</button></form>{% endif %}
+{% endif %}
+
+<details class="border-t border-line pt-4" id="mehr" {% if carousel_open %}open{% endif %}>
+  <summary class="cursor-pointer text-sm font-medium text-brand-text">Mehr: Gestaltung, Fakten, Story-Text, mehrere Bilder</summary>
+  <div class="mt-4 space-y-6">
+    {% if info.graphic %}
+    <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic/layout" class="space-y-3" id="gestaltung">
+      <fieldset><legend class="label">Gestaltung des Texts auf dem Bild</legend>
+        <div class="grid grid-cols-3 gap-2 sm:max-w-md">
+          {% for key, label in info.variants.items() %}
+          <label class="choice-card"><input type="radio" class="sr-only" name="variant" value="{{ key }}" {% if key == info.variant %}checked{% endif %}>
+            <span class="choice-card-body items-center text-center text-xs">
+              <span class="relative block h-14 w-11 overflow-hidden rounded bg-slate-300" aria-hidden="true">
+                {% if key == "zentriert" %}<span class="absolute inset-x-1.5 top-4 h-6 rounded-sm bg-brand"></span>
+                {% elif key == "farbfeld" %}<span class="absolute inset-x-0 bottom-0 h-6 bg-brand"></span>
+                {% else %}<span class="absolute inset-x-0 bottom-0 h-8 bg-brand"></span><span class="absolute inset-x-0 top-0 h-6 bg-slate-400"></span>{% endif %}
+              </span>{{ label }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% if info.available_facts %}
+      <fieldset><legend class="label">Fakten auf dem Bild</legend>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">{% for key, label in info.available_facts %}
+          <label class="flex items-center gap-1.5"><input type="checkbox" class="checkbox" name="facts" value="{{ key }}" {% if key in info.fact_keys %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+      </fieldset>
+      {% endif %}
+      <button type="submit" class="btn btn-secondary btn-sm" {% if image_locked %}disabled{% endif %}>Übernehmen</button>
+    </form>
+    {% else %}<p class="text-[13px] text-ink-subtle">Gestaltung und Fakten gibt es, sobald Text aufs Bild kommt.</p>{% endif %}
+
+    {% if has_story and info.graphic %}{% include "_flow_story_text.html" %}{% endif %}
+
+    <section aria-labelledby="mehrere-bilder-title" class="space-y-3" id="mehrere-bilder">
+      <h3 class="text-[15px] font-semibold" id="mehrere-bilder-title">Mehrere Bilder (Karussell)</h3>
+      {% if carousel_drafts %}
+      {% for d in carousel_drafts %}
+      {% set editable_draft = d.status.value in ("draft", "in_review", "needs_manual_review") %}
+      {{ ui.toggle("/social/drafts/" ~ d.id ~ "/carousel", "enabled", d.carousel_enabled, channel_labels[d.channel], not editable_draft or (image_locked and not d.carousel_enabled), "Aus", "An", 'data-carousel-toggle') }}
+      {% endfor %}
+      {% if carousel.pages or carousel_drafts | selectattr("carousel_enabled") | list %}{% include "_social_carousel.html" %}{% endif %}
+      {% else %}<p class="text-[13px] text-ink-subtle">Mehrere Bilder gibt es für Instagram- und Facebook-Beiträge.</p>{% endif %}
+    </section>
+  </div>
+</details>
+{% endcall %}

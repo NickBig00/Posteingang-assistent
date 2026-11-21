@@ -1,0 +1,68 @@
+{# "KI-Bild": prompt, hints before generating, variants as tiles (SPEC_social 13). #}
+{% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
+{% set st = image_state %}
+<div class="space-y-3" id="ki-bild" data-ai-images>
+  {% if image_locked %}<p class="text-[13px] text-ink-subtle">Das Bild ist mit einem freigegebenen Beitrag freigegeben.</p>
+  {% else %}
+  <form method="post" action="/social/briefings/{{ briefing.id }}/images/generate" class="space-y-2" data-loading="Bilder werden erzeugt …" id="ki-bild-form">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <label class="question" for="prompt-ki">Was soll zu sehen sein?</label>
+      {% if st.proposal %}{% if st.proposal.prompt_from_ai %}{{ ui.ai_badge() }}{% else %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}{% endif %}
+    </div>
+    <textarea id="prompt-ki" name="prompt" rows="3" maxlength="800" class="input text-sm {{ 'input-invalid' if st.violations else '' }}"
+              placeholder="z. B. Heller Kursraum mit Matten, weiches Morgenlicht, Pflanzen"
+              {% if st.violations %}aria-invalid="true" aria-describedby="violations-ki"{% endif %}>{{ st.proposal.prompt if st.proposal else "" }}</textarea>
+    {% if st.violations %}<ul class="list-disc pl-5 text-xs font-medium text-red-700" id="violations-ki" data-violations>{% for v in st.violations %}<li>{{ v }}</li>{% endfor %}</ul>{% endif %}
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn btn-primary btn-sm" {% if pending_hints %}disabled aria-describedby="image-hints-ki"{% endif %} data-generate>{{ ui.icon("sparkles") }}{{ "Neue Bilder erzeugen" if st.candidates or st.chosen else "Bilder erzeugen" }}</button>
+      <button type="submit" formaction="/social/briefings/{{ briefing.id }}/images/check" class="btn btn-secondary btn-sm" data-check-prompt>Prüfen</button>
+    </div>
+  </form>
+  {% if not st.proposal %}
+  <form method="post" action="/social/briefings/{{ briefing.id }}/images/suggest" data-loading="Vorschlag wird formuliert …">
+    <button type="submit" class="btn btn-ghost btn-sm">{{ ui.icon("sparkles") }}Vorschlag von der KI</button></form>
+  {% endif %}
+  {% if st.stored_hints %}
+  <ul class="space-y-2" id="image-hints-ki" data-image-hints aria-label="Hinweise zum Bild – erst bestätigen, dann erzeugen">
+    {% for h in st.stored_hints %}
+    {% if h.confirmed_at %}
+    <li class="flex flex-wrap items-center gap-2 text-[13px] text-ink-muted" id="hint-{{ h.id }}" title="{{ h.reason }}">
+      <span class="font-medium text-ink">{{ hint_labels[h.key] }}</span><span class="badge badge-ok">✓ bestätigt von {{ h.confirmed_by }} am {{ h.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+    </li>
+    {% else %}
+    <li class="flex flex-wrap items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm" id="hint-{{ h.id }}">
+      <span class="min-w-0 flex-1"><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</span>
+      <form method="post" action="/social/image-hints/{{ h.id }}/confirm" {% if h.consent_required %}onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Verwendung ihres Namens für dieses Bild ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')"{% endif %}>
+        <button type="submit" class="btn {{ 'btn-danger' if h.consent_required else 'btn-secondary' }} btn-sm">{{ "Einwilligung der Person liegt vor" if h.consent_required else "Verstanden" }}</button></form>
+    </li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+  <p class="text-[13px] text-ink-subtle">Erst bestätigen, dann erzeugen: Diese Hinweise erscheinen nur hier, nie im Bild. Gezeigte Personen sind keine echten Mitglieder.</p>
+  {% elif st.hints %}
+  <ul class="list-disc pl-5 text-[13px] text-amber-900" data-prompt-hints>{% for h in st.hints %}<li><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if st.candidates %}
+  <p class="text-sm font-medium">Variante wählen – sie wird das Bild aller Beiträge dieses Briefings</p>
+  {% call ui.thumb_grid("grid-cols-3") %}
+    {% for c in st.candidates %}
+    <div data-candidate="{{ c.id }}">{{ ui.thumb("/social/images/candidates/" ~ c.id, "KI-Variante " ~ c.variant, false, "/social/briefings/" ~ briefing.id ~ "/images/" ~ c.id ~ "/choose", {}, ui.ai_badge(ai_image_label)) }}</div>
+    {% endfor %}
+  {% endcall %}
+  <form method="post" action="/social/briefings/{{ briefing.id }}/images/discard"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Varianten verwerfen</button></form>
+  {% endif %}
+  {% if st.chosen %}
+  <div class="flex items-center gap-3">
+    <div class="w-36">{{ ui.thumb("/social/assets/" ~ st.chosen.id, "Gewähltes KI-Bild", true, "", {}, ui.ai_badge(ai_image_label)) }}</div>
+    <p class="text-sm">Gewählt. <span class="text-ink-subtle">Beim Posten als KI-generiert kennzeichnen.</span></p>
+  </div>
+  {% endif %}
+  {% if st.proposal and st.proposal.prompt %}
+  {% call ui.popover("Anders …", "image-revise") %}
+    {% set regenerate %}<button type="submit" name="regenerate" value="true" class="btn btn-primary btn-sm">Überarbeiten und neu erzeugen</button>{% endset %}
+    {{ revise_form("/social/briefings/" ~ briefing.id ~ "/images/revise", "image-instruction", image_quick_picks, "Nur Beschreibung überarbeiten", regenerate, "Neu erzeugen zählt für die Kostenbremse.") }}
+  {% endcall %}
+  {% endif %}
+  {% endif %}
+</div>

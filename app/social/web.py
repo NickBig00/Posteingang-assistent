@@ -1,6 +1,7 @@
 """Web routes of the social media module (SPEC_social section 8)."""
 
 import json
+import re
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -36,6 +37,7 @@ from app.social.assets import (
     delete_asset,
     revoke_consent,
     save_asset,
+    set_shows_persons,
     usable_assets,
 )
 from app.social.audit import briefing_audit_trail
@@ -94,6 +96,7 @@ from app.social.carousel import (
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
 from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
+from app.social.flow import draft_flow
 from app.social.graphics import GraphicLayoutError
 from app.social.highlight import highlight
 from app.social.images import (
@@ -105,6 +108,8 @@ from app.social.images import (
     discard_candidates,
     generate_variants,
     image_state,
+    pending_hints,
+    save_prompt,
     suggest_prompt,
 )
 from app.social.infographic import (
@@ -112,6 +117,7 @@ from app.social.infographic import (
     InfoGraphicError,
     InfoTexts,
     check_blockers,
+    clean_texts,
     confirm_check,
     get_info_graphic,
     graphic_checks,
@@ -496,6 +502,20 @@ def _render_briefing(
         }
         for d in drafts
     }
+    labels = _labels(config)
+    flows = {d.id: draft_flow(session, config, d, labels["check_labels"]) for d in drafts}
+    tabs = [
+        {
+            "id": d.channel.value,
+            "label": CHANNEL_LABELS[d.channel],
+            "symbol": flows[d.id].tab_symbol[0],
+            "tone": flows[d.id].tab_symbol[1],
+            "struck": d.status is PostStatus.REJECTED,
+            "status_label": POST_STATUS_LABELS[d.status],
+        }
+        for d in drafts
+    ]
+    image_state_value = image_state(session, config, briefing) if images_enabled else None
     return templates.TemplateResponse(
         request,
         "social_briefing_detail.html",
@@ -509,7 +529,19 @@ def _render_briefing(
             "assets": briefing_assets(session, briefing_id),
             "usable_assets": usable,
             "images_enabled": images_enabled,
-            "image_state": image_state(session, config, briefing) if images_enabled else None,
+            "image_state": image_state_value,
+            "pending_hints": pending_hints(session, briefing_id) if images_enabled else [],
+            "flows": flows,
+            "tabs": tabs,
+            "active_tab": _active_tab(request, session, list(drafts)),
+            "released_channels": [d.channel.value for d in drafts if flows[d.id].released],
+            "photos": [a for a in briefing_assets(session, briefing_id) if not a.ai_generated],
+            "image_problems": sorted(
+                {p for item in post_images.values() for p in item["problems"]}
+            ),
+            "carousel_drafts": [d for d in drafts if d.channel in CAROUSEL_CHANNELS],
+            "carousel_open": any(d.carousel_enabled for d in drafts),
+            "has_story": any(d.channel is Channel.INSTAGRAM_STORY for d in drafts),
             "image_formats": list(ImageFormat),
             "briefing_image": image,
             "chosen_asset": session.get(Asset, image.asset_id)
@@ -526,17 +558,39 @@ def _render_briefing(
             "config": config,
             "error": error,
             "revocation": revocation,
-            **_labels(config),
+            **labels,
         },
         status_code=status_code,
     )
+
+
+_DRAFT_PATH = re.compile(r"^/social/drafts/(\d+)/")
+
+
+def _active_tab(request: Request, session: Session, drafts: list[PostDraft]) -> str:
+    """Tab shown first: the draft an action was about (error pages are rendered at the action's
+    URL), else the first open draft. On normal pages the URL fragment decides (JavaScript)."""
+    if not drafts:
+        return ""
+    match = _DRAFT_PATH.match(request.url.path)
+    if match:
+        for draft in drafts:
+            if draft.id == int(match.group(1)):
+                return draft.channel.value
+    open_drafts = [d for d in drafts if d.status in EDITABLE_POST_STATUSES]
+    return (open_drafts or drafts)[0].channel.value
+
+
+EDITABLE_POST_STATUSES = frozenset(
+    {PostStatus.DRAFT, PostStatus.IN_REVIEW, PostStatus.NEEDS_MANUAL_REVIEW}
+)
 
 
 @router.get("/social/briefings/{briefing_id}", response_class=HTMLResponse)
 def briefing_detail(
     request: Request, session: SessionDep, config: ConfigDep, briefing_id: int
 ) -> HTMLResponse:
-    """Briefing left, drafts per channel with check results right."""
+    """The briefing as a flow: tabs per channel, steps text → image → check → publish."""
     return _render_briefing(request, session, config, briefing_id)
 
 
@@ -622,9 +676,11 @@ def draft_edit(
     draft_id: int,
     text: Annotated[str, Form()] = "",
     hashtags: Annotated[str, Form()] = "",
+    hashtags_add: Annotated[str, Form()] = "",
 ) -> HTMLResponse | RedirectResponse:
-    """A person edits text and hashtags; all checks run again."""
+    """A person edits text and hashtags (chips plus a field for new ones); checks run again."""
     draft = _draft_or_404(session, draft_id)
+    hashtags = f"{hashtags} {hashtags_add}".strip()
     return _respond(
         request,
         session,
@@ -743,7 +799,7 @@ async def asset_upload(
     # Uploading means "this photo": it becomes the image of the briefing (while not locked).
     if not image_locked(session, briefing_id):
         set_briefing_image(session, briefing_id, ImageSource.UPLOAD, asset.id, user)
-    return RedirectResponse(f"/social/briefings/{briefing_id}#bilder", status_code=303)
+    return RedirectResponse(f"/social/briefings/{briefing_id}#bild", status_code=303)
 
 
 @router.post("/social/assets/{asset_id}/consent", response_model=None)
@@ -756,7 +812,29 @@ def asset_consent(
         confirm_consent(session, asset, user)
     except AssetError as error:
         return _render_briefing(request, session, config, asset.briefing_id, str(error), 409)
-    return RedirectResponse(f"/social/briefings/{asset.briefing_id}#bilder", status_code=303)
+    return RedirectResponse(f"/social/briefings/{asset.briefing_id}#bild", status_code=303)
+
+
+@router.post("/social/assets/{asset_id}/persons", response_model=None)
+def asset_persons(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    user: UserDep,
+    asset_id: int,
+    shows_persons: Annotated[bool, Form()] = False,
+) -> HTMLResponse | RedirectResponse:
+    """ "Personen zu sehen?" after the upload; yes means the consent must be confirmed."""
+    asset = _asset_or_404(session, asset_id)
+    if image_locked(session, asset.briefing_id):
+        return _render_briefing(
+            request, session, config, asset.briefing_id, "Das Bild ist freigegeben.", 409
+        )
+    try:
+        set_shows_persons(session, asset, shows_persons, user)
+    except AssetError as error:
+        return _render_briefing(request, session, config, asset.briefing_id, str(error), 409)
+    return RedirectResponse(f"/social/briefings/{asset.briefing_id}#bild", status_code=303)
 
 
 @router.post("/social/assets/{asset_id}/delete", response_model=None)
@@ -770,7 +848,7 @@ def asset_delete(
     except BriefingImageError as error:
         return _render_briefing(request, session, config, briefing_id, str(error), 409)
     delete_asset(session, asset, user)
-    return RedirectResponse(f"/social/briefings/{briefing_id}#bilder", status_code=303)
+    return RedirectResponse(f"/social/briefings/{briefing_id}#bild", status_code=303)
 
 
 @router.get("/social/assets/{asset_id}", response_model=None)
@@ -919,6 +997,23 @@ def image_generate(
             session, config, provider, briefing, prompt=prompt, user=user, storage=storage
         )
     except (ImageSuggestionError, ImageError) as error:
+        return _render_briefing(request, session, config, briefing_id, str(error), 422)
+    return _images_back(briefing_id)
+
+
+@router.post("/social/briefings/{briefing_id}/images/check", response_model=None)
+def image_check(
+    request: Request,
+    session: SessionDep,
+    config: ConfigDep,
+    briefing_id: int,
+    prompt: Annotated[str, Form()] = "",
+) -> HTMLResponse | RedirectResponse:
+    """ "Prüfen": store the description and show its hints before anything is generated."""
+    briefing = _images_briefing(session, briefing_id)
+    try:
+        save_prompt(session, config, briefing, prompt)
+    except ImageSuggestionError as error:
         return _render_briefing(request, session, config, briefing_id, str(error), 422)
     return _images_back(briefing_id)
 
@@ -1188,12 +1283,71 @@ def _jpeg(body: bytes, name: str, *, download: bool) -> Response:
     )
 
 
+LIVE_FIELDS = ("headline", "subline", "intro", "points", "closing")
+
+
+def _live_texts(values: dict[str, str]) -> InfoTexts:
+    return clean_texts(
+        InfoTexts(
+            values.get("headline", "")[:200],
+            values.get("subline", "")[:200],
+            values.get("intro", "")[:400],
+            parse_points(values.get("points", "")[:1000]),
+            values.get("closing", "")[:200],
+        )
+    )
+
+
 @router.get("/social/drafts/{draft_id}/preview.jpg", response_model=None)
-def draft_image_preview(session: SessionDep, config: ConfigDep, draft_id: int) -> Response:
-    """The post image exactly as it will be posted (always visible, never a download)."""
+def draft_image_preview(
+    request: Request, session: SessionDep, config: ConfigDep, draft_id: int
+) -> Response:
+    """The post image exactly as it will be posted (always visible, never a download).
+
+    With `live=1` the text on the image comes from the query (typing, not saved yet).
+    """
     draft = _draft_or_404(session, draft_id)
-    body, name = _post_image_or_error(session, config, draft)
-    return _jpeg(body, name, download=False)
+    params = request.query_params
+    if params.get("live") != "1":
+        body, name = _post_image_or_error(session, config, draft)
+        return _jpeg(body, name, download=False)
+    briefing = _briefing_or_404(session, draft.briefing_id)
+    texts = _live_texts({k: params.get(k, "") for k in LIVE_FIELDS})
+    try:
+        image = render_post_image(
+            session, config, briefing, CHANNEL_IMAGE_FORMATS[draft.channel], texts=texts
+        )
+    except PostImageError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    if image is None:
+        raise HTTPException(status_code=404, detail="Kein Bild gewählt")
+    return _jpeg(image.content, f"vorschau-{draft.id}.jpg", download=False)
+
+
+@router.post("/social/briefings/{briefing_id}/info-graphic/live", response_class=HTMLResponse)
+async def info_graphic_live(
+    request: Request, session: SessionDep, config: ConfigDep, briefing_id: int
+) -> HTMLResponse:
+    """HTMX while typing: new preview images for every tab (out-of-band swaps) or, if the text
+    does not fit or adds facts, a short note – the preview keeps the last valid state."""
+    briefing = _briefing_or_404(session, briefing_id)
+    form = await request.form()
+    values = {k: str(form.get(k) or "") for k in LIVE_FIELDS}
+    texts = _live_texts(values)
+    drafts = session.exec(
+        select(PostDraft).where(PostDraft.briefing_id == briefing_id).order_by(col(PostDraft.id))
+    ).all()
+    problems: list[str] = []
+    try:
+        render_post_image(session, config, briefing, ImageFormat.PORTRAIT, texts=texts)
+    except PostImageError as error:
+        problems = error.problems
+    query = urlencode({"live": "1", **values})
+    return templates.TemplateResponse(
+        request,
+        "_flow_live.html",
+        {"drafts": drafts, "problems": problems, "query": query},
+    )
 
 
 @router.get("/social/drafts/{draft_id}/image.jpg", response_model=None)

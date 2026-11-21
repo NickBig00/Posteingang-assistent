@@ -369,7 +369,7 @@ def test_carousel_in_the_ui(web: TestClient, session: Session) -> None:
     draft, facebook = _drafts(session)
     url = f"/social/briefings/{draft.briefing_id}"
     page = web.get(url).text
-    assert 'id="karussell"' in page and page.count("data-carousel-toggle") == 2
+    assert 'id="mehrere-bilder"' in page and page.count("data-carousel-toggle") == 2
 
     page = web.post(
         f"/social/briefings/{draft.briefing_id}/carousel/suggest", follow_redirects=True

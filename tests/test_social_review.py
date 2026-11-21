@@ -343,7 +343,7 @@ def test_full_run_briefing_to_approval(social_client: TestClient, session: Sessi
     )
     assert created.status_code == 200  # followed the redirect to the detail page
     page = created.text
-    assert page.count("KI-Vorschlag</span>") == 2
+    assert page.count("KI-Vorschlag</span>") == 4  # per draft: step ① and preview
     assert page.count("Prüfungen ok") >= 2
     assert "Text kopieren" not in page
 
@@ -405,7 +405,7 @@ def test_ui_image_upload_and_consent(social_client: TestClient, session: Session
         data={"shows_persons": "true"},
     )
     assert uploaded.status_code == 200
-    assert "Einwilligung fehlt" in uploaded.text
+    assert "Einwilligung liegt vor?" in uploaded.text and "Personen zu sehen?" in uploaded.text
     (asset,) = session.exec(select(Asset)).all()
     image = social_client.get(f"/social/assets/{asset.id}")
     assert image.headers["content-type"] == "image/png"

@@ -1,0 +1,84 @@
+{#
+  The post as it will roughly look on the platform (SPEC_social 8.1): finished image (with text
+  if chosen) and post text; download and approval refer to exactly this. Needs d, f.
+#}
+{% import "_ui.html" as ui %}
+{% set limits = {"instagram_post": 125, "instagram_story": 160, "facebook": 280, "linkedin": 210} %}
+{% set ratios = {"1:1": "aspect-square", "4:5": "aspect-[4/5]", "9:16": "aspect-[9/16]"} %}
+{% set fmt = channel_formats[d.channel].value %}
+{% set limit = limits.get(d.channel.value, 200) %}
+{% set text = d.full_text %}
+{% set pi = post_images[d.id] %}
+{% set has_image = briefing_image and not pi.problems %}
+{% set name = config.brand.name %}
+{% set pages = carousel.pages if d.carousel_enabled else [] %}
+
+{% macro body_text(text, limit, more_label) -%}
+{% if text | length > limit %}
+<details class="group"><summary class="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+  <span class="whitespace-pre-line group-open:hidden">{{ text[:limit] | trim }}… <span class="text-ink-subtle">{{ more_label }}</span></span></summary>
+  <span class="whitespace-pre-line">{{ text }}</span></details>
+{% else %}<span class="whitespace-pre-line">{{ text }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro image_box() -%}
+<div class="{{ ratios[fmt] }} relative w-full bg-surface-sunken">
+  {% if has_image %}<img id="post-image-{{ d.id }}" src="{{ pi.src }}" alt="Beitragsbild {{ channel_labels[d.channel] }}" class="h-full w-full object-cover" data-post-image>
+  {% if chosen_asset and (chosen_asset.ai_generated or chosen_asset.ai_edited) %}<span class="absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{{ ai_image_label if chosen_asset.ai_generated else ai_edited_label }}</span>{% endif %}
+  {% else %}<div id="post-image-{{ d.id }}" class="flex h-full w-full flex-col items-center justify-center gap-1 p-4 text-center text-xs text-ink-subtle">{{ ui.icon("image", "h-6 w-6") }}{{ pi.problems[0] if pi.problems else "Noch kein Bild" }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+<figure class="w-full" data-preview="{{ d.channel.value }}">
+  <figcaption class="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-ink-subtle">
+    <span>Vorschau {{ channel_labels[d.channel] }}</span>{{ ui.badge(post_status_labels[d.status], post_status_tones[d.status], 'data-status="' ~ d.status.value ~ '"') }}</figcaption>
+  {% if d.channel.value == "instagram_story" %}
+  <div class="relative mx-auto w-52 overflow-hidden rounded-2xl bg-slate-800 {{ ratios[fmt] }}">
+    {% if has_image %}<img id="post-image-{{ d.id }}" src="{{ pi.src }}" alt="Story-Bild" class="absolute inset-0 h-full w-full object-cover" data-post-image>{% else %}<span id="post-image-{{ d.id }}"></span>{% endif %}
+    <div class="absolute inset-x-0 top-0 flex items-center gap-2 p-2 text-[10px] font-semibold text-white">
+      <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-on" aria-hidden="true">{{ name[:1] }}</span>{{ name | truncate(22, true, "…") }}</div>
+    {% if text and not (briefing_image and briefing_image.with_text) %}<div class="absolute inset-x-2 bottom-3 rounded-lg bg-black/60 p-2 text-[11px] leading-snug text-white">{{ text | truncate(limit, true, "…") }}</div>{% endif %}
+  </div>
+  {% else %}
+  <div class="preview-card">
+    <div class="flex items-center gap-2 px-3 py-2">
+      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-on" aria-hidden="true">{{ name[:1] }}</span>
+      <span class="min-w-0"><span class="block truncate font-semibold">{{ name }}</span><span class="block text-[11px] text-ink-subtle">Gerade eben</span></span>
+    </div>
+    {% if d.channel.value != "instagram_post" and text %}<div class="px-3 pb-2">{{ body_text(text, limit, "Mehr anzeigen" if d.channel.value == "facebook" else "…mehr") }}</div>{% endif %}
+    {% if pages | length >= 2 and d.channel.value == "instagram_post" %}
+    <ol class="flex snap-x snap-mandatory overflow-x-auto" aria-label="Karussell zum Durchwischen (Pfeiltasten)" tabindex="0" data-carousel-preview-swipe>
+      {% for item in pages %}<li class="w-full shrink-0 snap-start"><img src="/social/carousel-pages/{{ item.page.id }}.jpg?format=4:5" alt="Seite {{ loop.index }} von {{ pages | length }}" class="aspect-[4/5] w-full object-cover" loading="lazy"></li>{% endfor %}
+    </ol>
+    <p class="px-3 pt-1 text-center text-[11px] text-ink-subtle">{{ pages | length }} Bilder · wischen</p>
+    {% elif pages | length >= 2 %}
+    <div class="grid grid-cols-2 gap-0.5 bg-surface" aria-label="Bildraster wie auf Facebook" data-carousel-preview-grid>
+      {% for item in pages[:4] %}<div class="relative {{ 'col-span-2' if loop.first and pages | length == 3 else '' }}"><img src="/social/carousel-pages/{{ item.page.id }}.jpg?format=4:5" alt="Bild {{ loop.index }} von {{ pages | length }}" class="{{ 'aspect-[2/1]' if loop.first and pages | length == 3 else 'aspect-square' }} w-full object-cover" loading="lazy">
+        {% if loop.last and pages | length > 4 %}<span class="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">+{{ pages | length - 4 }}</span>{% endif %}</div>{% endfor %}
+    </div>
+    {% else %}{{ image_box() }}{% endif %}
+    {% if d.channel.value == "instagram_post" %}
+    <div class="flex gap-3 px-3 pt-2 text-ink" aria-hidden="true">♡ <span>💬</span> <span>↗</span></div>
+    <div class="px-3 pb-3 pt-1">{% if text %}<span class="font-semibold">{{ name | lower | replace(" ", "") | truncate(24, true, "") }}</span> {{ body_text(text, limit, "mehr") }}{% else %}<span class="text-ink-subtle">Noch kein Text.</span>{% endif %}</div>
+    {% else %}
+    <div class="flex justify-around border-t border-line px-3 py-2 text-xs text-ink-subtle" aria-hidden="true"><span>Gefällt mir</span><span>Kommentieren</span><span>Teilen</span></div>
+    {% endif %}
+  </div>
+  {% endif %}
+  <p class="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
+    {% if d.is_ai_suggestion and not d.edited_by_human %}{{ ui.ai_badge("Text: KI-Vorschlag") }}{% endif %}
+    {% if chosen_asset and chosen_asset.ai_generated %}{{ ui.ai_badge(ai_image_label) }}{% elif chosen_asset and chosen_asset.ai_edited %}{{ ui.ai_badge(ai_edited_label) }}{% endif %}
+    <span>Format {{ fmt }}</span>{% if briefing_image and briefing_image.with_text %}<span>· Text auf dem Bild</span>{% endif %}
+  </p>
+</figure>
+
+<div class="mt-4 space-y-2" data-main-action>
+  {% if d.status.value == "in_review" %}
+  <form method="post" action="/social/drafts/{{ d.id }}/approve" class="hidden lg:block">
+    <button type="submit" class="btn btn-success w-full py-2.5" {% if not f.ready %}disabled aria-describedby="approve-hint-{{ d.id }}"{% endif %}>{{ ui.icon("check") }}Freigeben</button></form>
+  {% if not f.ready %}<p class="hidden text-center text-xs text-ink-muted lg:block" id="approve-hint-{{ d.id }}">Erst die offenen Punkte erledigen.</p>{% endif %}
+  {% endif %}
+  {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
+  <form method="post" action="/social/drafts/{{ d.id }}/reject" class="text-center"><button type="submit" class="btn btn-link btn-sm text-ink-subtle">Verwerfen</button></form>
+  {% endif %}
+</div>

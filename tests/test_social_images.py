@@ -405,12 +405,12 @@ def test_image_feature_is_invisible_when_switched_off(
 def test_full_flow_in_the_ui(image_client: TestClient, session: Session) -> None:
     draft = _draft(session)
     url = f"/social/briefings/{draft.briefing_id}"
-    assert "Bild vorschlagen" in image_client.get(url).text
+    assert "Vorschlag von der KI" in image_client.get(url).text
 
     page = image_client.post(
         f"/social/briefings/{draft.briefing_id}/images/suggest", follow_redirects=True
     ).text
-    assert 'id="prompt-b"' in page and "Varianten erzeugen" in page
+    assert 'id="prompt-ki"' in page and "Bilder erzeugen" in page
 
     rejected = image_client.post(
         f"/social/briefings/{draft.briefing_id}/images/generate",
@@ -432,7 +432,7 @@ def test_full_flow_in_the_ui(image_client: TestClient, session: Session) -> None
         f"/social/briefings/{draft.briefing_id}/images/{candidate.id}/choose", follow_redirects=True
     ).text
     assert "KI-generiert" in page
-    assert "Variante gewählt" in page
+    assert "Gewählt." in page
 
     session.expire_all()
     approve_draft(session, session.get(PostDraft, draft.id), "demo")  # type: ignore[arg-type]

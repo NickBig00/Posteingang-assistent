@@ -53,6 +53,10 @@
   html {
     -webkit-text-size-adjust: 100%;
   }
+  /* `hidden` always wins over display utilities (tabs and choice panels toggle it). */
+  [hidden] {
+    display: none !important;
+  }
   body {
     @apply bg-surface-muted font-sans text-ink antialiased;
   }
@@ -290,10 +294,196 @@
     @apply h-5 w-5 shrink-0;
   }
 
+  /* ---------- Flow components (U7) ---------- */
+  /* Channel tabs */
+  .tabs {
+    @apply -mx-1 flex gap-1 overflow-x-auto border-b border-line px-1;
+    scrollbar-width: thin;
+  }
+  .tab {
+    @apply -mb-px inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-ink-muted no-underline transition-colors hover:text-ink;
+  }
+  .tab[aria-selected="true"] {
+    @apply border-brand text-ink;
+  }
+  .tab-status {
+    @apply inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1 text-xs font-semibold;
+  }
+  .tone-neutral { @apply text-slate-500; }
+  .tone-info { @apply text-sky-700; }
+  .tone-ok { @apply text-green-700; }
+  .tone-warning { @apply text-amber-600; }
+  .tone-error { @apply text-red-700; }
+
+  /* Steps: numbered sections along a fine line (space instead of frames) */
+  .stepper {
+    @apply relative space-y-10;
+  }
+  .stepper::before {
+    content: "";
+    @apply absolute bottom-2 left-[0.9375rem] top-2 w-px bg-line;
+  }
+  .step {
+    @apply relative pl-12;
+  }
+  .step-marker {
+    @apply absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-surface-muted text-sm font-semibold;
+  }
+  .step-open { @apply border-line-strong text-ink-muted; }
+  .step-done { @apply border-green-600 bg-green-600 text-white; }
+  .step-error { @apply border-red-600 text-red-700; }
+  .step-locked { @apply border-line text-ink-subtle; }
+  .step-head {
+    @apply flex min-h-[2rem] flex-wrap items-center gap-x-3 gap-y-1;
+  }
+  .step-title {
+    @apply text-lg font-semibold text-ink;
+  }
+  .step-state {
+    @apply text-[13px] font-medium;
+  }
+  .step-state-done { @apply text-green-700; }
+  .step-state-open { @apply text-ink-subtle; }
+  .step-state-error { @apply text-red-700; }
+  .step-state-locked { @apply text-ink-subtle; }
+  .step-body {
+    @apply mt-4 space-y-4 text-[15px];
+  }
+  .question {
+    @apply text-[15px] font-medium text-ink;
+  }
+
+  /* Choice cards and segmented switch */
+  .choice-card {
+    @apply cursor-pointer;
+  }
+  .choice-card-body {
+    @apply flex h-full flex-col items-start gap-1 rounded-xl border border-line-strong bg-surface px-3 py-3 text-sm text-ink transition-colors hover:border-brand;
+  }
+  .choice-card input:checked + .choice-card-body {
+    @apply border-brand bg-brand-soft ring-1 ring-brand;
+  }
+  .choice-card input:focus-visible + .choice-card-body {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+  }
+  .toggle {
+    @apply flex flex-wrap items-center gap-3;
+  }
+  .toggle-label {
+    @apply text-[15px] font-medium text-ink;
+  }
+  .segmented {
+    @apply inline-flex rounded-lg border border-line-strong bg-surface p-0.5;
+  }
+  .segment {
+    @apply rounded-md px-3 py-1 text-sm font-medium text-ink-muted transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .segment[aria-pressed="true"] {
+    @apply bg-brand text-brand-on;
+  }
+
+  /* Popover */
+  .popover {
+    @apply relative inline-block;
+  }
+  .popover > summary {
+    @apply cursor-pointer list-none;
+  }
+  .popover > summary::-webkit-details-marker {
+    display: none;
+  }
+  .popover-panel {
+    @apply absolute left-0 z-20 mt-2 w-[min(28rem,calc(100vw-2rem))] rounded-xl border border-line bg-surface p-4 shadow-lg;
+  }
+  .popover-right .popover-panel {
+    @apply left-auto right-0;
+  }
+
+  /* Checklist "Noch offen" */
+  .checklist {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-2.5 text-sm;
+  }
+  .checklist-open {
+    @apply border border-amber-200 bg-amber-50 text-amber-950;
+  }
+  .checklist-ready {
+    @apply border border-green-200 bg-green-50 text-green-900;
+  }
+  .checklist-link {
+    @apply inline-flex items-center gap-1.5 font-medium underline underline-offset-2;
+    color: inherit;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  }
+  .checklist-number {
+    @apply inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/70 text-xs;
+  }
+
+  /* Hashtag chips */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-brand-soft py-0.5 pl-2.5 pr-1 text-sm text-brand-text;
+  }
+  .chip-remove {
+    @apply inline-flex h-5 w-5 items-center justify-center rounded-full text-base leading-none hover:bg-white/70;
+  }
+  .chips-input {
+    @apply min-w-[10rem] flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm focus:border-line-strong focus:bg-surface focus:outline-none;
+  }
+
+  /* Upload area */
+  .dropzone-area {
+    @apply flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line-strong bg-surface px-4 py-6 text-center text-sm transition-colors hover:border-brand;
+  }
+  .dropzone-area:focus-within {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+  }
+  .dropzone-active .dropzone-area {
+    @apply border-brand bg-brand-soft;
+  }
+
+  /* Image tiles */
+  .thumb {
+    @apply relative overflow-hidden rounded-lg ring-1 ring-line transition;
+  }
+  .thumb-selected {
+    @apply ring-2 ring-brand;
+  }
+  .thumb-button {
+    @apply absolute inset-0 h-full w-full cursor-pointer hover:bg-black/10 focus-visible:bg-black/10 disabled:cursor-not-allowed;
+  }
+  .thumb-check {
+    @apply absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-brand-on shadow;
+  }
+  .thumb-badge {
+    @apply pointer-events-none absolute bottom-1.5 left-1.5;
+  }
+
+  /* Post preview and the fixed footer on small screens */
+  .preview-card {
+    @apply overflow-hidden rounded-card border border-line bg-surface text-[13px] leading-snug text-ink shadow-card;
+  }
+  .sticky-footer {
+    @apply fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur lg:hidden;
+  }
+  .review-item {
+    @apply flex flex-wrap items-start gap-3 py-3;
+  }
+  .flash {
+    animation: flash-highlight 1.6s ease-out;
+  }
+  @keyframes flash-highlight {
+    0% { background-color: rgb(254 243 199); }
+    100% { background-color: transparent; }
+  }
+
 @tailwind utilities;
 
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation-duration: 2s;
+  }
+  .flash {
+    animation: none;
   }
 }

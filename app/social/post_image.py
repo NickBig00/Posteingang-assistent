@@ -30,11 +30,13 @@ from app.social.graphics import GraphicLayoutError
 from app.social.images import image_hint_blockers, latest_proposal, prompt_hints
 from app.social.infographic import (
     InfoGraphicError,
+    InfoTexts,
     check_blockers,
     get_info_graphic,
     graphic_fact_keys,
     render_info_graphic,
     run_graphic_checks,
+    story_texts,
     text_errors,
     texts_for_format,
 )
@@ -113,11 +115,18 @@ def _background(session: Session, briefing: Briefing, image: BriefingImage) -> A
 
 
 def render_post_image(
-    session: Session, config: SocialConfig, briefing: Briefing, fmt: ImageFormat
+    session: Session,
+    config: SocialConfig,
+    briefing: Briefing,
+    fmt: ImageFormat,
+    *,
+    texts: InfoTexts | None = None,
 ) -> PostImage | None:
     """The finished post image in `fmt`, or None when the briefing has no image.
 
-    Raises `PostImageError` with the reasons (facts, layout, missing headline …).
+    `texts` renders unsaved text on the image for the live preview while typing (facts and
+    layout are checked as always; never used for downloads). Raises `PostImageError` with the
+    reasons (facts, layout, missing headline …).
     """
     image = briefing_image(session, briefing.id or 0)
     if image is None:
@@ -127,15 +136,23 @@ def render_post_image(
     try:
         if image.with_text:
             graphic = get_info_graphic(session, briefing.id or 0)
-            if graphic is None or not graphic.headline:
+            headline = (
+                texts.headline if texts is not None else (graphic.headline if graphic else "")
+            )
+            if not headline:
                 raise PostImageError(["Text aufs Bild: Bitte eine Überschrift eingeben."])
-            errors = text_errors(session, graphic)
+            if graphic is None:
+                graphic = InfoGraphic(briefing_id=briefing.id or 0)
+            errors = text_errors(session, graphic) if texts is None and graphic.id else []
             if errors:
                 raise PostImageError(errors, from_checks=True)
+            shown = texts if texts is not None else texts_for_format(graphic, fmt)
+            if texts is not None and fmt is ImageFormat.STORY and story_texts(graphic):
+                shown = texts_for_format(graphic, fmt)
             body = render_info_graphic(
                 config,
                 briefing,
-                texts_for_format(graphic, fmt),
+                shown,
                 fmt,
                 variant=graphic.variant,
                 background=content,

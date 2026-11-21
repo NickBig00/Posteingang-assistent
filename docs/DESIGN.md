@@ -85,6 +85,16 @@ Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
 | Seitenkopf | `page-title`, `page-subtitle`, `back-link` | `ui.page_header(title, subtitle, back_href, back_label)` |
 | Kennzahl | – | `ui.stat(value, label, href, tone, hint)` |
 | Symbole | – | `ui.icon(name, cls)` (eigene einfache Linien-Symbole) |
+| Reiter je Kanal | `tabs`, `tab`, `tab-status`, `tone-<ton>` | `ui.tabs(items, label, active)` (WAI-ARIA-Tabs, Pfeiltasten, URL-Fragment) |
+| Schritt eines Ablaufs | `stepper`, `step`, `step-marker`, `step-<zustand>`, `step-title` | `ui.step(nummer, titel, id, zustand, zustand_text, extra)` mit `{% call %}` |
+| Auswahlkarten | `choice-card`, `choice-card-body` | `ui.choice_cards(name, optionen, gewählt, legende)`; Bereiche mit `data-choice-panel` |
+| Ja/Nein-Schalter | `toggle`, `segmented`, `segment` (`aria-pressed`) | `ui.toggle(action, name, aktuell, label, disabled)` |
+| Popover | `popover`, `popover-panel` | `ui.popover(label, id)` mit `{% call %}` (Escape und Klick daneben schließen) |
+| Checkliste „Noch offen“ | `checklist`, `checklist-open`, `checklist-ready` | `ui.checklist(einträge)` (Einträge springen an die Stelle und heben sie kurz hervor) |
+| Chips (Hashtags) | `chip`, `chip-remove`, `chips-input` | `ui.chips(name, tags, label, id)` |
+| Upload-Fläche | `dropzone`, `dropzone-area` | `ui.dropzone(action, label)` (Ziehen und Ablegen, sendet sofort) |
+| Bild-Kacheln | `thumb`, `thumb-selected` | `ui.thumb(src, alt, gewählt, action, felder, badge)` in `ui.thumb_grid()` |
+| Fixierter Fuß | `sticky-footer` | `ui.sticky_footer()` (nur schmale Bildschirme) |
 
 ## Regeln
 
@@ -96,3 +106,13 @@ Jeder Status beider Module ist genau einem Ton zugeordnet (`STATUS_TONES` in
 - Jede Liste ohne Inhalt zeigt einen Leerzustand mit nächstem Schritt.
 - Neue Komponenten zuerst hier und auf `/design` ergänzen.
 - Barrierefreiheit prüfen: `node scripts/a11y.cjs` (Bericht unter `docs/accessibility/`).
+
+## Abläufe (U7)
+
+- **Der Ablauf ist die Seite:** nummerierte Schritte (`ui.step`) entlang einer feinen Linie statt
+  vieler Karten; höchstens eine Karte je Spalte (z. B. die Vorschau).
+- **Eine Frage pro Schritt** („Welches Bild?“, „Text aufs Bild?“) mit `ui.choice_cards` bzw.
+  `ui.toggle`; Fortgeschrittenes in `<details>` („Mehr …“).
+- **Immer klar, was fehlt:** `ui.checklist` über den Schritten; jeder Eintrag verweist auf die
+  Stelle, an der er erledigt wird.
+- **Typografie:** Schritt-Überschrift 18 px (`step-title`), Text 15 px, Hilfe 13 px.

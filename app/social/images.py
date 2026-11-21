@@ -511,6 +511,41 @@ def suggest_prompt(
     return proposal
 
 
+def save_prompt(
+    session: Session, config: SocialConfig, briefing: Briefing, prompt: str
+) -> PromptCheck:
+    """Store the prompt and its hints without generating ("Prüfen"): the hints appear below
+    the field and are confirmed before "Bilder erzeugen" (first confirm, then generate)."""
+    _require_editable(session, briefing)
+    prompt = prompt.strip()
+    check = check_prompt(prompt, member_names(session), config.brand.name)
+    proposal = latest_proposal(session, briefing.id or 0)
+    if proposal is None:
+        proposal = ImageProposal(briefing_id=briefing.id or 0, prompt_from_ai=False)
+    if prompt != proposal.prompt:
+        proposal.prompt_from_ai = False
+    proposal.prompt = prompt
+    session.add(proposal)
+    session.commit()
+    session.refresh(proposal)
+    if check.errors:
+        raise ImagePromptRejectedError(check.errors)
+    _store_hints(session, briefing, proposal, check.hints)
+    return check
+
+
+def pending_hints(session: Session, briefing_id: int) -> list[PromptHint]:
+    """Hints of the stored prompt that still need a confirmation before generating."""
+    proposal = latest_proposal(session, briefing_id)
+    if proposal is None:
+        return []
+    return [
+        h
+        for h in prompt_hints(session, briefing_id)
+        if h.confirmed_at is None and h.prompt_hash == _hash(proposal.prompt)
+    ]
+
+
 def _remove_candidates(session: Session, briefing_id: int, keep_path: str | None = None) -> int:
     rows = candidates(session, briefing_id)
     for row in rows:

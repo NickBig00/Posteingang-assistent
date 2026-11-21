@@ -4,7 +4,9 @@
 //
 // 1. axe-core (WCAG 2.1 A/AA rules, incl. colour contrast) on every page, laptop and tablet.
 // 2. Keyboard: Tab through every page; each stop must be visible (focus outline) and the
-//    sequence must reach the main actions. Uses the same seeded demo as the screenshots.
+//    sequence must reach the main actions – on the briefing flow the controls of every step
+//    (choice cards are a radio group: Tab reaches the chosen card, arrow keys the others).
+//    Uses the same seeded demo as the screenshots.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -20,8 +22,9 @@ const PAGES = [
   ["Audit Eingang", "/items/{inbox_item}/audit"],
   ["Social Media", "/social"],
   ["Neues Briefing", "/social/briefings/new"],
-  ["Entwurf in Prüfung (mit KI-Bild)", "/social/briefings/{briefing}"],
-  ["Entwurf freigegeben", "/social/briefings/{approved_briefing}"],
+  ["Briefing-Ablauf in Prüfung (mit KI-Bild)", "/social/briefings/{briefing}", ["Beitragstext", "Bilder erzeugen", "Freigeben"]],
+  ["Briefing-Ablauf Reiter Facebook", "/social/briefings/{briefing}#facebook", ["Beitragstext", "KI-Bild", "Freigeben"]],
+  ["Briefing freigegeben (Veröffentlichen)", "/social/briefings/{approved_briefing}", ["Text kopieren", "Bild herunterladen"]],
   ["Kalender Woche", "/social/calendar?view=week&date={schedule_date}"],
   ["Kalender Monat", "/social/calendar?view=month&date={schedule_date}"],
   ["Kampagnen", "/social/campaigns"],
@@ -48,7 +51,7 @@ async function axe(page) {
   });
 }
 
-async function keyboard(page, maxStops = 60) {
+async function keyboard(page, maxStops = 250) {
   const stops = [];
   await page.keyboard.press("Tab");
   for (let i = 0; i < maxStops; i++) {
@@ -60,7 +63,8 @@ async function keyboard(page, maxStops = 60) {
         (style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0) ||
         style.boxShadow !== "none";
       const rect = el.getBoundingClientRect();
-      const label = (el.getAttribute("aria-label") || el.innerText || el.value || el.name || el.tagName)
+      const own = el.labels && el.labels[0] ? el.labels[0].innerText : "";
+      const label = (el.getAttribute("aria-label") || own || el.innerText || el.value || el.name || el.tagName)
         .trim().replace(/\s+/g, " ").slice(0, 40);
       return { tag: el.tagName.toLowerCase(), label, visible, onScreen: rect.width > 0 && rect.height > 0 };
     });
@@ -76,14 +80,16 @@ async function keyboard(page, maxStops = 60) {
     const browser = await chromium.launch();
     const results = [];
     for (const [viewportName, viewport] of [["Laptop 1366×900", LAPTOP], ["Tablet 820×1180", TABLET]]) {
-      for (const [name, url] of PAGES) {
+      for (const [name, url, expect] of PAGES) {
         const context = await browser.newContext({ viewport, locale: "de-DE" });
         const page = await context.newPage();
         await page.goto(BASE + fill(url, ids), { waitUntil: "networkidle" });
         const violations = await axe(page);
         const stops = viewportName.startsWith("Laptop") ? await keyboard(page) : [];
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-        results.push({ viewport: viewportName, name, url: fill(url, ids), violations, stops, overflow });
+        // The keyboard walk must reach the main controls of every step (U7).
+        const missing = (expect || []).filter((label) => !stops.some((s) => s.label.includes(label)));
+        results.push({ viewport: viewportName, name, url: fill(url, ids), violations, stops, overflow, missing: viewportName.startsWith("Laptop") ? missing : [] });
         await context.close();
       }
     }
@@ -100,14 +106,15 @@ async function keyboard(page, maxStops = 60) {
     "Erzeugt mit `node scripts/a11y.cjs` (axe-core 4.10, Regeln WCAG 2.1 A/AA inkl. Farbkontrast; Tastatur-Durchlauf mit Tab).",
     "Demo-Daten wie bei den Screenshots (Fake-Anbieter, KI-Bilder eingeschaltet).",
     "",
-    "| Ansicht | Seite | axe-Verstöße | Tab-Stopps | ohne sichtbaren Fokus | horizontales Scrollen |",
-    "|---|---|---|---|---|---|",
+    "| Ansicht | Seite | axe-Verstöße | Tab-Stopps | ohne sichtbaren Fokus | Schritte per Tastatur erreicht | horizontales Scrollen |",
+    "|---|---|---|---|---|---|---|",
   ];
   for (const r of report) {
     const invisible = r.stops.filter((s) => !s.visible).length;
     lines.push(
       `| ${r.viewport} | ${r.name} | ${r.violations.length ? r.violations.map((v) => `${v.id} (${v.count})`).join(", ") : "keine"} | ` +
-        `${r.viewport.startsWith("Laptop") ? r.stops.length : "–"} | ${r.viewport.startsWith("Laptop") ? invisible : "–"} | ${r.overflow ? "ja" : "nein"} |`,
+        `${r.viewport.startsWith("Laptop") ? r.stops.length : "–"} | ${r.viewport.startsWith("Laptop") ? invisible : "–"} | ` +
+        `${!r.viewport.startsWith("Laptop") ? "–" : r.missing.length ? "fehlt: " + r.missing.join(", ") : "ja"} | ${r.overflow ? "ja" : "nein"} |`,
     );
   }
   const details = report.filter((r) => r.violations.length);
@@ -120,7 +127,8 @@ async function keyboard(page, maxStops = 60) {
   fs.writeFileSync(path.join(dir, "report.md"), lines.join("\n") + "\n");
   const total = report.reduce((n, r) => n + r.violations.length, 0);
   const invisible = report.reduce((n, r) => n + r.stops.filter((s) => !s.visible).length, 0);
-  console.log(`axe violations: ${total}, focus without outline: ${invisible}`);
+  const missing = report.reduce((n, r) => n + r.missing.length, 0);
+  console.log(`axe violations: ${total}, focus without outline: ${invisible}, step controls not reached: ${missing}`);
 })().catch((error) => {
   console.error(error);
   process.exit(1);

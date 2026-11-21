@@ -458,7 +458,7 @@ def test_revoke_and_delete_draft_in_the_ui(
     first, second = _drafts(session, briefing)
     approve_draft(session, first, "demo")
     page = social_client.get(f"/social/briefings/{briefing.id}").text
-    assert "Einwilligung widerrufen</button>" in page
+    assert "widerrufen</button>" in page
     assert "Entwurf löschen" in page
 
     revoked = social_client.post(f"/social/assets/{asset.id}/revoke")
