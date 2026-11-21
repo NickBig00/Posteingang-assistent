@@ -6,6 +6,7 @@ checked like the fact check of the posts before anything is rendered: every fact
 in its display spelling, no other date, time, price or phone number.
 """
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Literal
 
@@ -22,7 +23,7 @@ from app.core.image_formats import (
 from app.core.outcomes import Outcome
 from app.core.theme import WHITE, contrast_ratio, mix, parse_hex
 from app.social.checks import check_facts, check_forbidden_terms
-from app.social.facts import FACT_LABELS, BriefingFacts, FactKey, formatted_facts
+from app.social.facts import FACT_KEYS, FACT_LABELS, BriefingFacts, FactKey, formatted_facts
 from app.social.models import Briefing
 from app.social.profiles import SocialConfig
 from app.social.textscan import find_dates, find_phones, find_prices, find_times, phone_digits
@@ -71,11 +72,13 @@ class GraphicText:
 
     layout: Layout
     brand: str  # brand name as text; empty when the logo is shown instead
-    tag: str
+    tag: str  # occasion label; empty when it is the headline already (no double line)
     headline: str
     facts: list[tuple[str, str]]  # (label, value in display spelling)
 
     logo: bool = False
+    # Facts a person chose for the graphic (all facts of the briefing by default).
+    fact_keys: tuple[FactKey, ...] = FACT_KEYS
 
     @property
     def lines(self) -> list[str]:
@@ -91,26 +94,59 @@ def layout_for(occasion_key: str) -> Layout:
     return OCCASION_LAYOUTS.get(occasion_key, "standard")
 
 
-def graphic_text(config: SocialConfig, briefing: Briefing, headline: str = "") -> GraphicText:
+def parse_fact_keys(values: Iterable[str], facts: BriefingFacts) -> tuple[FactKey, ...]:
+    """Facts chosen for the graphic: known keys the briefing has, in canonical order.
+
+    No valid choice at all means all facts (a graphic never loses its facts by accident).
+    """
+    chosen = {value for value in values}
+    keys = tuple(k for k in FACT_KEYS if k in chosen and facts.has(k))
+    return keys or tuple(facts.present_keys())
+
+
+def select_facts(facts: BriefingFacts, keys: Iterable[FactKey]) -> BriefingFacts:
+    """Only the chosen facts (the fact check then expects exactly these)."""
+    wanted = set(keys)
+    data = {
+        name: value
+        for name, value in facts.to_json().items()
+        if (name.removesuffix("_von").removesuffix("_bis") if name.startswith("zeitraum") else name)
+        in wanted
+    }
+    return BriefingFacts.from_json(data)
+
+
+def graphic_text(
+    config: SocialConfig,
+    briefing: Briefing,
+    headline: str = "",
+    fact_keys: Iterable[FactKey] | None = None,
+) -> GraphicText:
     """Text of the graphic from the structured facts (never from the AI draft)."""
     layout = layout_for(briefing.occasion_type)
-    facts = formatted_facts(BriefingFacts.from_json(briefing.facts))
+    all_facts = BriefingFacts.from_json(briefing.facts)
+    keys = parse_fact_keys(fact_keys if fact_keys is not None else FACT_KEYS, all_facts)
+    facts = formatted_facts(select_facts(all_facts, keys))
     ordered = [(FACT_LABELS[k], facts[k]) for k in FACT_ORDER[layout] if k in facts]
     occasion = config.industry.occasion_type(briefing.occasion_type).label
     logo = config.logo_path is not None
+    title = " ".join(headline.split())
     return GraphicText(
         layout=layout,
         brand="" if logo else config.brand.name,
         logo=logo,
-        tag=occasion,
-        headline=" ".join(headline.split()) or occasion,
+        # Without an own headline the occasion is the headline: no second "KURS" line.
+        tag=occasion if title and title.casefold() != occasion.casefold() else "",
+        headline=title or occasion,
         facts=ordered,
+        fact_keys=keys,
     )
 
 
 def verify_graphic_text(text: GraphicText, facts: BriefingFacts, config: SocialConfig) -> None:
     """Fact check of the graphic text (analogous to the posts); raises `GraphicError`."""
     problems: list[str] = []
+    facts = select_facts(facts, text.fact_keys)
     if len(text.headline) > MAX_HEADLINE:
         problems.append(f"Die Überschrift ist zu lang (höchstens {MAX_HEADLINE} Zeichen).")
     full = text.full_text
@@ -203,9 +239,10 @@ def render_graphic(
     *,
     headline: str = "",
     background: bytes | None = None,
+    fact_keys: Iterable[FactKey] | None = None,
 ) -> tuple[bytes, GraphicText]:
     """Check the text, then render the graphic as JPEG in the exact size of `fmt`."""
-    text = graphic_text(config, briefing, headline)
+    text = graphic_text(config, briefing, headline, fact_keys)
     verify_graphic_text(text, BriefingFacts.from_json(briefing.facts), config)
     design = config.brand.design
     primary = parse_hex(design.primary_color if design else DEFAULT_PRIMARY)
@@ -286,22 +323,38 @@ def render_graphic(
     _ensure_inside([(line, font) for line, font in blocks], draw, inner)
     _ensure_inside([(line, head_font) for line in head_lines], draw, inner)
     gap = round(width * 0.018)
-    # Stories: keep clear of the platform's reply bar at the bottom.
-    y = height - margin - (round(height * 0.12) if fmt is ImageFormat.STORY else 0)
-    for line, font in reversed(blocks):
-        y -= font.size + gap
-        draw.text((margin, y), line, font=font, fill=colour if background is None else WHITE)
-    y -= gap * 2
-    for line in reversed(head_lines):
-        y -= head_font.size + gap // 2
-        draw.text((margin, y), line, font=head_font, fill=colour if background is None else WHITE)
-    y -= gap * 2 + tag_font.size + gap
-    tag_width = draw.textlength(text.tag.upper(), font=tag_font)
+    tag_width = draw.textlength(text.tag.upper(), font=tag_font) if text.tag else 0
     pad = round(width * 0.015)
-    draw.rounded_rectangle(
-        (margin, y - pad, margin + tag_width + 2 * pad, y + tag_font.size + pad),
-        radius=pad,
-        fill=accent,
-    )
-    draw.text((margin + pad, y - 2), text.tag.upper(), font=tag_font, fill=_text_colour(accent))
+    # Height of the whole text block, laid out from its top edge.
+    block = sum(font.size + gap for _, font in blocks) + gap * 2
+    block += len(head_lines) * (head_font.size + gap // 2)
+    if text.tag:
+        block += gap * 2 + tag_font.size + gap
+    # Stories: keep clear of the platform's reply bar at the bottom.
+    bottom = height - margin - (round(height * 0.12) if fmt is ImageFormat.STORY else 0)
+    top = bottom - block
+    if background is None:
+        # Colour fill: centre the block in the free area below the brand line instead of
+        # leaving the upper part of tall formats empty (it never moves below `bottom`).
+        free_top = margin + round(width * 0.12)
+        top = max(free_top, free_top + (bottom - free_top - block) // 2)
+        top = min(top, bottom - block)
+    fill = colour if background is None else WHITE
+    y = top
+    if text.tag:
+        y += gap
+        draw.rounded_rectangle(
+            (margin, y - pad, margin + tag_width + 2 * pad, y + tag_font.size + pad),
+            radius=pad,
+            fill=accent,
+        )
+        draw.text((margin + pad, y - 2), text.tag.upper(), font=tag_font, fill=_text_colour(accent))
+        y += tag_font.size + gap * 2
+    for line in head_lines:
+        draw.text((margin, y), line, font=head_font, fill=fill)
+        y += head_font.size + gap // 2
+    y += gap * 2
+    for line, font in blocks:
+        draw.text((margin, y), line, font=font, fill=fill)
+        y += font.size + gap
     return to_jpeg(canvas.convert("RGB")), text

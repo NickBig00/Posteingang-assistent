@@ -7,9 +7,21 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, JsonValue
 
-# Inbox: classify, extract, draft, ocr. Social media: post_draft, post_assess, image_prompt.
+# Inbox: classify, extract, draft, ocr. Social media: post drafts and their assessment, image
+# prompts, revisions by instruction, texts for info graphics and carousel plans.
 LLMTask = Literal[
-    "classify", "extract", "draft", "ocr", "post_draft", "post_assess", "image_prompt"
+    "classify",
+    "extract",
+    "draft",
+    "ocr",
+    "post_draft",
+    "post_assess",
+    "image_prompt",
+    "post_revise",
+    "image_prompt_revise",
+    "graphic_text",
+    "graphic_text_revise",
+    "carousel_plan",
 ]
 
 # Media types a provider may receive as visual input (OCR of images and scanned PDFs).

@@ -14,7 +14,9 @@ from app.core.web import (
     SETTINGS_ENTRY,
     BrandColorProvider,
     NavEntry,
+    log_configuration_problems,
     mount_static,
+    register_error_handlers,
 )
 from app.core.web import router as core_router
 from app.inbox import web as inbox_web
@@ -41,6 +43,7 @@ BRAND_COLOR_PROVIDERS: dict[str, BrandColorProvider] = {"social": profile_brand_
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     setup_logging()
+    log_configuration_problems()
     init_db(engine)
     yield
 
@@ -49,6 +52,7 @@ def create_app() -> FastAPI:
     """Build the application with the modules enabled via env `MODULES`."""
     application = FastAPI(title=app_title(), version="0.1.0", lifespan=lifespan)
     mount_static(application)
+    register_error_handlers(application)
     application.include_router(core_router)
     navigation: list[NavEntry] = [OVERVIEW_ENTRY]
     providers: list[OverviewProvider] = []

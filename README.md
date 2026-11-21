@@ -67,7 +67,13 @@ Download des Bildes als JPEG im Format des Kanals (Instagram-Beitrag und Faceboo
 ### KI-Bilder (optional)
 
 Standardmäßig aus. Einschalten mit `IMAGE_GENERATION_ENABLED=true`; Anbieter über
-`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Das
+`IMAGE_PROVIDER` (`fake` = offline Platzhalter, `openai` mit `IMAGE_MODEL`). Modellnamen ändern
+sich beim Anbieter; welche Bildmodelle das eigene Konto nutzen kann, zeigt
+`uv run python -m app.cli image-models` (braucht `OPENAI_API_KEY`). Lehnt der Anbieter eine
+Anfrage ab (unbekanntes Modell, Abrechnungslimit, Inhaltsfilter …), zeigen Oberfläche und Audit
+den genauen Grund; „nicht erreichbar“ erscheint nur bei Verbindungsfehlern. Ein API-Schlüssel mit
+unzulässigen Zeichen (z. B. aus einem Platzhalter) wird beim Start protokolliert, unter
+Einstellungen markiert und führt zu einer klaren Meldung statt eines Serverfehlers. Das
 anbieterunabhängige Interface liegt in `app/core/images/` (einziger Ort für Bild-SDKs neben
 `app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3) und `IMAGE_MAX_PER_DAY`
 (Standard 20) Erzeugungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht
@@ -76,10 +82,22 @@ Tests rufen nie eine echte Bild-API auf.
 
 Im Entwurf (vor der Freigabe) schlägt „Bild vorschlagen“ einen Bild-Prompt aus Briefing und
 `image_style` des Bereichs im Markenprofil vor. Der Prompt ist sichtbar und bearbeitbar; vor
-jeder Erzeugung lehnt ein Code-Check Personen, Namen, Text im Bild, echte Räume oder
-Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten ab. Die gewählte Variante
+jeder Erzeugung prüft ein Code-Check auf Personen, Namen, Text im Bild, echte Räume oder
+Ergebnisse, Vorher-nachher- oder medizinische Motive und Kontaktdaten. Das sind **Hinweise**,
+die ein Mensch **vor dem Erzeugen** bestätigt (Bestätigung im Audit): erst bestätigen, dann
+erzeugen, dann freigeben. Ein Name aus der Mitgliederliste braucht die bestätigte Einwilligung
+der Person. Die gewählte Variante
 ist als „KI-generiert“ gekennzeichnet, wird mit dem Beitrag freigegeben und wie ein
 hochgeladenes Bild gelöscht.
+
+### Überarbeiten per Anweisung (Social Media)
+
+Bei Beitragstexten und KI-Bildern gibt es das Feld **„Was soll anders werden?“** (eigene Worte
+oder Schnellauswahl). Die KI liefert eine neue Version (versionierte Prompts
+`prompts/social/post_revise_v1.md`, `image_prompt_revise_v1.md`, ein Retry); sie ist wieder ein
+KI-Vorschlag und läuft durch alle Prüfungen bzw. den Bild-Prompt-Check. Bei ungültiger Ausgabe
+bleibt der bisherige Stand. Jede Anweisung steht im Audit (wer, wann, Hash; Klartext in der
+löschbaren Audit-Ausgabe); „Überarbeiten und neu erzeugen“ zählt für die Kostenbremse.
 
 ### Grafiken aus Vorlagen (Social Media)
 

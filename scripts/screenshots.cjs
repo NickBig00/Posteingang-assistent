@@ -60,7 +60,38 @@ const SHOTS = {
     ["leer-posteingang", "/inbox", { empty: true }],
     ["leer-social", "/social", { empty: true }],
   ],
+  B4: [
+    ["briefing-wunschtermin", "/social/briefings/new", { selector: "#desired-date-hint", fullPage: true }],
+    ["grafik-farbflaeche-hochformat", "/social/briefings/{briefing}#grafik", { selector: "#grafik" }],
+    ["grafik-faktenauswahl", "/social/briefings/{approved_briefing}?graphic_format=9:16&graphic_headline=Zwei%20Wochen%20gratis&graphic_facts=zeitraum#grafik", { selector: "#grafik" }],
+  ],
+  B5: [
+    ["bild-hinweise-bestaetigt", "/social/briefings/{briefing}#images-{hint_draft}", { selector: "#images-{hint_draft}" }],
+    ["bild-hinweise-vor-dem-erzeugen", "/social/briefings/{briefing}#images-{image_draft}", {
+      selector: "#images-{image_draft}",
+      before: async (page, ids) => {
+        // A changed prompt with a person and text: the hints come first, nothing is generated.
+        await page.fill(`#prompt-${ids.image_draft}`, "Mann beim Dehnen am Fenster, Schriftzug „Pause“ an der Wand");
+        await Promise.all([page.waitForLoadState("networkidle"), page.click(`#images-${ids.image_draft} form[action$="/images/generate"] button[type=submit]`)]);
+      },
+    }],
+  ],
+  B6: [
+    ["text-ueberarbeiten", "/social/briefings/{briefing}", {
+      selector: "#draft-{image_draft}",
+      before: async (page, ids) => {
+        await page.click(`#revise-${ids.image_draft} summary`);
+        await page.fill(`#instruction-${ids.image_draft}`, "Satz 2 klingt wie ein Heilversprechen, bitte neutraler formulieren");
+        await page.click(`#image-revise-${ids.image_draft} summary`);
+        await page.fill(`#image-instruction-${ids.image_draft}`, "Bitte ohne Pflanzen, mehr Bewegung zeigen");
+      },
+    }],
+    ["audit-anweisung", "/social/briefings/{briefing}/audit", { fullPage: true }],
+  ],
 };
+
+// Milestones whose pages need the AI image functions switched on.
+const IMAGE_MILESTONES = new Set(["B2", "B4", "B5", "B6", "B8", "B9"]);
 
 function startServer(env) {
   // Start uvicorn directly (not via `uv run`), so stopping the child really stops the server.
@@ -177,12 +208,29 @@ async function seed(withImages) {
   if (withImages) {
     const first = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
     const draft = (first.match(/id="draft-(\d+)"/) || [])[1];
+    ids.image_draft = draft;
     if (draft) {
       await post(`/social/drafts/${draft}/images/suggest`, { image_format: "4:5" });
       const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
       const match = page.match(new RegExp(`id="prompt-${draft}"[^>]*>([^<]*)</textarea>`));
       const prompt = match ? match[1].replace(/&amp;/g, "&").replace(/&#34;/g, '"').replace(/&#39;/g, "'") : "";
       if (prompt) await post(`/social/drafts/${draft}/images/generate`, { prompt, image_format: "4:5" });
+    }
+    // Second draft: a prompt with people and text in the image → hints to confirm (B5).
+    const drafts = [...new Set([...first.matchAll(/id="draft-(\d+)"/g)].map((m) => m[1]))];
+    ids.hint_draft = drafts[1] || drafts[0];
+    if (ids.hint_draft) {
+      const prompt = "Frau beim Rückentraining auf einer Matte, heller Raum, Schriftzug „Rückenfit“ an der Wand";
+      // First confirm, then generate: the first attempt only records the hints.
+      await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
+      const pending = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      for (const m of pending.matchAll(/\/social\/image-hints\/(\d+)\/confirm/g)) await post(m[0]);
+      await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
+      const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+      const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];
+      if (candidate) await post(`/social/drafts/${ids.hint_draft}/images/${candidate}/choose`);
+      // A revision by instruction, so the audit trail shows one (B6).
+      await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
     }
   }
   return ids;
@@ -206,7 +254,15 @@ async function shoot(browser, milestone, ids, empty) {
     const page = await context.newPage();
     await page.goto(BASE + fill(urlPath, ids), { waitUntil: "networkidle" });
     if (options.click) await page.click(options.click);
-    await page.screenshot({ path: path.join(dir, `${name}.png`), fullPage: Boolean(options.fullPage) });
+    if (options.before) await options.before(page, ids);
+    const file = path.join(dir, `${name}.png`);
+    if (options.selector && !options.fullPage) {
+      // Element shots: the sticky page header would cover the top of the element.
+      await page.addStyleTag({ content: "header { position: static !important; }" });
+      await page.locator(fill(options.selector, ids)).first().screenshot({ path: file });
+    } else {
+      await page.screenshot({ path: file, fullPage: Boolean(options.fullPage) });
+    }
     await context.close();
     console.log(`docs/screenshots/${milestone}/${name}.png`);
   }
@@ -227,13 +283,13 @@ async function run(milestones, empty) {
     DATABASE_URL: `sqlite:///${path.join(tmp, "demo.db")}`,
     STORAGE_DIR: path.join(tmp, "raw"),
     LLM_PROVIDER: "fake",
-    IMAGE_GENERATION_ENABLED: milestones.includes("B2") ? "true" : "false",
+    IMAGE_GENERATION_ENABLED: milestones.some((m) => IMAGE_MILESTONES.has(m)) ? "true" : "false",
     IMAGE_PROVIDER: "fake",
   };
   const server = startServer(env);
   try {
     await waitForServer();
-    const ids = empty ? {} : await seed(milestones.includes("B2"));
+    const ids = empty ? {} : await seed(milestones.some((m) => IMAGE_MILESTONES.has(m)));
     const browser = await chromium.launch();
     for (const milestone of milestones) await shoot(browser, milestone, ids, empty);
     await browser.close();

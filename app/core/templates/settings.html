@@ -6,6 +6,12 @@
 <a href="/design" class="btn btn-secondary">Design-System ansehen</a>
 {% endcall %}
 
+{% if problems %}
+<div class="mb-4" data-config-problems>{% call ui.alert("", "error", "alert") %}
+  <p class="font-semibold">Konfiguration prüfen</p>
+  <ul class="ml-4 list-disc">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>
+{% endcall %}</div>
+{% endif %}
 <div class="grid gap-6 lg:grid-cols-3">
   <section class="card lg:col-span-2" aria-labelledby="config-title">
     <div class="card-header"><h2 class="card-title" id="config-title">Konfiguration</h2>{{ ui.badge("nur lesbar", "neutral") }}</div>

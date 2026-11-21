@@ -1,6 +1,6 @@
 """Social media LLM operations: render prompt, call provider, validate output."""
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.core.llm.base import LLMProvider, LLMTask
 from app.core.llm.calls import LLMCall, parse_json_object, short_error, timed_complete
@@ -17,6 +17,8 @@ PROMPT_VERSIONS: dict[LLMTask, str] = {
     "post_draft": "v2",
     "post_assess": "v2",
     "image_prompt": "v1",
+    "post_revise": "v1",
+    "image_prompt_revise": "v1",
 }
 
 
@@ -128,3 +130,71 @@ class SocialLLMClient:
             except (ValueError, ValidationError) as exc:
                 call.error = f"invalid output: {short_error(exc)}"
         return call
+
+    def _structured[T: BaseModel](
+        self, task: LLMTask, schema: type[T], **context: object
+    ) -> LLMCall[T]:
+        """Render the task's prompt, call the provider once and validate the JSON answer."""
+        template = self.prompts[task]
+        prompt = template.render(**context)
+        completion, error, duration = timed_complete(self.provider, task, prompt)
+        call: LLMCall[T] = LLMCall(
+            task, template.prompt_id, prompt, duration, completion, error=error
+        )
+        if completion is not None:
+            try:
+                call.output = schema.model_validate(parse_json_object(completion.text))
+            except (ValueError, ValidationError) as exc:
+                call.error = f"invalid output: {short_error(exc)}"
+        return call
+
+    def revise_post(
+        self,
+        config: SocialConfig,
+        *,
+        area_key: str,
+        channel: Channel,
+        facts: BriefingFacts,
+        text: str,
+        hashtags: list[str],
+        instruction: str,
+    ) -> LLMCall[DraftOutput]:
+        """New version of a post following a person's instruction (SPEC_social 13.8).
+
+        Sent: post text, hashtags, facts, tone and the instruction – not the key points.
+        """
+        brand = config.brand
+        area = brand.area(area_key)
+        return self._structured(
+            "post_revise",
+            DraftOutput,
+            brand_name=brand.name,
+            channel=channel.value,
+            channel_label=CHANNEL_LABELS[channel],
+            max_length=CHANNEL_SPECS[channel].max_length,
+            area_label=area.label,
+            tone=area.tone,
+            address_form_label=ADDRESS_FORM_LABELS[area.address_form],
+            forbidden_terms=brand.forbidden_terms,
+            max_hashtags=brand.max_hashtags,
+            facts=[(FACT_LABELS[k], v) for k, v in formatted_facts(facts).items()],
+            text=text,
+            hashtags=hashtags,
+            instruction=instruction,
+        )
+
+    def revise_image_prompt(
+        self, config: SocialConfig, *, area_key: str, prompt: str, instruction: str
+    ) -> LLMCall[ImagePromptOutput]:
+        """New version of an image prompt following a person's instruction."""
+        style = config.brand.area(area_key).image_style
+        return self._structured(
+            "image_prompt_revise",
+            ImagePromptOutput,
+            prompt=prompt,
+            instruction=instruction,
+            colors=style.colors if style else "passend zur Marke",
+            mood=style.mood if style else config.brand.area(area_key).tone,
+            motifs=style.motifs if style else "passend zum Anlass",
+            exclusions=style.exclusions if style else [],
+        )

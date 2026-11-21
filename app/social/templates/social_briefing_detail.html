@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
 {% block title %}Briefing {{ briefing.id }} – Social Media{% endblock %}
 {% block content %}
 {% set title = "Briefing " ~ briefing.id ~ ": " ~ occasion_labels.get(briefing.occasion_type, briefing.occasion_type) ~ " · " ~ area_labels.get(briefing.area, briefing.area) %}
@@ -81,6 +82,10 @@
             <button type="submit" class="btn btn-primary">Speichern und neu prüfen</button>
             <p class="text-xs text-ink-subtle">Nach dem Speichern laufen alle Prüfungen erneut; bestätigte Warnungen müssen neu bestätigt werden.</p>
           </form>
+        </details>
+        <details class="mt-2" id="revise-{{ d.id }}">
+          <summary class="btn btn-secondary btn-sm cursor-pointer">{{ ui.icon("sparkles") }}Von KI überarbeiten lassen</summary>
+          {{ revise_form("/social/drafts/" ~ d.id ~ "/revise", "instruction-" ~ d.id, post_quick_picks, "Text überarbeiten", hint="Bestätigte Warnungen müssen danach neu bestätigt werden.") }}
         </details>
         {% endif %}
 

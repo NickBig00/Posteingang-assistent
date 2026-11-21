@@ -14,7 +14,7 @@
         {% for e in entries %}
         <tr>
           <td class="whitespace-nowrap tabular-nums text-ink-muted">{{ e.created_at.strftime("%d.%m.%Y %H:%M:%S") }}</td>
-          <td class="font-medium">{{ e.step }}</td>
+          <td class="font-medium">{{ e.step }}{% if instructions.get(e.id) %}<span class="hint font-normal" data-instruction>Anweisung ({{ e.model_params.get("target") }}, Version {{ e.model_params.get("version") }}): „{{ instructions[e.id] }}“</span>{% endif %}</td>
           <td class="tabular-nums">{{ e.model_params.get("draft_id", "–") }}</td>
           <td>{% if e.model_params.get("actor") %}{{ ui.badge(e.model_params.get("actor"), "neutral") }}{% else %}<span class="inline-flex items-center gap-1.5">{{ ui.ai_badge("KI") }}{{ e.model }}</span>{% endif %}</td>
           <td>{{ e.prompt_version or "–" }}</td>

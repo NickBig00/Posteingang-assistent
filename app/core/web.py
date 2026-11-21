@@ -1,5 +1,6 @@
 """Shared web building blocks: layout with sidebar, templates, static files, settings page."""
 
+import logging
 import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -21,6 +22,7 @@ from app.core.images.service import image_generation_enabled, image_limits
 from app.core.models import utcnow
 from app.core.overview import ModuleOverview, OverviewProvider
 from app.core.profiles import active_profile_key
+from app.core.provider_errors import ProviderConfigError, configuration_problems
 from app.core.retention import retention_days
 from app.core.theme import (
     BRAND_COLOR_VARIABLE,
@@ -230,11 +232,47 @@ def settings_rows(profile_color: str | None = None) -> list[SettingRow]:
     ]
 
 
+# API key variables checked at start-up and on the settings page (values are never shown).
+KEY_VARIABLES = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
+logger = logging.getLogger(__name__)
+
+
+def log_configuration_problems() -> list[str]:
+    """Warn at start-up about unusable API keys (only the variable name, never the value)."""
+    problems = configuration_problems(KEY_VARIABLES)
+    for problem in problems:
+        logger.warning("configuration problem: %s", problem)
+    return problems
+
+
 @router.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request) -> HTMLResponse:
     """Read-only overview of the configuration (changed via environment variables)."""
     rows = settings_rows(profile_brand_color(request.app))
-    return templates.TemplateResponse(request, "settings.html", {"rows": rows})
+    problems = configuration_problems(KEY_VARIABLES)
+    return templates.TemplateResponse(
+        request, "settings.html", {"rows": rows, "problems": problems}
+    )
+
+
+def provider_config_error_page(request: Request, error: Exception) -> HTMLResponse:
+    """Clear message instead of a server error when a provider is not configured usably."""
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {
+            "title": "KI-Anbieter nicht nutzbar",
+            "message": str(error),
+            "hint": "Die Konfiguration steht in Umgebungsvariablen bzw. der Datei .env. Nach "
+            "einer Änderung die Anwendung neu starten. Ohne API-Schlüssel arbeitet die Demo "
+            "mit LLM_PROVIDER=fake und IMAGE_PROVIDER=fake.",
+        },
+        status_code=503,
+    )
+
+
+def register_error_handlers(application: FastAPI) -> None:
+    application.add_exception_handler(ProviderConfigError, provider_config_error_page)  # type: ignore[arg-type]
 
 
 @router.get("/design", response_class=HTMLResponse)
