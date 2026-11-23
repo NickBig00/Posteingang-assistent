@@ -17,6 +17,13 @@
 <p class="whitespace-pre-wrap text-sm text-ink-subtle line-through">{{ d.full_text }}</p>
 <form method="post" action="/social/drafts/{{ d.id }}/reopen"><button type="submit" class="btn btn-secondary btn-sm">Wieder öffnen</button></form>
 {% else %}
+{% if f.ai_error %}
+<div data-ai-error>{% call ui.alert("", "error", "alert") %}
+  <p class="font-semibold">Die KI konnte keinen Text liefern.</p>
+  <p class="mt-0.5">{{ f.ai_error }}</p>
+  <p class="mt-1 text-[13px]">Schreib den Text hier selbst – oder behebe die Ursache (z. B. neuen API-Schlüssel unter Einstellungen prüfen) und lege das Briefing neu an.</p>
+{% endcall %}</div>
+{% endif %}
 <form method="post" action="/social/drafts/{{ d.id }}/edit" class="space-y-3" id="text-{{ d.id }}" data-dirty data-loading="Wird gespeichert und geprüft …">
   <label class="sr-only" for="text-input-{{ d.id }}">Beitragstext {{ channel_labels[d.channel] }}</label>
   <textarea id="text-input-{{ d.id }}" name="text" rows="{{ 10 if d.text | length > 400 else 7 }}" class="input text-[15px] leading-relaxed"
