@@ -15,6 +15,7 @@ from typing import Literal
 from sqlmodel import Session
 
 from app.core.outcomes import Outcome
+from app.social.audit import briefing_audit_trail
 from app.social.briefing_image import briefing_image, chosen_asset
 from app.social.carousel import carousel_checks
 from app.social.images import HINT_LABELS, chosen_image, prompt_hints
@@ -77,6 +78,8 @@ class DraftFlow:
     released: bool
     editable: bool
     image_problems: list[str] = field(default_factory=list)
+    # Why the AI delivered no text (provider error of the last attempt, e.g. expired key).
+    ai_error: str | None = None
 
     @property
     def open_items(self) -> list[ReviewItem]:
@@ -299,8 +302,11 @@ def checklist(flow_items: list[ReviewItem], draft: PostDraft, blockers: list[str
     entries: list[ChecklistEntry] = []
     if not draft.text:
         entries.append(ChecklistEntry("Text schreiben", f"#text-{draft.id}"))
-    errors = [i for i in flow_items if i.status == "error" and i.source != "Bild"]
-    open_items = [i for i in flow_items if i.status == "open"]
+    # Without text the checks of the post text only repeat "missing" (facts, length): they
+    # are left out until a text is there; "Text schreiben" covers them.
+    relevant = [i for i in flow_items if draft.text or i.source != "Beitragstext"]
+    errors = [i for i in relevant if i.status == "error" and i.source != "Bild"]
+    open_items = [i for i in relevant if i.status == "open"]
     if errors:
         entries.append(
             ChecklistEntry(
@@ -326,6 +332,24 @@ def checklist(flow_items: list[ReviewItem], draft: PostDraft, blockers: list[str
     return entries
 
 
+TEXT_STEPS = ("social.post_draft", "social.post_revise")
+
+
+def last_text_error(session: Session, draft: PostDraft) -> str | None:
+    """Error of the last AI attempt at the post text, if that attempt failed.
+
+    Comes from the audit trail (the provider message never contains the API key).
+    """
+    attempts = [
+        e
+        for e in briefing_audit_trail(session, draft.briefing_id)
+        if e.step in TEXT_STEPS and e.model_params.get("draft_id") == draft.id
+    ]
+    if not attempts or not attempts[-1].error:
+        return None
+    return attempts[-1].error.removeprefix("LLMProviderError: ")
+
+
 def draft_flow(
     session: Session, config: SocialConfig, draft: PostDraft, labels: dict[str, str]
 ) -> DraftFlow:
@@ -343,6 +367,7 @@ def draft_flow(
     blockers = approval_blockers(session, draft, config) if editable else []
     has_image = briefing_image(session, briefing.id or 0) is not None
     return DraftFlow(
+        ai_error=None if draft.text else last_text_error(session, draft),
         draft=draft,
         items=items,
         checklist=checklist(items, draft, blockers, has_image, problems),
