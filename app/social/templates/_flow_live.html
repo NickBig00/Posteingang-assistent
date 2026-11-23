@@ -1,0 +1,8 @@
+{# HTMX response of the live preview: out-of-band updates of every preview image. #}
+{% if problems %}
+<p id="live-note" hx-swap-oob="true" class="text-[13px] font-medium text-amber-900" role="status" aria-live="polite">Vorschau zeigt den letzten gültigen Stand: {{ problems | join(" ") }}</p>
+{% else %}
+<p id="live-note" hx-swap-oob="true" class="text-[13px] text-ink-subtle" role="status" aria-live="polite">Vorschau aktualisiert – „Text übernehmen und prüfen“ speichert.</p>
+{% for d in drafts %}<img id="post-image-{{ d.id }}" hx-swap-oob="outerHTML" src="/social/drafts/{{ d.id }}/preview.jpg?{{ query }}" alt="Beitragsbild (Vorschau, noch nicht gespeichert)" class="{{ 'absolute inset-0 ' if d.channel.value == 'instagram_story' else '' }}h-full w-full object-cover" data-post-image>
+{% endfor %}
+{% endif %}

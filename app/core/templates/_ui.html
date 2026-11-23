@@ -27,6 +27,11 @@
   "clock": "M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z",
   "trash": "M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3",
   "doc": "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm7 0v5h5",
+  "more": "M5 12h.01M12 12h.01M19 12h.01",
+  "upload": "M12 16V5m0 0-4 4m4-4 4 4M5 19h14",
+  "palette": "M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.4-4-7.8-9-7.8zM7.5 12h.01M10 7.5h.01M15 7.5h.01",
+  "photo": "M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+  "layers": "M12 3 3 8l9 5 9-5zm-9 9 9 5 9-5M3 16l9 5 9-5",
 } %}
 
 {% macro icon(name, cls="h-4 w-4") -%}
@@ -98,4 +103,133 @@
   <span class="mt-1 block text-sm font-medium text-ink">{{ label }}</span>
   {% if hint %}<span class="mt-0.5 block text-xs text-ink-subtle">{{ hint }}</span>{% endif %}
 </a>
+{%- endmacro %}
+
+
+{# --- Flow components (U7, docs/DESIGN.md "Abläufe") --- #}
+
+{# Channel tabs (WAI-ARIA tabs): items are dicts with id, label, symbol, tone, struck. #}
+{% macro tabs(items, label="Kanäle", active="") -%}
+<div class="tabs" role="tablist" aria-label="{{ label }}" data-tabs>
+  {% for t in items %}{% set on = (t.id == active) or (not active and loop.first) %}
+  <a class="tab" role="tab" id="tab-{{ t.id }}" href="#{{ t.id }}" aria-controls="panel-{{ t.id }}"
+     aria-selected="{{ 'true' if on else 'false' }}" tabindex="{{ '0' if on else '-1' }}" data-tab-target="{{ t.id }}">
+    <span class="{{ 'line-through' if t.struck else '' }}">{{ t.label }}</span>
+    <span class="tab-status tone-{{ t.tone }}" aria-hidden="true">{{ t.symbol }}</span>
+    {% if t.status_label %}<span class="sr-only">({{ t.status_label }})</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# Numbered step of a flow; state: open, done, error, locked. `extra` is trusted markup. #}
+{% macro step(number, title, id, state="open", state_label="", extra="") -%}
+<section class="step" id="{{ id }}" aria-labelledby="{{ id }}-title" data-step="{{ state }}">
+  <span class="step-marker step-{{ state }}" aria-hidden="true">{% if state == "done" %}✓{% else %}{{ number }}{% endif %}</span>
+  <div class="step-head">
+    <h2 class="step-title" id="{{ id }}-title">{{ title }}</h2>
+    {% if state_label %}<span class="step-state step-state-{{ state }}">{{ state_label }}</span>{% endif %}
+    {% if extra %}<span class="ml-auto flex flex-wrap items-center gap-2">{{ extra | safe }}</span>{% endif %}
+  </div>
+  <div class="step-body">{{ caller() if caller else "" }}</div>
+</section>
+{%- endmacro %}
+
+{# Large choice cards (radio group). options: (value, label, icon, text). Shows the panel with
+   data-choice-panel="value" inside the element with data-choice-group="name". #}
+{% macro choice_cards(name, options, selected, legend) -%}
+<fieldset class="choice-cards" data-choice-cards="{{ name }}">
+  <legend class="label">{{ legend }}</legend>
+  <div class="grid grid-cols-2 gap-2 sm:grid-cols-{{ options | length if options | length <= 4 else 4 }}">
+  {% for value, label, icon_name, text in options %}
+  <label class="choice-card">
+    <input type="radio" class="sr-only" name="{{ name }}" value="{{ value }}" {% if value == selected %}checked{% endif %} data-choice="{{ value }}">
+    <span class="choice-card-body">{{ icon(icon_name, "h-5 w-5") }}<span class="font-medium">{{ label }}</span>
+      {% if text %}<span class="text-xs text-ink-subtle">{{ text }}</span>{% endif %}</span>
+  </label>
+  {% endfor %}
+  </div>
+</fieldset>
+{%- endmacro %}
+
+{# Yes/no switch as a small form with two buttons (aria-pressed). #}
+{% macro toggle(action, name, current, label, disabled=false, no="Nein", yes="Ja", attrs="") -%}
+<form method="post" action="{{ action }}" class="toggle" {{ attrs | safe }}>
+  <span class="toggle-label" id="{{ name }}-{{ action | replace('/', '-') }}">{{ label }}</span>
+  <span class="segmented" role="group" aria-labelledby="{{ name }}-{{ action | replace('/', '-') }}">
+    <button type="submit" name="{{ name }}" value="false" class="segment" aria-pressed="{{ 'false' if current else 'true' }}" {% if disabled %}disabled{% endif %}>{{ no }}</button>
+    <button type="submit" name="{{ name }}" value="true" class="segment" aria-pressed="{{ 'true' if current else 'false' }}" {% if disabled %}disabled{% endif %}>{{ yes }}</button>
+  </span>
+</form>
+{%- endmacro %}
+
+{# Popover for small secondary forms ("✨ Anders formulieren …"). #}
+{% macro popover(label, id, icon_name="sparkles", cls="btn btn-ghost btn-sm") -%}
+<details class="popover" id="{{ id }}" data-popover>
+  <summary class="{{ cls }}">{% if icon_name %}{{ icon(icon_name) }}{% endif %}{{ label }}</summary>
+  <div class="popover-panel">{{ caller() }}</div>
+</details>
+{%- endmacro %}
+
+{# "Noch offen": entries with label and href (anchor); nothing open → "Bereit zur Freigabe". #}
+{% macro checklist(entries, ready_text="Bereit zur Freigabe", attrs="") -%}
+{% set required = entries | rejectattr("optional") | list %}
+{% if required %}
+<nav class="checklist checklist-open" aria-label="Noch offen" {{ attrs | safe }}>
+  <span class="font-semibold">Noch offen:</span>
+  <ol class="flex flex-wrap gap-x-4 gap-y-1">{% for e in entries %}
+    <li><a href="{{ e.href }}" class="checklist-link {{ 'text-ink-subtle' if e.optional else '' }}" data-checklist-link><span class="checklist-number" aria-hidden="true">{{ loop.index }}</span>{{ e.label }}{% if e.optional %} <span class="sr-only">(optional)</span>{% endif %}</a></li>{% endfor %}
+  </ol>
+</nav>
+{% else %}
+<div class="checklist checklist-ready" role="status" {{ attrs | safe }}>{{ icon("check") }}<span class="font-semibold">{{ ready_text }}</span>
+  {% for e in entries %}<a href="{{ e.href }}" class="checklist-link text-ink-subtle">Tipp: {{ e.label }}</a>{% endfor %}</div>
+{% endif %}
+{%- endmacro %}
+
+{# Hashtags as chips: a hidden field holds the tags, × removes one (JavaScript), new ones are
+   typed into `<name>_add` (merged by the server, works without JavaScript). #}
+{% macro chips(name, tags, label="Hashtags", id="") -%}
+<div class="chips" data-chips>
+  <label class="label" for="{{ id or name }}">{{ label }}</label>
+  <input type="hidden" name="{{ name }}" value="{{ tags | join(' ') }}" data-chips-value>
+  <div class="flex flex-wrap items-center gap-1.5">
+    {% for tag in tags %}<span class="chip" data-chip="{{ tag }}">{{ tag }}<button type="button" class="chip-remove" data-chip-remove="{{ tag }}" aria-label="{{ tag }} entfernen">×</button></span>{% endfor %}
+    <input type="text" id="{{ id or name }}" name="{{ name }}_add" value="" class="chips-input" placeholder="+ Hashtag, z. B. #Rücken" autocomplete="off" data-chips-input>
+  </div>
+</div>
+{%- endmacro %}
+
+{# Upload area: click or drop a file; submits on choice (JavaScript), with a button as fallback. #}
+{% macro dropzone(action, label="Foto hochladen", hint="PNG oder JPG, höchstens 10 MB", accept=".png,.jpg,.jpeg", disabled=false) -%}
+<form method="post" action="{{ action }}" enctype="multipart/form-data" class="dropzone" data-dropzone data-loading="Wird hochgeladen …">
+  <label class="dropzone-area">
+    {{ icon("upload", "h-6 w-6 text-ink-subtle") }}
+    <span class="font-medium text-ink">{{ label }}</span>
+    <span class="text-xs text-ink-subtle">Datei hierher ziehen oder klicken · {{ hint }}</span>
+    <input type="file" name="file" accept="{{ accept }}" required class="sr-only" data-dropzone-input {% if disabled %}disabled{% endif %}>
+  </label>
+  <button type="submit" class="btn btn-secondary btn-sm mt-2" data-dropzone-submit {% if disabled %}disabled{% endif %}>Hochladen</button>
+</form>
+{%- endmacro %}
+
+{# Image tile with selection state; `action` posts the choice (selected tiles are not buttons). #}
+{% macro thumb(src, alt, selected=false, action="", hidden_fields={}, badge="", disabled=false, ratio="aspect-[4/5]") -%}
+<div class="thumb {{ 'thumb-selected' if selected else '' }}" {% if selected %}aria-current="true"{% endif %}>
+  <img src="{{ src }}" alt="{{ alt }}" class="{{ ratio }} w-full object-cover" loading="lazy">
+  {% if badge %}<span class="thumb-badge">{{ badge | safe }}</span>{% endif %}
+  {% if selected %}<span class="thumb-check" aria-hidden="true">{{ icon("check", "h-3.5 w-3.5") }}</span><span class="sr-only">gewählt</span>
+  {% elif action %}<form method="post" action="{{ action }}" class="absolute inset-0">
+    {% for k, v in hidden_fields.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <button type="submit" class="thumb-button" {% if disabled %}disabled{% endif %}><span class="sr-only">{{ alt }} wählen</span></button></form>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro thumb_grid(cls="grid-cols-3 sm:grid-cols-4") -%}
+<div class="grid gap-2 {{ cls }}" data-thumb-grid>{{ caller() }}</div>
+{%- endmacro %}
+
+{# Bar fixed at the bottom on small screens (main action stays reachable). #}
+{% macro sticky_footer(attrs="") -%}
+<div class="sticky-footer" {{ attrs | safe }}>{{ caller() }}</div>
 {%- endmacro %}

@@ -22,6 +22,7 @@ from app.core.llm.calls import LLMCall, audit_llm_call, call_with_retry
 from app.core.models import utcnow
 from app.core.outcomes import Outcome
 from app.core.theme import WHITE, mix, parse_hex
+from app.social.briefing_image import LOCKED_MESSAGE, image_locked
 from app.social.checking import member_names
 from app.social.checks import (
     Finding,
@@ -43,7 +44,7 @@ from app.social.graphics import (
 )
 from app.social.llm.client import SocialLLMClient
 from app.social.llm.schemas import AssessmentOutput, GraphicTextOutput
-from app.social.models import Briefing, InfoGraphic, InfoGraphicCheck, PostDraft, PostStatus
+from app.social.models import Briefing, InfoGraphic, InfoGraphicCheck, PostDraft
 from app.social.profiles import SocialConfig
 from app.social.sensitive import (
     assessment_failed,
@@ -70,7 +71,9 @@ CONSENT_STEP = "social.graphic_text_consent"
 
 # Limits per field (characters) and of the list.
 LIMITS = {"headline": 60, "subline": 90, "intro": 260, "point": 80, "closing": 140}
-MIN_POINTS, MAX_POINTS = 3, 6
+# The list is optional: an info graphic with only a headline replaces the old template
+# graphic (SPEC_social 14).
+MIN_POINTS, MAX_POINTS = 0, 6
 # Smallest font scale before text is refused as too long (never cut).
 MIN_SCALE = 0.55
 # Largest font scale: tall formats with little text use the space instead of leaving it empty.
@@ -342,12 +345,9 @@ def text_errors(session: Session, graphic: InfoGraphic) -> list[str]:
 
 
 def _editable(session: Session, briefing_id: int) -> None:
-    """The texts are publishing material of the briefing: fixed once every post is out."""
-    statuses = session.exec(
-        select(PostDraft.status).where(PostDraft.briefing_id == briefing_id)
-    ).all()
-    if statuses and all(s in (PostStatus.PUBLISHED, PostStatus.REJECTED) for s in statuses):
-        raise InfoGraphicError(["Alle Beiträge sind veröffentlicht oder verworfen."])
+    """The texts are part of the post image: fixed once a post of the briefing is approved."""
+    if image_locked(session, briefing_id):
+        raise InfoGraphicError([LOCKED_MESSAGE])
 
 
 def _audit(
@@ -410,6 +410,48 @@ def save_texts(
     if changed or from_ai or not graphic_checks(session, graphic.id or 0):
         run_graphic_checks(session, config, client, briefing, graphic)
     return graphic
+
+
+LAYOUT_STEP = "social.graphic_layout"
+
+
+def save_layout(
+    session: Session,
+    briefing: Briefing,
+    *,
+    variant: str,
+    fact_keys: Iterable[str] | None,
+    user: str,
+) -> InfoGraphic:
+    """Design variant and facts on the graphic (no new text checks: the texts are unchanged).
+
+    `fact_keys` None means all facts of the briefing; an empty choice also means all facts (a
+    graphic never loses its facts by accident).
+    """
+    _editable(session, briefing.id or 0)
+    if variant not in VARIANT_LABELS:
+        raise InfoGraphicError(["Unbekannte Gestaltungsvariante."])
+    graphic = get_info_graphic(session, briefing.id or 0)
+    if graphic is None:
+        raise InfoGraphicError(["Bitte zuerst eine Überschrift eingeben."])
+    facts = BriefingFacts.from_json(briefing.facts)
+    keys = list(parse_fact_keys(fact_keys, facts)) if fact_keys is not None else None
+    if keys is not None and set(keys) == set(facts.present_keys()):
+        keys = None
+    graphic.variant, graphic.fact_keys = variant, keys
+    graphic.updated_by, graphic.updated_at = user, utcnow()
+    session.add(graphic)
+    session.commit()
+    session.refresh(graphic)
+    _audit(session, graphic, LAYOUT_STEP, user, variant=variant, fact_keys=keys)
+    return graphic
+
+
+def graphic_fact_keys(graphic: InfoGraphic, briefing: Briefing) -> tuple[FactKey, ...]:
+    facts = BriefingFacts.from_json(briefing.facts)
+    if graphic.fact_keys is None:
+        return tuple(facts.present_keys())
+    return parse_fact_keys(graphic.fact_keys, facts)
 
 
 FACT_MASK = "[Fakt]"
@@ -840,7 +882,7 @@ def render_info_graphic(
     # Brand line at the top (on photos with a small shade behind it).
     brand_font = _font("semibold", brand_size)
     brand = config.brand.name
-    if photo is not None:
+    if photo is not None and config.logo_path is None:
         tw = draw.textlength(brand, font=brand_font)
         strip = Image.new("RGBA", (width, height), (0, 0, 0, 0))
         ImageDraw.Draw(strip).rounded_rectangle(
@@ -855,15 +897,22 @@ def render_info_graphic(
         )
         canvas = Image.alpha_composite(canvas, strip)
         draw = ImageDraw.Draw(canvas)
-    draw.rectangle(
-        (margin, margin, margin + round(width * 0.012), margin + brand_size), fill=accent
-    )
-    draw.text(
-        (margin + round(width * 0.03), margin - 2),
-        brand,
-        font=brand_font,
-        fill=WHITE if photo is not None else colour,
-    )
+    if config.logo_path is not None:
+        # Logo from the brand profile instead of the brand name (SPEC_social 14).
+        logo = open_image(config.logo_path.read_bytes()).convert("RGBA")
+        logo.thumbnail((round(text_width * 0.5), round(width * 0.09)), Image.Resampling.LANCZOS)
+        canvas.alpha_composite(logo, (margin, margin))
+        draw = ImageDraw.Draw(canvas)
+    else:
+        draw.rectangle(
+            (margin, margin, margin + round(width * 0.012), margin + brand_size), fill=accent
+        )
+        draw.text(
+            (margin + round(width * 0.03), margin - 2),
+            brand,
+            font=brand_font,
+            fill=WHITE if photo is not None else colour,
+        )
 
     for block in blocks:
         y += block.gap_before

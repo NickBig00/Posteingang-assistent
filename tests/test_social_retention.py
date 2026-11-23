@@ -1,5 +1,6 @@
 """Deletion concept of the social media module: delete per briefing/campaign, retention."""
 
+import io
 import json
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -7,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, select
 
@@ -21,6 +23,7 @@ from app.social.assets import (
     revoke_consent,
     save_asset,
 )
+from app.social.briefing_image import set_briefing_image
 from app.social.briefings import create_briefing
 from app.social.calendar import publish_draft, schedule_draft
 from app.social.campaigns import create_campaign, load_demo_campaign
@@ -32,10 +35,12 @@ from app.social.models import (
     Campaign,
     Channel,
     CheckResult,
+    ImageSource,
     PostDraft,
     PostReview,
     PostStatus,
 )
+from app.social.post_image import remove_asset_choice
 from app.social.retention import (
     DELETE_STEP,
     DRAFT_DELETE_STEP,
@@ -50,7 +55,16 @@ from app.social.web import get_social_client, get_social_config
 from tests.social_helpers import course_input, demo_config, scripted
 
 CONFIG = demo_config()
-PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+
+
+def _png(colour: tuple[int, int, int]) -> bytes:
+    buffer = io.BytesIO()
+    Image.new("RGB", (40, 50), colour).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+PNG = _png((30, 140, 120))
+OTHER_PNG = _png((140, 30, 120))
 NOW = datetime(2027, 6, 1, 12, 0, tzinfo=UTC)
 
 
@@ -324,12 +338,15 @@ def test_delete_draft_keeps_briefing_and_other_drafts(session: Session) -> None:
 # --- withdrawn image consent ---
 
 
-def _with_consented_image(session: Session, raw_dir: Path) -> tuple[Briefing, Asset]:
+def _with_consented_image(
+    session: Session, raw_dir: Path, content: bytes = PNG
+) -> tuple[Briefing, Asset]:
     briefing = _briefing(session)
     asset = save_asset(
-        session, briefing, "team.png", PNG, shows_persons=True, consent_confirmed=True,
+        session, briefing, "team.png", content, shows_persons=True, consent_confirmed=True,
         user="demo", storage=raw_dir,
     )  # fmt: skip
+    set_briefing_image(session, briefing.id or 0, ImageSource.UPLOAD, asset.id, "demo")
     return briefing, asset
 
 
@@ -358,6 +375,7 @@ def test_revoke_consent_lists_affected_posts(session: Session, raw_dir: Path) ->
     assert entry.model_params["published"] == [published.id]
 
     # Removing the image entry lifts the block.
+    remove_asset_choice(session, asset)
     delete_asset(session, asset, "demo")
     assert approval_blockers(session, planned) == []
 
@@ -373,13 +391,30 @@ def test_revoke_needs_confirmed_consent(session: Session, raw_dir: Path) -> None
         revoke_consent(session, asset, "demo")
 
 
-def test_revoked_file_stays_for_other_consented_entry(session: Session, raw_dir: Path) -> None:
+def test_revoked_file_stays_for_another_photo_with_consent(session: Session, raw_dir: Path) -> None:
     _, revoked = _with_consented_image(session, raw_dir)
-    _, other = _with_consented_image(session, raw_dir)
+    _, other = _with_consented_image(session, raw_dir, OTHER_PNG)
 
     revoke_consent(session, revoked, "demo")
 
-    assert Path(other.stored_path).exists()
+    assert Path(other.stored_path).exists() and other.consent_revoked_at is None
+
+
+def test_revocation_applies_to_the_same_photo_in_every_briefing(
+    session: Session, raw_dir: Path
+) -> None:
+    """The same photo shows the same people: a withdrawal applies wherever it is used."""
+    first, revoked = _with_consented_image(session, raw_dir)
+    second, same = _with_consented_image(session, raw_dir)
+    (draft, *_) = _drafts(session, second)
+    approve_draft(session, draft, "demo")
+
+    revocation = revoke_consent(session, revoked, "demo")
+
+    session.refresh(same)
+    assert same.consent_revoked_at is not None and not Path(same.stored_path).exists()
+    assert [d.id for d in revocation.back_to_review] == [draft.id]
+    assert any("widerrufen" in b for b in approval_blockers(session, draft))
 
 
 # --- audit holds only hashes and metadata ---
@@ -423,7 +458,7 @@ def test_revoke_and_delete_draft_in_the_ui(
     first, second = _drafts(session, briefing)
     approve_draft(session, first, "demo")
     page = social_client.get(f"/social/briefings/{briefing.id}").text
-    assert "Einwilligung widerrufen</button>" in page
+    assert "widerrufen</button>" in page
     assert "Entwurf löschen" in page
 
     revoked = social_client.post(f"/social/assets/{asset.id}/revoke")

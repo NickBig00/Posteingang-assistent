@@ -1,0 +1,45 @@
+{# Step ④ Veröffentlichen (after the approval) with ①–③ as a folded summary. Needs d, f. #}
+{% import "_ui.html" as ui %}
+{% set review = reviews.get(d.id) %}
+{% set pi = post_images[d.id] %}
+{% call ui.step(4, "Veröffentlichen", "draft-" ~ d.id, "done" if d.status.value == "published" else "open", post_status_labels[d.status]) %}
+{% if review %}<p class="text-[13px] text-green-800">✓ Freigegeben von {{ review.reviewer }} am {{ review.reviewed_at.strftime("%d.%m.%Y %H:%M") }}</p>{% endif %}
+<div class="space-y-4 rounded-card border border-line bg-surface p-5 shadow-card" id="publish-aids-{{ d.id }}">
+  <p class="text-[13px] text-ink-muted">Das System postet nichts selbst: Text und Bild übernehmen Sie von Hand in {{ channel_labels[d.channel] | replace("-Beitrag", "") | replace("-Story", "") }}.</p>
+  <ol class="space-y-4">
+    <li class="flex flex-wrap items-center gap-3"><span class="step-marker static step-open" aria-hidden="true">1</span>
+      <button type="button" class="btn btn-primary" data-copy="{{ d.full_text }}">{{ ui.icon("copy") }}<span data-copy-label>Text kopieren</span></button>
+      <a href="/social/drafts/{{ d.id }}/export" class="btn btn-link btn-sm">als Textdatei</a></li>
+    <li class="flex flex-wrap items-center gap-3"><span class="step-marker static step-open" aria-hidden="true">2</span>
+      {% if d.carousel_enabled %}
+      <a href="/social/drafts/{{ d.id }}/carousel.zip" class="btn btn-primary" download data-carousel-download>{{ ui.icon("download") }}Bilder herunterladen (ZIP)</a>
+      {% elif briefing_image and not pi.problems %}
+      <a href="/social/drafts/{{ d.id }}/image.jpg" class="btn btn-primary" download data-jpeg-download>{{ ui.icon("download") }}Bild herunterladen ({{ channel_formats[d.channel].value }})</a>
+      {% else %}<span class="text-sm text-ink-subtle">Kein Bild – der Beitrag wird nur mit Text veröffentlicht.</span>{% endif %}
+      {% if chosen_asset and (chosen_asset.ai_generated or chosen_asset.ai_edited) %}
+      <span class="basis-full pl-11" data-ai-download-notice>{% call ui.alert("", "ai") %}<strong>Beim Posten als KI-{{ "generiert" if chosen_asset.ai_generated else "bearbeitet" }} kennzeichnen:</strong> Setzen Sie auf der Plattform die KI-Kennzeichnung (z. B. „Mit KI erstellt“) oder erwähnen Sie es im Text.{% endcall %}</span>
+      {% endif %}</li>
+    <li class="flex flex-wrap items-center gap-3"><span class="step-marker static step-open" aria-hidden="true">3</span>
+      {% if d.status.value == "published" %}<span class="badge badge-ok">✓✓ veröffentlicht{% if d.published_at %} am {{ (d.published_at | local).strftime("%d.%m.%Y %H:%M") }}{% endif %}</span>
+      {% else %}
+      {% set back = "" %}{% include "_social_schedule.html" %}
+      {% if d.status.value == "scheduled" %}
+      {% if d.is_scheduled_externally %}<span class="badge badge-info" data-external>eingeplant (extern)</span>
+        <form method="post" action="/social/drafts/{{ d.id }}/external/undo" class="inline"><button type="submit" class="btn btn-link btn-sm">zurücknehmen</button></form>
+      {% else %}<form method="post" action="/social/drafts/{{ d.id }}/external"><button type="submit" class="btn btn-secondary btn-sm" title="Festhalten, dass der Beitrag in der Planungsfunktion der Plattform eingeplant ist.">Als „eingeplant (extern)“ markieren</button></form>{% endif %}
+      <form method="post" action="/social/drafts/{{ d.id }}/publish"><button type="submit" class="btn btn-success btn-sm">Als veröffentlicht markieren</button></form>
+      <form method="post" action="/social/drafts/{{ d.id }}/unschedule"><button type="submit" class="btn btn-ghost btn-sm">Aus Kalender nehmen</button></form>
+      {% endif %}
+      {% endif %}</li>
+  </ol>
+  {% if d.scheduled_at %}<p class="flex items-center gap-2 text-sm">{{ ui.icon("calendar", "h-4 w-4 text-ink-subtle") }}Geplant: <strong>{{ (d.scheduled_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr</strong></p>{% endif %}
+</div>
+{% if d.status.value in ("approved", "scheduled") %}
+<form method="post" action="/social/drafts/{{ d.id }}/reject" onsubmit="return confirm('Freigabe zurückziehen und den Beitrag verwerfen?')"><button type="submit" class="btn btn-link btn-sm px-0 text-ink-subtle">Freigabe zurückziehen (verwerfen)</button></form>
+{% endif %}
+<details class="text-sm">
+  <summary class="cursor-pointer text-ink-muted">Text und Prüfungen ansehen</summary>
+  <p class="mt-2 whitespace-pre-wrap leading-relaxed">{{ d.full_text }}</p>
+  <ul class="mt-2 list-disc pl-5 text-[13px] text-ink-muted">{% for i in f.items %}<li>{{ i.label }} · {{ i.source }}: {{ i.reason }}{% if i.confirmed_at %} (bestätigt von {{ i.confirmed_by }}){% endif %}</li>{% endfor %}</ul>
+</details>
+{% endcall %}

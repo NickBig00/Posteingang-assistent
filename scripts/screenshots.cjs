@@ -98,10 +98,32 @@ const SHOTS = {
   B9: [
     ["karussell", "/social/briefings/{briefing}#carousel-{image_draft}", { selector: "#carousel-{image_draft}" }],
   ],
+  U7: [
+    ["briefing-ablauf-laptop", "/social/briefings/{briefing}#instagram_post", { fullPage: true }],
+    ["briefing-ablauf-facebook", "/social/briefings/{briefing}#facebook", { fullPage: true }],
+    ["briefing-freigegeben-veroeffentlichen", "/social/briefings/{approved_briefing}#instagram_post", { fullPage: true }],
+    ["briefing-ablauf-tablet", "/social/briefings/{briefing}#instagram_post", { viewport: TABLET, fullPage: true }],
+    ["briefing-tablet-oben", "/social/briefings/{briefing}#facebook", { viewport: TABLET }],
+    ["design-system-ablauf", "/design", { selector: "section:has(#flow)" }],
+  ],
+  U8: [
+    ["toast-freigegeben", "/social/briefings/{approved_briefing}?toast=freigegeben#instagram_post", {}],
+    ["ki-bild-ladezustand", "/social/briefings/{briefing}#ki-bild", {
+      before: async (page) => {
+        await page.evaluate(() => {
+          const skeleton = document.querySelector('[data-skeleton-for="ki-bild-form"]');
+          skeleton.hidden = false;
+          const old = skeleton.parentElement.querySelector("[data-skeleton-hide]");
+          if (old) old.hidden = true;
+          skeleton.scrollIntoView({ block: "center" });
+        });
+      },
+    }],
+  ],
 };
 
 // Milestones whose pages need the AI image functions switched on.
-const IMAGE_MILESTONES = new Set(["B2", "B4", "B5", "B6", "B8", "B9"]);
+const IMAGE_MILESTONES = new Set(["B2", "B4", "B5", "B6", "B8", "B9", "U7", "U8"]);
 
 function startServer(env) {
   // Start uvicorn directly (not via `uv run`), so stopping the child really stops the server.
@@ -197,6 +219,18 @@ async function seed(withImages) {
     upload.append("file", new Blob([image], { type: "image/jpeg" }), "demo_hintergrund.jpg");
     await fetch(`${BASE}/social/briefings/${briefingId}/assets`, { method: "POST", body: upload, redirect: "manual" });
   }
+  // Text on the image of the approved briefing (before the approval: then the image is fixed).
+  await post(`/social/briefings/${ids.approved_briefing}/image/text`, { with_text: "true" });
+  await post(`/social/briefings/${ids.approved_briefing}/info-graphic`, {
+    headline: "Winter-Schnupperwochen",
+    subline: "Zwei Wochen alle Kurse ausprobieren",
+    intro: "Neugierig auf unsere Kurse? In den Schnupperwochen kannst du alles testen.",
+    points: "Alle Kurse inklusive\nOhne Vertragsbindung\nPersönliche Einweisung",
+    closing: "Melde dich einfach am Empfang!",
+    variant: "farbfeld",
+  });
+  const infoPage = await (await fetch(`${BASE}/social/briefings/${ids.approved_briefing}`)).text();
+  for (const m of new Set([...infoPage.matchAll(/\/social\/info-graphic-checks\/(\d+)\/confirm/g)].map((x) => x[0]))) await post(m);
   const detail = await (await fetch(`${BASE}/social/briefings/${ids.approved_briefing}`)).text();
   const draftIds = [...new Set([...detail.matchAll(/id="draft-(\d+)"/g)].map((m) => m[1]))];
   const confirmIds = [...new Set([...detail.matchAll(/\/social\/checks\/(\d+)\/confirm/g)].map((m) => m[1]))];
@@ -212,55 +246,31 @@ async function seed(withImages) {
     }
   }
 
-  // Info graphic texts for the approved briefing (B7).
-  await post(`/social/briefings/${ids.approved_briefing}/info-graphic`, {
-    headline: "Winter-Schnupperwochen",
-    subline: "Zwei Wochen alle Kurse ausprobieren",
-    intro: "Neugierig auf unsere Kurse? In den Schnupperwochen kannst du alles testen.",
-    points: "Alle Kurse inklusive\nOhne Vertragsbindung\nPersönliche Einweisung",
-    closing: "Melde dich einfach am Empfang!",
-    variant: "farbfeld",
-  });
-  const infoPage = await (await fetch(`${BASE}/social/briefings/${ids.approved_briefing}`)).text();
-  for (const m of infoPage.matchAll(/\/social\/info-graphic-checks\/(\d+)\/confirm/g)) await post(m[0]);
-  ids.background_asset = (infoPage.match(/name="info_background"[\s\S]*?<option value="(\d+)"/) || [])[1] || "color";
-
   const campaign = await post("/social/campaigns/demo");
   ids.campaign = campaign.split("/").pop() || "1";
   ids.image_briefing = ids.briefing;
+  const first = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+  const drafts = [...new Set([...first.matchAll(/id="draft-(\d+)"/g)].map((m) => m[1]))];
+  ids.image_draft = drafts[0];
+  ids.hint_draft = drafts[1] || drafts[0];
   if (withImages) {
-    const first = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
-    const draft = (first.match(/id="draft-(\d+)"/) || [])[1];
-    ids.image_draft = draft;
-    if (draft) {
-      await post(`/social/drafts/${draft}/images/suggest`, { image_format: "4:5" });
-      const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
-      const match = page.match(new RegExp(`id="prompt-${draft}"[^>]*>([^<]*)</textarea>`));
-      const prompt = match ? match[1].replace(/&amp;/g, "&").replace(/&#34;/g, '"').replace(/&#39;/g, "'") : "";
-      if (prompt) await post(`/social/drafts/${draft}/images/generate`, { prompt, image_format: "4:5" });
-    }
-    // Second draft: a prompt with people and text in the image → hints to confirm (B5).
-    const drafts = [...new Set([...first.matchAll(/id="draft-(\d+)"/g)].map((m) => m[1]))];
-    ids.hint_draft = drafts[1] || drafts[0];
-    if (ids.hint_draft) {
-      const prompt = "Frau beim Rückentraining auf einer Matte, heller Raum, Schriftzug „Rückenfit“ an der Wand";
-      // First confirm, then generate: the first attempt only records the hints.
-      await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
-      const pending = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
-      for (const m of pending.matchAll(/\/social\/image-hints\/(\d+)\/confirm/g)) await post(m[0]);
-      await post(`/social/drafts/${ids.hint_draft}/images/generate`, { prompt, image_format: "4:5" });
-      const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
-      const candidate = (page.match(new RegExp(`/social/drafts/${ids.hint_draft}/images/(\\d+)/choose`)) || [])[1];
-      if (candidate) await post(`/social/drafts/${ids.hint_draft}/images/${candidate}/choose`);
-      // An own photo edited with AI (B8): the result is a new image labelled "KI-bearbeitet".
-      const assetsPage = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
-      ids.photo = (assetsPage.match(/id="asset-(\d+)"/) || [])[1];
-      if (ids.photo) await post(`/social/assets/${ids.photo}/edit`, { quick: "Wärmeres Licht", image_format: "4:5" });
-      // A carousel for the Instagram post (B9), suggested by the (offline) AI.
-      await post(`/social/drafts/${ids.image_draft}/carousel/suggest`);
-      // A revision by instruction, so the audit trail shows one (B6).
-      await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
-    }
+    // An own photo edited with AI (B8): the result is a new image labelled "KI-bearbeitet".
+    ids.photo = (first.match(/id="asset-(\d+)"/) || [])[1];
+    if (ids.photo) await post(`/social/assets/${ids.photo}/edit`, { quick: "Wärmeres Licht", image_format: "4:5" });
+    // An AI image with people and text in the prompt → hints to confirm first (B5), then chosen.
+    const prompt = "Frau beim Rückentraining auf einer Matte, heller Raum, Schriftzug „Rückenfit“ an der Wand";
+    await post(`/social/briefings/${ids.briefing}/images/check`, { prompt });
+    const pending = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+    for (const m of new Set([...pending.matchAll(/\/social\/image-hints\/(\d+)\/confirm/g)].map((x) => x[0]))) await post(m);
+    await post(`/social/briefings/${ids.briefing}/images/generate`, { prompt });
+    const page = await (await fetch(`${BASE}/social/briefings/${ids.briefing}`)).text();
+    const candidate = (page.match(new RegExp(`/social/briefings/${ids.briefing}/images/(\\d+)/choose`)) || [])[1];
+    if (candidate) await post(`/social/briefings/${ids.briefing}/images/${candidate}/choose`);
+    // Several images for the Instagram post (B9/U6), split suggested by the (offline) AI.
+    await post(`/social/drafts/${ids.image_draft}/carousel`, { enabled: "true" });
+    await post(`/social/briefings/${ids.briefing}/carousel/suggest`, { draft: ids.image_draft });
+    // A revision by instruction, so the audit trail shows one (B6).
+    await post(`/social/drafts/${ids.hint_draft}/revise`, { quick: "Kürzer fassen" });
   }
   return ids;
 }

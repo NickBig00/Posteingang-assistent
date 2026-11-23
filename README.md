@@ -75,8 +75,8 @@ den genauen Grund; „nicht erreichbar“ erscheint nur bei Verbindungsfehlern. 
 unzulässigen Zeichen (z. B. aus einem Platzhalter) wird beim Start protokolliert, unter
 Einstellungen markiert und führt zu einer klaren Meldung statt eines Serverfehlers. Das
 anbieterunabhängige Interface liegt in `app/core/images/` (einziger Ort für Bild-SDKs neben
-`app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3) und `IMAGE_MAX_PER_DAY`
-(Standard 20) Erzeugungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht
+`app/core/llm/`). Kostenbremse: `IMAGE_MAX_PER_POST` (Standard 3, gilt je Briefing, weil ein Bild für alle Kanäle
+gilt) und `IMAGE_MAX_PER_DAY` (Standard 20) Erzeugungen bzw. KI-Bearbeitungen, je Erzeugung `IMAGE_VARIANTS` (2–3) Varianten; jede Erzeugung steht
 mit Modell, Parametern, Variantenzahl und Kostenschätzung (`IMAGE_COST_PER_IMAGE_EUR`) im Audit.
 Tests rufen nie eine echte Bild-API auf.
 

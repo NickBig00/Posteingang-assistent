@@ -133,6 +133,9 @@ class PostDraft(SQLModel, table=True):
         default=None, sa_column=_optional_timestamp_column()
     )
     external_scheduled_by: str | None = None
+    # Several images in one post (carousel, SPEC_social 14.2): the pages belong to the briefing,
+    # each post of an allowed channel switches them on or off.
+    carousel_enabled: bool = False
     # Transparency requirement: the text was produced by the LLM (kept after approval as
     # provenance; the label is shown in the UI, never inside the post text).
     is_ai_suggestion: bool = True
@@ -205,6 +208,9 @@ class Asset(SQLModel, table=True):
         default=None, sa_column=_optional_timestamp_column()
     )
     draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
+    # Copy taken over from another briefing ("Wie Schritt 1", SPEC_social 14.3; no foreign key:
+    # the original may be deleted while the copy stays).
+    copied_from_asset_id: int | None = None
     # Consent withdrawn: the file is deleted, the entry stays as record until removed.
     consent_revoked_by: str | None = None
     consent_revoked_at: datetime | None = Field(
@@ -212,11 +218,46 @@ class Asset(SQLModel, table=True):
     )
 
 
-class ImageProposal(SQLModel, table=True):
-    """Prompt for AI images of one draft: AI suggestion, visible and editable by a person."""
+class ImageSource(StrEnum):
+    UPLOAD = "upload"
+    AI = "ai"
+    COLOR = "color"
+
+
+IMAGE_SOURCE_LABELS: dict[ImageSource, str] = {
+    ImageSource.UPLOAD: "Eigenes Foto",
+    ImageSource.AI: "KI-Bild",
+    ImageSource.COLOR: "Farbfläche",
+}
+
+
+class BriefingImage(SQLModel, table=True):
+    """The one image of a briefing for all channels (SPEC_social 14.3).
+
+    `asset_id` is the chosen photo (also AI-edited) or AI image; None for a colour fill. With
+    `with_text` the rendered post image is the info graphic over it (no foreign key: a deleted
+    image shows as a problem instead of breaking the briefing).
+    """
 
     id: int | None = Field(default=None, primary_key=True)
-    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int = Field(foreign_key="briefing.id", index=True, unique=True)
+    source: ImageSource
+    asset_id: int | None = None
+    with_text: bool = False
+    chosen_by: str
+    chosen_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
+    # Taken over from another briefing of the campaign ("Wie Schritt 1").
+    copied_from_briefing_id: int | None = None
+
+
+class ImageProposal(SQLModel, table=True):
+    """Prompt for AI images of a briefing: AI suggestion, visible and editable by a person.
+
+    `draft_id` is only set on rows from before U6 (images per draft).
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     briefing_id: int = Field(foreign_key="briefing.id", index=True)
     prompt: str = ""
     # The current prompt is the unchanged AI suggestion (False once a person edited it).
@@ -233,7 +274,8 @@ class PromptHint(SQLModel, table=True):
     """
 
     id: int | None = Field(default=None, primary_key=True)
-    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
+    briefing_id: int | None = Field(default=None, foreign_key="briefing.id", index=True)
     proposal_id: int = Field(foreign_key="imageproposal.id", index=True)
     key: str
     reason: str
@@ -249,7 +291,7 @@ class ImageCandidate(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     proposal_id: int = Field(foreign_key="imageproposal.id", index=True)
-    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     briefing_id: int = Field(foreign_key="briefing.id", index=True)
     variant: int
     stored_path: str
@@ -276,6 +318,8 @@ class InfoGraphic(SQLModel, table=True):
     closing: str = ""
     story: dict[str, JsonValue] | None = Field(default=None, sa_column=Column(JSON))
     variant: str = "zentriert"
+    # Facts shown on the graphic (keys of `FACT_KEYS`); None = all facts of the briefing.
+    fact_keys: list[str] | None = Field(default=None, sa_column=Column(JSON))
     is_ai_suggestion: bool = False
     edited_by_human: bool = False
     updated_by: str = ""
@@ -299,14 +343,17 @@ class InfoGraphicCheck(SQLModel, table=True):
 
 
 class CarouselPage(SQLModel, table=True):
-    """One page of an Instagram carousel post (SPEC_social 14.2), in the order of `position`.
+    """One page of a carousel post (SPEC_social 14.2), in the order of `position`.
 
-    `kind` "info": an info graphic page with its own texts (optional background image and
-    facts block); "image": an image of the briefing (own photo, AI image, AI-edited photo).
+    The pages belong to the briefing; posts switch them on with `PostDraft.carousel_enabled`.
+    `kind` "cover": the rendered post image of the briefing (14.3); "info": an info graphic
+    page with its own texts (optional background image and facts block); "image": an image of
+    the briefing (own photo, AI image, AI-edited photo). `draft_id` only on rows before U6.
     """
 
     id: int | None = Field(default=None, primary_key=True)
-    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int | None = Field(default=None, foreign_key="briefing.id", index=True)
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     position: int
     kind: str = "info"
     texts: dict[str, JsonValue] = Field(default_factory=dict, sa_column=Column(JSON))
@@ -322,7 +369,8 @@ class CarouselCheck(SQLModel, table=True):
     """Check result on the pages of a carousel (like `CheckResult` for the post text)."""
 
     id: int | None = Field(default=None, primary_key=True)
-    draft_id: int = Field(foreign_key="postdraft.id", index=True)
+    briefing_id: int | None = Field(default=None, foreign_key="briefing.id", index=True)
+    draft_id: int | None = Field(default=None, foreign_key="postdraft.id", index=True)
     page: int | None = None
     check_key: str
     outcome: Outcome

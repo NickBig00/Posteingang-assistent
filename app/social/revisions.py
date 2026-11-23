@@ -18,19 +18,25 @@ from app.core.audit import HUMAN_ACTOR_MODEL, write_audit_entry
 from app.core.image_formats import ImageFormat
 from app.core.images.base import ImageProvider
 from app.core.llm.calls import LLMCall, audit_llm_call, call_with_retry
+from app.social.briefing_image import image_locked
 from app.social.checking import run_checks
 from app.social.facts import BriefingFacts
-from app.social.images import EDITABLE_STATUSES, generate_variants, latest_proposal
+from app.social.images import generate_variants, latest_proposal
 from app.social.llm.client import SocialLLMClient
 from app.social.llm.schemas import DraftOutput, ImagePromptOutput
 from app.social.models import (
     Briefing,
     ImageProposal,
     PostDraft,
+    PostStatus,
     RevisionRequest,
     RevisionTarget,
 )
 from app.social.profiles import SocialConfig
+
+EDITABLE_STATUSES = frozenset(
+    {PostStatus.DRAFT, PostStatus.IN_REVIEW, PostStatus.NEEDS_MANUAL_REVIEW}
+)
 
 REQUEST_STEP = "social.revision_request"
 POST_REVISE_STEP = "social.post_revise"
@@ -219,25 +225,20 @@ def revise_image_prompt(
     session: Session,
     config: SocialConfig,
     client: SocialLLMClient,
-    draft: PostDraft,
+    briefing: Briefing,
     instruction: str,
     user: str,
     *,
     target: RevisionTarget = RevisionTarget.IMAGE_PROMPT,
 ) -> ImageProposal:
-    """New version of the image prompt (a new proposal row; the previous ones stay)."""
-    if draft.status not in EDITABLE_STATUSES:
+    """New version of the image prompt of the briefing (a new proposal row)."""
+    if image_locked(session, briefing.id or 0):
         raise RevisionError("Das Bild lässt sich nur vor der Freigabe ändern.")
     instruction = clean_instruction(instruction)
-    briefing = _briefing(session, draft.briefing_id)
-    current = latest_proposal(session, draft.id or 0)
+    current = latest_proposal(session, briefing.id or 0)
     if current is None or not current.prompt.strip():
         raise RevisionError("Es gibt noch keinen Bild-Prompt zum Überarbeiten.")
-    context: dict[str, JsonValue] = {
-        "briefing_id": draft.briefing_id,
-        "draft_id": draft.id,
-        "channel": draft.channel.value,
-    }
+    context: dict[str, JsonValue] = {"briefing_id": briefing.id}
     call = _audited(
         session,
         client,
@@ -250,8 +251,8 @@ def revise_image_prompt(
     output = call.output if call.ok else None
     record_request(
         session,
-        briefing_id=draft.briefing_id,
-        draft_id=draft.id,
+        briefing_id=briefing.id or 0,
+        draft_id=None,
         target=target,
         instruction=instruction,
         user=user,
@@ -263,8 +264,7 @@ def revise_image_prompt(
             "Versuch). Der bisherige Prompt bleibt; bitte selbst anpassen."
         )
     proposal = ImageProposal(
-        draft_id=draft.id or 0,
-        briefing_id=draft.briefing_id,
+        briefing_id=briefing.id or 0,
         prompt=output.prompt.strip(),
         prompt_from_ai=True,
         image_format=current.image_format,
@@ -280,7 +280,7 @@ def revise_image(
     config: SocialConfig,
     client: SocialLLMClient,
     provider: ImageProvider,
-    draft: PostDraft,
+    briefing: Briefing,
     instruction: str,
     user: str,
     storage: Path,
@@ -290,17 +290,17 @@ def revise_image(
     The generation goes through the image service: switch, cost brake, prompt check, audit.
     """
     proposal = revise_image_prompt(
-        session, config, client, draft, instruction, user, target=RevisionTarget.IMAGE
+        session, config, client, briefing, instruction, user, target=RevisionTarget.IMAGE
     )
     try:
         fmt = ImageFormat(proposal.image_format)
     except ValueError:
-        fmt = ImageFormat.SQUARE
+        fmt = ImageFormat.PORTRAIT
     generate_variants(
         session,
         config,
         provider,
-        draft,
+        briefing,
         prompt=proposal.prompt,
         fmt=fmt,
         user=user,

@@ -342,7 +342,8 @@ def test_submit_creates_drafts(social_client: TestClient, session: Session) -> N
     assert response.status_code == 303
     detail = social_client.get(response.headers["location"])
     assert detail.status_code == 200
-    assert detail.text.count("KI-Vorschlag</span>") == 2
+    # Labelled per draft: at the text (step ①) and in the preview.
+    assert detail.text.count("KI-Vorschlag</span>") == 4
     assert "Instagram-Beitrag" in detail.text and "Facebook-Beitrag" in detail.text
     assert len(session.exec(select(PostDraft)).all()) == 2
     overview = social_client.get("/social").text

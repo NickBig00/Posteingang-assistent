@@ -1,0 +1,36 @@
+{# Step ③ Prüfen und freigeben: one list of all checks of text, image and carousel. Needs d, f. #}
+{% import "_ui.html" as ui %}
+{% macro item_row(i) %}
+<li class="review-item" id="{{ i.uid }}" data-review-item="{{ i.status }}">
+  <span class="mt-1.5 dot dot-{{ {'error': 'error', 'open': 'warning', 'note': 'warning', 'confirmed': 'ok', 'ok': 'ok'}[i.status] }}" aria-hidden="true"></span>
+  <div class="min-w-0 flex-1 text-sm">
+    <p><span class="font-medium">{{ i.label }}</span> <span class="text-ink-subtle">· {{ i.source }}</span>
+      {% if i.is_ai %} {{ ui.ai_badge("KI-Einschätzung") }}{% endif %}
+      <span class="sr-only">({{ {'error': 'Fehler', 'open': 'offen', 'note': 'Hinweis', 'confirmed': 'bestätigt', 'ok': 'ok'}[i.status] }})</span></p>
+    <p class="mt-0.5 text-ink-muted">{{ i.reason }}</p>
+    {% if i.excerpt %}<blockquote class="mt-1 text-[13px] text-ink-muted">„<mark class="rounded bg-amber-100 px-0.5 text-ink">{{ i.excerpt }}</mark>“</blockquote>{% endif %}
+    {% if i.confirmed_at %}<p class="mt-1 text-xs text-green-800">✓ {{ "Einwilligung bestätigt" if i.confirm_text else "bestätigt" }} von {{ i.confirmed_by }} am {{ i.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</p>{% endif %}
+  </div>
+  {% if i.action_url %}
+  <form method="post" action="{{ i.action_url }}" {% if i.confirm_text %}onsubmit="return confirm('{{ i.confirm_text }}')"{% endif %}>
+    <button type="submit" class="btn {{ 'btn-danger' if i.confirm_text else 'btn-secondary' }} btn-sm">{{ i.action_label }}</button></form>
+  {% endif %}
+</li>
+{% endmacro %}
+{% set open = f.open_items %}
+{% call ui.step(3, "Prüfen und freigeben", "pruefen-" ~ d.id, "done" if f.ready else ("error" if f.to_do else "open"), ("bereit" if f.ready else (f.to_do ~ " offen" if f.to_do else "")) ) %}
+<p class="flex items-start gap-2 text-[13px] text-ink-muted">{{ ui.icon("info", "mt-0.5 h-4 w-4 shrink-0") }}<span>Werbung mit Gesundheitsbezug unterliegt besonderen Regeln. Das System markiert Auffälligkeiten, ersetzt aber keine rechtliche Prüfung.</span></p>
+{% if open %}
+<ul class="divide-y divide-line" aria-label="Prüfungen mit Handlungsbedarf oder Hinweis">{% for i in open %}{{ item_row(i) }}{% endfor %}</ul>
+{% endif %}
+{% if f.ok_items %}
+<details>
+  <summary class="cursor-pointer text-sm text-ink-muted">{{ ui.icon("check", "inline h-4 w-4 text-green-700") }} {{ f.ok_items | length }} {{ "Prüfung" if f.ok_items | length == 1 else "Prüfungen" }} ok</summary>
+  <ul class="divide-y divide-line">{% for i in f.ok_items %}{{ item_row(i) }}{% endfor %}</ul>
+</details>
+{% elif not f.items %}<p class="text-sm text-ink-subtle">Noch keine Prüfergebnisse – nach dem Speichern des Texts prüft das System.</p>{% endif %}
+{% if f.blockers and d.status.value == "in_review" %}
+<details class="text-[13px] text-ink-muted"><summary class="cursor-pointer">Warum noch keine Freigabe?</summary>
+  <ul class="mt-1 list-disc pl-5" aria-label="Freigabe noch nicht möglich">{% for b in f.blockers %}<li>{{ b }}</li>{% endfor %}</ul></details>
+{% endif %}
+{% endcall %}

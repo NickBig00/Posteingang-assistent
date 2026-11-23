@@ -19,7 +19,6 @@ from sqlmodel import Session, select
 from app.cli import main as cli_main
 from app.core.image_formats import ImageFormat
 from app.core.images.base import ImageProviderError
-from app.core.images.fake import FakeImageProvider
 from app.core.images.openai_provider import (
     OpenAIImageProvider,
     list_image_models,
@@ -35,12 +34,12 @@ from app.core.provider_errors import (
     mask_secrets,
 )
 from app.main import app
-from app.social.briefings import create_briefing
 from app.social.facts import BriefingFacts
-from app.social.graphics import graphic_text, parse_fact_keys, render_graphic
-from app.social.models import Briefing, Channel
+from app.social.graphics import parse_fact_keys
+from app.social.infographic import InfoTexts, fact_lines, render_info_graphic
+from app.social.models import Briefing
 from app.social.web import get_social_client, get_social_config
-from tests.social_helpers import course_input, demo_config
+from tests.social_helpers import demo_config
 
 CONFIG = demo_config()
 REQUEST = httpx.Request("POST", "https://api.example.invalid/v1/images/generations")
@@ -312,25 +311,16 @@ def _briefing(facts: BriefingFacts = COURSE) -> Briefing:
     )
 
 
-def test_occasion_appears_once_without_own_headline() -> None:
-    text = graphic_text(CONFIG, _briefing())
-
-    assert text.tag == "" and text.headline == "Kurs"
-    assert [line.casefold() for line in text.lines].count("kurs") == 1
-
-
-def test_tag_stays_with_an_own_headline() -> None:
-    text = graphic_text(CONFIG, _briefing(), "Rücken-Fit")
-
-    assert text.tag == "Kurs" and text.headline == "Rücken-Fit"
-
-
 def test_only_chosen_facts_are_shown_and_checked() -> None:
-    text = graphic_text(CONFIG, _briefing(ALL), fact_keys=["datum", "preis"])
+    """Facts on the image are selectable (the former template graphic, now the info graphic)."""
+    texts = InfoTexts(headline="Rücken-Fit")
+    some = render_info_graphic(
+        CONFIG, _briefing(ALL), texts, ImageFormat.SQUARE, fact_keys=["preis"]
+    )
+    every = render_info_graphic(CONFIG, _briefing(ALL), texts, ImageFormat.SQUARE)
 
-    assert [label for label, _ in text.facts] == ["Datum", "Preis"]
-    jpeg, rendered = render_graphic(CONFIG, _briefing(ALL), ImageFormat.SQUARE, fact_keys=["preis"])
-    assert jpeg and [label for label, _ in rendered.facts] == ["Preis"]
+    assert some and some != every
+    assert fact_lines(ALL, ("preis",)) == ["Preis: 19,00 €"]
 
 
 def test_unknown_or_empty_choice_means_all_facts() -> None:
@@ -360,7 +350,9 @@ def test_colour_fill_uses_the_height_of_portrait_formats() -> None:
 
     assert CONFIG.brand.design is not None
     primary = parse_hex(CONFIG.brand.design.primary_color)
-    jpeg, _ = render_graphic(CONFIG, _briefing(), ImageFormat.STORY)
+    jpeg = render_info_graphic(
+        CONFIG, _briefing(), InfoTexts(headline="Rücken-Fit"), ImageFormat.STORY
+    )
 
     rows = [y for y in _text_rows(jpeg, primary) if y > 1920 * 0.15]
     # The text block sits in the middle of the free area, not squeezed to the bottom edge.
@@ -372,27 +364,3 @@ def test_wunschtermin_is_explained_in_the_form(social_client: TestClient) -> Non
     page = social_client.get("/social/briefings/new").text
 
     assert "kein Kalendertermin" in page
-
-
-def test_graphic_has_fact_choice_and_background_links(
-    social_client: TestClient, session: Session, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    from app.social.drafts import generate_drafts
-    from app.social.llm.client import SocialLLMClient
-    from tests.social_helpers import scripted
-
-    monkeypatch.setenv("IMAGE_GENERATION_ENABLED", "true")
-    briefing = create_briefing(session, CONFIG, course_input(channels=[Channel.FACEBOOK]), "demo")
-    (draft,) = generate_drafts(session, CONFIG, SocialLLMClient(scripted()), briefing)
-
-    page = social_client.get(f"/social/briefings/{briefing.id}?graphic_facts=datum").text
-
-    assert 'name="graphic_facts" value="datum" checked' in page
-    assert 'name="graphic_facts" value="ort" >' in page or 'value="ort" ' in page
-    assert f'href="#images-{draft.id}"' in page and "KI-Bild erzeugen" in page
-    assert "facts=datum" in page and "facts=ort" not in page
-    response = social_client.get(
-        f"/social/briefings/{briefing.id}/graphic.jpg?format=1:1&facts=datum"
-    )
-    assert response.status_code == 200
-    assert FakeImageProvider  # image provider not involved in graphics

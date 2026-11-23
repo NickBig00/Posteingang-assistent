@@ -92,10 +92,57 @@ def add_missing_columns(engine: Engine) -> list[str]:
     return added
 
 
+def relax_not_null_columns(engine: Engine) -> list[str]:
+    """Make columns nullable that newer models declare optional (SQLite only).
+
+    SQLite cannot drop a NOT NULL constraint with ALTER TABLE, so the affected table is rebuilt
+    from the model: rename, create, copy the common columns, drop the old one. Data is kept.
+    Returns the relaxed columns as `table.column`.
+    """
+    if engine.dialect.name != "sqlite":
+        return []
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    relaxed: list[str] = []
+    with engine.connect() as connection:
+        connection.execute(text("PRAGMA foreign_keys=OFF"))
+        connection.commit()
+        try:
+            for table in SQLModel.metadata.sorted_tables:
+                if table.name not in existing_tables or table.name == _AUDIT_TABLE:
+                    continue
+                present = {c["name"]: c for c in inspector.get_columns(table.name)}
+                columns = [
+                    c.name
+                    for c in table.columns
+                    if c.name in present and c.nullable and not present[c.name]["nullable"]
+                ]
+                if not columns:
+                    continue
+                old = f"_old_{table.name}"
+                common = ", ".join(c.name for c in table.columns if c.name in present)
+                with connection.begin():
+                    connection.execute(text(f"ALTER TABLE {table.name} RENAME TO {old}"))
+                    for index in table.indexes:
+                        connection.execute(text(f"DROP INDEX IF EXISTS {index.name}"))
+                    table.create(connection)
+                    connection.execute(
+                        # Names come from the model metadata, never from input.
+                        text(f"INSERT INTO {table.name} ({common}) SELECT {common} FROM {old}")  # noqa: S608
+                    )
+                    connection.execute(text(f"DROP TABLE {old}"))
+                relaxed += [f"{table.name}.{name}" for name in columns]
+        finally:
+            connection.execute(text("PRAGMA foreign_keys=ON"))
+            connection.commit()
+    return relaxed
+
+
 def init_db(engine: Engine) -> None:
     """Create all tables, add new columns to existing ones and the audit triggers."""
     SQLModel.metadata.create_all(engine)
     add_missing_columns(engine)
+    relax_not_null_columns(engine)
     if engine.dialect.name == "sqlite":
         with engine.begin() as connection:
             _create_audit_triggers(connection)

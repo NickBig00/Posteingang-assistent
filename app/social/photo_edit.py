@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 
 from pydantic import JsonValue
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.audit import write_human_audit_entry
 from app.core.image_formats import ImageFormat
@@ -21,8 +21,9 @@ from app.core.images.base import ImageProvider
 from app.core.images.service import edit_image, image_generation_enabled
 from app.core.models import utcnow
 from app.social.assets import is_usable
+from app.social.briefing_image import LOCKED_MESSAGE, image_locked
 from app.social.checking import member_names
-from app.social.models import Asset, Briefing, PostDraft, PostStatus
+from app.social.models import Asset, Briefing
 from app.social.sensitive import check_persons
 from app.social.textscan import find_phones
 
@@ -104,11 +105,8 @@ def _require(session: Session, source: Asset) -> Briefing:
     briefing = session.get(Briefing, source.briefing_id)
     if briefing is None:
         raise PhotoEditError("Briefing nicht gefunden.")
-    statuses = session.exec(
-        select(PostDraft.status).where(PostDraft.briefing_id == briefing.id)
-    ).all()
-    if statuses and all(s in (PostStatus.PUBLISHED, PostStatus.REJECTED) for s in statuses):
-        raise PhotoEditError("Alle Beiträge dieses Briefings sind veröffentlicht oder verworfen.")
+    if image_locked(session, briefing.id or 0):
+        raise PhotoEditError(LOCKED_MESSAGE)
     return briefing
 
 

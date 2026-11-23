@@ -19,6 +19,7 @@ from app.social.drafts import generate_drafts
 from app.social.images import GENERATE_STEP, candidates, latest_proposal, suggest_prompt
 from app.social.llm.client import SocialLLMClient
 from app.social.models import (
+    Briefing,
     Channel,
     CheckResult,
     PostDraft,
@@ -176,18 +177,25 @@ def test_only_needed_data_is_sent(session: Session) -> None:
 # --- image prompts and images ---
 
 
-def _with_prompt(session: Session) -> PostDraft:
-    draft = _draft(session)
-    suggest_prompt(session, CONFIG, CLIENT, draft, ImageFormat.PORTRAIT)
-    return draft
+def _briefing_of(session: Session, draft: PostDraft) -> Briefing:
+    briefing = session.get(Briefing, draft.briefing_id)
+    assert briefing is not None
+    return briefing
+
+
+def _with_prompt(session: Session) -> Briefing:
+    """The image prompt belongs to the briefing (one image for all channels, U6)."""
+    briefing = _briefing_of(session, _draft(session))
+    suggest_prompt(session, CONFIG, CLIENT, briefing)
+    return briefing
 
 
 def test_image_prompt_revision_creates_a_new_version(session: Session) -> None:
-    draft = _with_prompt(session)
-    first = latest_proposal(session, draft.id or 0)
+    briefing = _with_prompt(session)
+    first = latest_proposal(session, briefing.id or 0)
     assert first is not None
 
-    second = revise_image_prompt(session, CONFIG, CLIENT, draft, "Mehr Bewegung zeigen", "demo")
+    second = revise_image_prompt(session, CONFIG, CLIENT, briefing, "Mehr Bewegung zeigen", "demo")
 
     assert second.id != first.id and second.prompt != first.prompt
     assert "Mehr Bewegung zeigen" in second.prompt and second.prompt_from_ai
@@ -200,18 +208,18 @@ def test_image_revision_generates_new_variants_through_the_checks(
 ) -> None:
     from app.social.images import ImageHintsPendingError, confirm_prompt_hint, prompt_hints
 
-    draft = _with_prompt(session)
+    briefing = _with_prompt(session)
     provider = FakeImageProvider()
 
     # The new prompt shows a person: first confirm the hint, then generate.
     with pytest.raises(ImageHintsPendingError):
         revise_image(
-            session, CONFIG, CLIENT, provider, draft, "Frau beim Dehnen zeigen", "demo", raw_dir
+            session, CONFIG, CLIENT, provider, briefing, "Frau beim Dehnen zeigen", "demo", raw_dir
         )
     assert provider.calls == []
-    for hint in prompt_hints(session, draft.id or 0):
+    for hint in prompt_hints(session, briefing.id or 0):
         confirm_prompt_hint(session, hint, "demo")
-    proposal = latest_proposal(session, draft.id or 0)
+    proposal = latest_proposal(session, briefing.id or 0)
     assert proposal is not None
     from app.social.images import generate_variants
 
@@ -219,14 +227,14 @@ def test_image_revision_generates_new_variants_through_the_checks(
         session,
         CONFIG,
         provider,
-        draft,
+        briefing,
         prompt=proposal.prompt,
         fmt=ImageFormat.PORTRAIT,
         user="demo",
         storage=raw_dir,
     )
 
-    assert len(candidates(session, draft.id or 0)) == 3
+    assert len(candidates(session, briefing.id or 0)) == 3
     assert "Frau beim Dehnen zeigen" in provider.calls[0]
     entry = session.exec(select(AuditEntry).where(AuditEntry.step == GENERATE_STEP)).one()
     assert "personen" in entry.model_params["hints"]  # type: ignore[operator]
@@ -238,19 +246,21 @@ def test_image_revision_respects_the_cost_brake(
     session: Session, raw_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("IMAGE_MAX_PER_POST", "0")
-    draft = _with_prompt(session)
+    briefing = _with_prompt(session)
     provider = FakeImageProvider()
 
     from app.core.images.base import ImageBudgetExceededError
 
     with pytest.raises(ImageBudgetExceededError):
-        revise_image(session, CONFIG, CLIENT, provider, draft, "Heller", "demo", raw_dir)
+        revise_image(session, CONFIG, CLIENT, provider, briefing, "Heller", "demo", raw_dir)
     assert provider.calls == []
 
 
 def test_without_prompt_there_is_nothing_to_revise(session: Session) -> None:
     with pytest.raises(RevisionError, match="noch keinen Bild-Prompt"):
-        revise_image_prompt(session, CONFIG, CLIENT, _draft(session), "Heller", "demo")
+        revise_image_prompt(
+            session, CONFIG, CLIENT, _briefing_of(session, _draft(session)), "Heller", "demo"
+        )
 
 
 # --- web ---
@@ -285,13 +295,13 @@ def test_revise_in_the_ui_with_quick_pick_and_own_words(web: TestClient, session
 
 
 def test_image_revise_route(web: TestClient, session: Session) -> None:
-    draft = _with_prompt(session)
+    briefing = _with_prompt(session)
 
     page = web.post(
-        f"/social/drafts/{draft.id}/images/revise",
+        f"/social/briefings/{briefing.id}/images/revise",
         data={"instruction": "Wärmeres Licht", "regenerate": "true"},
         follow_redirects=True,
     ).text
 
     assert page.count("data-candidate=") == 3
-    assert "Bild per Anweisung ändern" in page
+    assert 'id="image-revise"' in page

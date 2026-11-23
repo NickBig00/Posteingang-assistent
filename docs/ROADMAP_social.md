@@ -197,11 +197,59 @@ im PR.
 
 ## Nächste Ausbaustufe: Beitrag in einem Ablauf (Briefing-Seite neu gestalten)
 
-Entwurf, Entscheidungen und Meilensteine U6–U8 stehen in `docs/SPEC_beitrag_ablauf.md`
-(Praxistest nach B4–B9: Seite zu kompliziert; ein Bild je Briefing, Reiter je Kanal, Schritte
-Text → Bild → Prüfen und Freigeben, Vorschau zeigt genau das, was gepostet wird). Die nächste
-Session übernimmt sie wie beschrieben in `docs/SPEC_social.md`, `docs/SPEC.md` und diese
-Roadmap und löscht danach die Entwurfsdatei.
+Spezifikation: `docs/SPEC_social.md` Abschnitte 8.1 und 14.3, `docs/SPEC.md` Abschnitt 10.2
+(Praxistest nach B4–B9: Seite zu kompliziert). Entscheidungen des Product Owners (November 2026):
+ein Bild je Briefing für alle Kanäle, „Grafik aus Vorlage“ geht in der Info-Grafik auf, das
+fertige Bild ist das Beitragsbild, Reiter je Kanal mit drei Schritten plus Veröffentlichen,
+keine Bilder je Kanal im Datenmodell, „Bild von Schritt 1 übernehmen“ in Kampagnen, Karussell
+für Instagram und Facebook, „Text aufs Bild“ standardmäßig nur bei Farbfläche. Reihenfolge: erst
+die Bild-Zuordnung (Logik), dann die neue Seite, dann der Feinschliff.
+
+## [x] U6 – Ein Bild je Briefing (Logik)
+
+Briefing-Bild, KI-Bild je Briefing, `post_image()` als einzige Quelle für Vorschau, Download und
+Karussell-Seite 1, Freigabe-Bindung, Migration der Demo-Daten. „Grafik aus Vorlage“ in die
+Info-Grafik überführen. Karussell je Briefing, auch für Facebook. Kampagnen: „Bild von Schritt 1
+übernehmen“.
+
+**Akzeptanz:** Tests (Fake-Anbieter) für Bildwahl, gerendertes Beitragsbild je Kanalformat,
+Kennzeichnung, Einwilligung, Hinweise vor dem Erzeugen, Kostenbremse je Briefing, Karussell für
+Instagram und Facebook, Übernahme von Schritt 1 (Kopie, Fakten aus dem eigenen Briefing),
+Migration und Löschkonzept; bestehende Tests angepasst und grün.
+
+## [x] U7 – Briefing-Seite als Ablauf
+
+Kopf, Reiter je Kanal, Schritte ①–④, Checkliste „Noch offen“, sticky Vorschau, neue Komponenten
+in `_ui.html` und auf `/design` (`ui.tabs`, `ui.step`, `ui.choice_cards`, `ui.toggle`,
+`ui.popover`, `ui.checklist`, `ui.chips`, `ui.dropzone`, `ui.thumb_grid`, `ui.sticky_footer`),
+Live-Vorschau per HTMX.
+
+**Akzeptanz:** Tests der Routen und Teil-Templates; Screenshots Laptop und Tablet
+(`scripts/screenshots.cjs`, Abschnitt U7) im PR; a11y-Prüfung ohne Verstöße.
+
+## [ ] U8 – Feinschliff und Usability-Test
+
+Bewegung, Ladezustände, Toasts, Fokusführung, Texte. Usability-Test mit mindestens einer Person,
+die die App nicht kennt; sie bekommt nur die Aufgaben (kein Hinweis auf Knöpfe):
+
+1. „Mach aus diesem Briefing einen Instagram-Beitrag mit eigenem Foto und der Überschrift
+   ‚Starker Rücken‘ auf dem Bild.“
+2. „Lass die KI ein anderes Bild erzeugen und nimm das.“
+3. „Ändere den Text so, dass er kürzer ist.“
+4. „Gib den Beitrag frei.“ (inklusive offener Hinweise)
+5. „Lade Bild und Text für Instagram herunter.“
+
+Ziel: alle Aufgaben ohne Hilfe, jede in unter zwei Minuten; die Person kann jederzeit sagen, was
+gepostet würde (zeigt auf die Vorschau).
+
+**Akzeptanz:** alle fünf Aufgaben ohne Hilfe gelöst; Messung, Befunde und Anpassungen im PR.
+
+**Stand:** Feinschliff umgesetzt (Toasts, Fokusführung, Platzhalter beim Erzeugen, abgeblendete
+Live-Vorschau, Bewegung mit `prefers-reduced-motion`). Protokoll und Beobachtungsbogen:
+`docs/usability/U8_usability_test.md`; ein automatischer Probedurchlauf
+(`node scripts/usability_walkthrough.cjs`) löst alle fünf Aufgaben allein über sichtbare
+Beschriftungen. **Offen: der Test mit mindestens einer Person, die die App nicht kennt** – erst
+danach wird U8 abgehakt.
 
 ---
 
@@ -263,3 +311,19 @@ Roadmap und löscht danach die Entwurfsdatei.
   zeigt, entscheidet der Mensch.
 - [x] **Grafiktext-Prüfung bei Anrede:** entschieden: Warnungen zur Anrede im Grafiktext brauchen
   wie bei Beiträgen keine Bestätigung; Gesundheits- und Personenhinweise schon.
+- [ ] **Bild nach der ersten Freigabe fest (U6):** Annahme: Solange ein Beitrag des Briefings
+  freigegeben, geplant oder veröffentlicht ist, lassen sich Bild, Text aufs Bild und Karussell
+  nicht ändern (sonst änderte sich ein freigegebener Beitrag unbemerkt). Zu entscheiden, ob statt
+  der Sperre eine Änderung die freigegebenen Beiträge zurück in die Prüfung schicken soll.
+- [ ] **Einwilligung nur für genutzte Bilder (U6):** Annahme: Die Freigabe prüft nur die Bilder,
+  die der Beitrag nutzt (Beitragsbild, Karussell-Seiten), nicht jedes hochgeladene Foto. Ein
+  Widerruf wirkt auf alle Einträge mit demselben Foto (gleicher Inhalts-Hash), auch in anderen
+  Briefings.
+- [ ] **Facebook-Raster (U6):** Facebook zeigt mehrere Fotos als Raster; das erste Bild bestimmt
+  das Layout, Bilder im Raster werden zugeschnitten. Karussell-Download für Facebook wie für
+  Instagram in 4:5 (1080×1350); vor echtem Einsatz an einem Testbeitrag prüfen.
+- [ ] **Live-Vorschau mit Meldung je Feld (U7):** Die Live-Vorschau beim Tippen zeigt Probleme
+  (zu viel Text, fremde Fakten) als eine Zeile unter dem Formular, nicht direkt am betroffenen
+  Feld; die Prüfungen (Gesundheit, Personen) laufen erst beim Übernehmen.
+- [ ] **Alte Screenshot-Abschnitte (U7):** `scripts/screenshots.cjs` B2–B9/U4 verweisen teils auf
+  Bereiche der alten Briefing-Seite; aktuell ist der Abschnitt U7.

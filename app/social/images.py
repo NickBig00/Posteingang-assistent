@@ -1,10 +1,11 @@
-"""AI image suggestions for a draft (SPEC_social 13.3–13.5).
+"""AI image suggestions for a briefing (SPEC_social 13.3–13.5, one image per briefing 14.3).
 
 Flow: the LLM suggests a prompt from briefing and image style → a person sees and edits it →
 a code check gives hints on people, text in the image, real places/results and contact data
 (confirmed by a person before approval) and only blocks member names → 2–3 variants are
-generated through `app.core.images` (switch, cost brake, audit) → a person chooses one (it
-becomes an `Asset` labelled "KI-generiert" and is approved with the post) or discards them.
+generated through `app.core.images` (switch, cost brake per briefing, audit) → a person chooses
+one (it becomes an `Asset` labelled "KI-generiert" and the image of the briefing, approved with
+each post) or discards them.
 """
 
 import hashlib
@@ -13,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import JsonValue
+from sqlalchemy import or_
 from sqlmodel import Session, col, delete, select
 
 from app.core.audit import write_human_audit_entry
@@ -21,6 +23,13 @@ from app.core.images.base import ImageProvider
 from app.core.images.service import generate_images, image_generation_enabled
 from app.core.llm.calls import audit_llm_call, call_with_retry
 from app.core.models import utcnow
+from app.social.briefing_image import (
+    BriefingImageError,
+    briefing_image,
+    image_locked,
+    set_briefing_image,
+)
+from app.social.carousel_refs import asset_in_carousel
 from app.social.checking import member_names
 from app.social.llm.client import SocialLLMClient
 from app.social.llm.schemas import ImagePromptOutput
@@ -29,8 +38,7 @@ from app.social.models import (
     Briefing,
     ImageCandidate,
     ImageProposal,
-    PostDraft,
-    PostStatus,
+    ImageSource,
     PromptHint,
 )
 from app.social.profiles import SocialConfig
@@ -52,11 +60,6 @@ SAFETY_SUFFIX = (
     "Keine echten, erkennbaren Personen nachbilden (keine Prominenten, keine bestimmten "
     "Personen). Keine Logos, keine Wasserzeichen und kein Text außer dem, der oben "
     "ausdrücklich verlangt wird."
-)
-
-# Statuses in which the image can still change: it is approved together with the post.
-EDITABLE_STATUSES = frozenset(
-    {PostStatus.DRAFT, PostStatus.IN_REVIEW, PostStatus.NEEDS_MANUAL_REVIEW}
 )
 
 
@@ -311,7 +314,7 @@ def provider_prompt(prompt: str, config: SocialConfig, area_key: str) -> str:
 
 @dataclass
 class ImageState:
-    """What the draft page shows for AI images."""
+    """What the briefing page shows for AI images."""
 
     proposal: ImageProposal | None
     candidates: list[ImageCandidate]
@@ -323,64 +326,71 @@ class ImageState:
     stored_hints: list[PromptHint]
 
 
-def _briefing(session: Session, draft: PostDraft) -> Briefing:
-    briefing = session.get(Briefing, draft.briefing_id)
-    if briefing is None:
-        raise ImageSuggestionError("Briefing nicht gefunden.")
-    return briefing
-
-
-def latest_proposal(session: Session, draft_id: int) -> ImageProposal | None:
+def latest_proposal(session: Session, briefing_id: int) -> ImageProposal | None:
     statement = (
         select(ImageProposal)
-        .where(ImageProposal.draft_id == draft_id)
+        .where(ImageProposal.briefing_id == briefing_id)
         .order_by(col(ImageProposal.id).desc())
     )
     return session.exec(statement).first()
 
 
-def candidates(session: Session, draft_id: int) -> list[ImageCandidate]:
+def candidates(session: Session, briefing_id: int) -> list[ImageCandidate]:
     statement = (
         select(ImageCandidate)
-        .where(ImageCandidate.draft_id == draft_id)
+        .where(ImageCandidate.briefing_id == briefing_id)
         .order_by(col(ImageCandidate.variant))
     )
     return list(session.exec(statement).all())
 
 
-def chosen_image(session: Session, draft_id: int) -> Asset | None:
-    statement = select(Asset).where(Asset.draft_id == draft_id).where(Asset.ai_generated)
-    return session.exec(statement).first()
+def ai_images(session: Session, briefing_id: int) -> list[Asset]:
+    """AI images chosen for the briefing (the current one and those kept for the carousel)."""
+    statement = (
+        select(Asset)
+        .where(Asset.briefing_id == briefing_id)
+        .where(Asset.ai_generated)
+        .order_by(col(Asset.id))
+    )
+    return list(session.exec(statement).all())
 
 
-def image_state(session: Session, config: SocialConfig, draft: PostDraft) -> ImageState:
-    proposal = latest_proposal(session, draft.id or 0)
+def chosen_image(session: Session, briefing_id: int) -> Asset | None:
+    """The AI image that is the image of the briefing (None for photos or colour fills)."""
+    image = briefing_image(session, briefing_id)
+    if image is None or image.source is not ImageSource.AI or image.asset_id is None:
+        return None
+    return session.get(Asset, image.asset_id)
+
+
+def image_state(session: Session, config: SocialConfig, briefing: Briefing) -> ImageState:
+    proposal = latest_proposal(session, briefing.id or 0)
     check = PromptCheck([], [])
     if proposal and proposal.prompt:
         check = check_prompt(proposal.prompt, member_names(session), config.brand.name)
     return ImageState(
         proposal=proposal,
-        candidates=candidates(session, draft.id or 0),
-        chosen=chosen_image(session, draft.id or 0),
+        candidates=candidates(session, briefing.id or 0),
+        chosen=chosen_image(session, briefing.id or 0),
         violations=check.errors,
         hints=check.hints,
-        stored_hints=prompt_hints(session, draft.id or 0),
+        stored_hints=prompt_hints(session, briefing.id or 0),
     )
 
 
-def prompt_hints(session: Session, draft_id: int) -> list[PromptHint]:
+def prompt_hints(session: Session, briefing_id: int) -> list[PromptHint]:
     statement = (
-        select(PromptHint).where(PromptHint.draft_id == draft_id).order_by(col(PromptHint.id))
+        select(PromptHint).where(PromptHint.briefing_id == briefing_id).order_by(col(PromptHint.id))
     )
     return list(session.exec(statement).all())
 
 
 def _store_hints(
-    session: Session, draft: PostDraft, proposal: ImageProposal, hints: list[PromptFinding]
+    session: Session, briefing: Briefing, proposal: ImageProposal, hints: list[PromptFinding]
 ) -> None:
     """Hints of the prompt to generate from. A confirmation stays only while the prompt is
     unchanged; a changed prompt starts over (like edited post texts)."""
-    previous = prompt_hints(session, draft.id or 0)
+    previous = prompt_hints(session, briefing.id or 0)
     confirmed = {
         h.key: h
         for h in previous
@@ -393,7 +403,7 @@ def _store_hints(
         kept = confirmed.get(hint.key)
         session.add(
             PromptHint(
-                draft_id=draft.id or 0,
+                briefing_id=briefing.id,
                 proposal_id=proposal.id or 0,
                 key=hint.key,
                 reason=hint.reason,
@@ -412,8 +422,7 @@ def _hash(text: str) -> str:
 
 def confirm_prompt_hint(session: Session, hint: PromptHint, user: str) -> PromptHint:
     """A person confirms a hint on the image prompt (recorded in the audit trail)."""
-    draft = session.get(PostDraft, hint.draft_id)
-    if draft is None or draft.status not in EDITABLE_STATUSES:
+    if hint.briefing_id is None or image_locked(session, hint.briefing_id):
         raise ImageSuggestionError("Hinweise können nur vor der Freigabe bestätigt werden.")
     if hint.confirmed_at is not None:
         raise ImageSuggestionError("Der Hinweis ist bereits bestätigt.")
@@ -427,33 +436,34 @@ def confirm_prompt_hint(session: Session, hint: PromptHint, user: str) -> Prompt
         item_id=None,
         step=MEMBER_CONSENT_STEP if hint.consent_required else HINT_CONFIRM_STEP,
         actor=user,
-        details=_context(draft) | {"hint_id": hint.id, "hint": hint.key},
+        details={"briefing_id": hint.briefing_id, "hint_id": hint.id, "hint": hint.key},
     )
     return hint
 
 
-def image_hint_blockers(session: Session, draft: PostDraft) -> list[str]:
-    """Unconfirmed hints of the prompt behind the post's AI image block its approval."""
-    if draft.id is None or chosen_image(session, draft.id) is None:
+def image_hint_blockers(session: Session, briefing_id: int) -> list[str]:
+    """Unconfirmed hints of the prompt behind the briefing's AI image block the approval."""
+    if chosen_image(session, briefing_id) is None:
         return []
     return [
         f"Hinweis zum KI-Bild noch nicht bestätigt: {HINT_LABELS.get(h.key, h.key)}"
-        for h in prompt_hints(session, draft.id)
+        for h in prompt_hints(session, briefing_id)
         if h.confirmed_at is None
     ]
 
 
-def _require_editable(draft: PostDraft) -> None:
+def _require_editable(session: Session, briefing: Briefing) -> None:
     if not image_generation_enabled():
         raise ImageSuggestionError("Die Bilderzeugung ist ausgeschaltet.")
-    if draft.status not in EDITABLE_STATUSES:
+    if image_locked(session, briefing.id or 0):
         raise ImageSuggestionError(
-            "Das Bild lässt sich nur vor der Freigabe ändern (es wird mit dem Beitrag freigegeben)."
+            "Das Bild lässt sich nur vor der Freigabe ändern (es wird mit den Beiträgen "
+            "freigegeben). Zum Ändern den Beitrag verwerfen und wieder öffnen."
         )
 
 
-def _context(draft: PostDraft) -> dict[str, JsonValue]:
-    return {"briefing_id": draft.briefing_id, "draft_id": draft.id, "channel": draft.channel.value}
+def _context(briefing: Briefing) -> dict[str, JsonValue]:
+    return {"briefing_id": briefing.id}
 
 
 # --- actions ---
@@ -463,12 +473,11 @@ def suggest_prompt(
     session: Session,
     config: SocialConfig,
     client: SocialLLMClient,
-    draft: PostDraft,
-    fmt: ImageFormat,
+    briefing: Briefing,
+    fmt: ImageFormat = ImageFormat.PORTRAIT,
 ) -> ImageProposal:
     """LLM suggestion for the image prompt (one retry, then an empty prompt to fill in)."""
-    _require_editable(draft)
-    briefing = _briefing(session, draft)
+    _require_editable(session, briefing)
 
     def attempt() -> object:
         return client.image_prompt(
@@ -485,14 +494,13 @@ def suggest_prompt(
             attempt=number,
             provider=client.provider.name,
             step=PROMPT_STEP,
-            context=_context(draft),
+            context=_context(briefing),
         )
 
     call = call_with_retry(attempt, record)  # type: ignore[arg-type]
     output = call.output if call.ok else None
     proposal = ImageProposal(
-        draft_id=draft.id or 0,
-        briefing_id=draft.briefing_id,
+        briefing_id=briefing.id or 0,
         prompt=output.prompt if isinstance(output, ImagePromptOutput) else "",
         prompt_from_ai=output is not None,
         image_format=fmt.value,
@@ -503,13 +511,49 @@ def suggest_prompt(
     return proposal
 
 
-def _remove_candidates(session: Session, draft_id: int, keep_path: str | None = None) -> int:
-    rows = candidates(session, draft_id)
+def save_prompt(
+    session: Session, config: SocialConfig, briefing: Briefing, prompt: str
+) -> PromptCheck:
+    """Store the prompt and its hints without generating ("Prüfen"): the hints appear below
+    the field and are confirmed before "Bilder erzeugen" (first confirm, then generate)."""
+    _require_editable(session, briefing)
+    prompt = prompt.strip()
+    check = check_prompt(prompt, member_names(session), config.brand.name)
+    proposal = latest_proposal(session, briefing.id or 0)
+    if proposal is None:
+        proposal = ImageProposal(briefing_id=briefing.id or 0, prompt_from_ai=False)
+    if prompt != proposal.prompt:
+        proposal.prompt_from_ai = False
+    proposal.prompt = prompt
+    session.add(proposal)
+    session.commit()
+    session.refresh(proposal)
+    if check.errors:
+        raise ImagePromptRejectedError(check.errors)
+    _store_hints(session, briefing, proposal, check.hints)
+    return check
+
+
+def pending_hints(session: Session, briefing_id: int) -> list[PromptHint]:
+    """Hints of the stored prompt that still need a confirmation before generating."""
+    proposal = latest_proposal(session, briefing_id)
+    if proposal is None:
+        return []
+    return [
+        h
+        for h in prompt_hints(session, briefing_id)
+        if h.confirmed_at is None and h.prompt_hash == _hash(proposal.prompt)
+    ]
+
+
+def _remove_candidates(session: Session, briefing_id: int, keep_path: str | None = None) -> int:
+    rows = candidates(session, briefing_id)
     for row in rows:
         path = Path(row.stored_path)
-        if row.stored_path != keep_path and path.is_file():
+        used = session.exec(select(Asset).where(Asset.stored_path == row.stored_path)).first()
+        if row.stored_path != keep_path and used is None and path.is_file():
             path.unlink()
-    session.exec(delete(ImageCandidate).where(col(ImageCandidate.draft_id) == draft_id))  # type: ignore[call-overload]
+    session.exec(delete(ImageCandidate).where(col(ImageCandidate.briefing_id) == briefing_id))  # type: ignore[call-overload]
     session.commit()
     return len(rows)
 
@@ -518,24 +562,24 @@ def generate_variants(
     session: Session,
     config: SocialConfig,
     provider: ImageProvider,
-    draft: PostDraft,
+    briefing: Briefing,
     *,
     prompt: str,
-    fmt: ImageFormat,
+    fmt: ImageFormat = ImageFormat.PORTRAIT,
     user: str,
     storage: Path,
 ) -> list[ImageCandidate]:
-    """Check the (possibly edited) prompt, then generate 2–3 variants in `fmt`."""
-    _require_editable(draft)
-    briefing = _briefing(session, draft)
+    """Check the (possibly edited) prompt, then generate 2–3 variants in `fmt`.
+
+    The cost brake counts per briefing (scope `briefing:{id}`), like photo edits.
+    """
+    _require_editable(session, briefing)
     prompt = prompt.strip()
     check = check_prompt(prompt, member_names(session), config.brand.name)
     violations = check.errors
-    proposal = latest_proposal(session, draft.id or 0)
+    proposal = latest_proposal(session, briefing.id or 0)
     if proposal is None:
-        proposal = ImageProposal(
-            draft_id=draft.id or 0, briefing_id=draft.briefing_id, prompt_from_ai=False
-        )
+        proposal = ImageProposal(briefing_id=briefing.id or 0, prompt_from_ai=False)
     if prompt != proposal.prompt:
         proposal.prompt_from_ai = False
     proposal.prompt = prompt
@@ -547,8 +591,8 @@ def generate_variants(
         raise ImagePromptRejectedError(violations)
     # First confirm, then generate (then approve): nothing goes to the provider before a
     # person has read the hints on this exact prompt.
-    _store_hints(session, draft, proposal, check.hints)
-    pending = [h for h in prompt_hints(session, draft.id or 0) if h.confirmed_at is None]
+    _store_hints(session, briefing, proposal, check.hints)
+    pending = [h for h in prompt_hints(session, briefing.id or 0) if h.confirmed_at is None]
     if pending:
         raise ImageHintsPendingError(
             "Bitte zuerst die Hinweise zum Bild-Prompt prüfen und bestätigen, dann erzeugen: "
@@ -561,15 +605,15 @@ def generate_variants(
         prompt=provider_prompt(prompt, config, briefing.area),
         fmt=fmt,
         step=GENERATE_STEP,
-        scope=f"draft:{draft.id}",
+        scope=f"briefing:{briefing.id}",
         user=user,
-        details=_context(draft)
+        details=_context(briefing)
         | {
             "prompt_edited": not proposal.prompt_from_ai,
             "hints": [h.key for h in check.hints],
         },
     )
-    _remove_candidates(session, draft.id or 0)
+    _remove_candidates(session, briefing.id or 0)
     target_dir = storage / "social" / "ki"
     target_dir.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -580,8 +624,7 @@ def generate_variants(
         path.write_bytes(image.content)
         row = ImageCandidate(
             proposal_id=proposal.id or 0,
-            draft_id=draft.id or 0,
-            briefing_id=draft.briefing_id,
+            briefing_id=briefing.id or 0,
             variant=number,
             stored_path=str(path),
             media_type=image.media_type,
@@ -596,23 +639,29 @@ def generate_variants(
     return rows
 
 
-def choose_candidate(session: Session, draft: PostDraft, candidate_id: int, user: str) -> Asset:
-    """A person picks one variant: it becomes the post's image, labelled "KI-generiert"."""
-    _require_editable(draft)
+def _drop_previous_ai_image(session: Session, briefing_id: int, keep_path: str) -> None:
+    """The previous AI image goes, unless a carousel page still shows it."""
+    previous = chosen_image(session, briefing_id)
+    if previous is None or asset_in_carousel(session, previous.id or 0):
+        return
+    old_path = previous.stored_path
+    session.delete(previous)
+    session.commit()
+    still_used = session.exec(select(Asset).where(Asset.stored_path == old_path)).first()
+    if still_used is None and Path(old_path).is_file() and old_path != keep_path:
+        Path(old_path).unlink()
+
+
+def choose_candidate(session: Session, briefing: Briefing, candidate_id: int, user: str) -> Asset:
+    """A person picks one variant: it becomes the image of the briefing, "KI-generiert"."""
+    _require_editable(session, briefing)
     candidate = session.get(ImageCandidate, candidate_id)
-    if candidate is None or candidate.draft_id != draft.id:
+    if candidate is None or candidate.briefing_id != briefing.id:
         raise ImageSuggestionError("Variante nicht gefunden.")
-    previous = chosen_image(session, draft.id or 0)
-    if previous is not None:
-        old_path = previous.stored_path
-        session.delete(previous)
-        session.commit()
-        if Path(old_path).is_file() and old_path != candidate.stored_path:
-            Path(old_path).unlink()
+    _drop_previous_ai_image(session, briefing.id or 0, candidate.stored_path)
     asset = Asset(
-        briefing_id=draft.briefing_id,
-        draft_id=draft.id,
-        filename=f"ki-bild-entwurf-{draft.id}-variante-{candidate.variant}"
+        briefing_id=briefing.id or 0,
+        filename=f"ki-bild-briefing-{briefing.id}-variante-{candidate.variant}"
         + Path(candidate.stored_path).suffix,
         stored_path=candidate.stored_path,
         media_type=candidate.media_type,
@@ -624,44 +673,55 @@ def choose_candidate(session: Session, draft: PostDraft, candidate_id: int, user
     session.add(asset)
     session.commit()
     session.refresh(asset)
-    _remove_candidates(session, draft.id or 0, keep_path=candidate.stored_path)
+    _remove_candidates(session, briefing.id or 0, keep_path=candidate.stored_path)
+    try:
+        set_briefing_image(session, briefing.id or 0, ImageSource.AI, asset.id, user, audit=False)
+    except BriefingImageError as error:
+        raise ImageSuggestionError(str(error)) from error
     write_human_audit_entry(
         session,
         item_id=None,
         step=CHOOSE_STEP,
         actor=user,
-        details=_context(draft)
+        details=_context(briefing)
         | {"asset_id": asset.id, "variant": candidate.variant, "image_hash": asset.content_hash},
     )
     return asset
 
 
-def discard_candidates(session: Session, draft: PostDraft, user: str) -> int:
+def discard_candidates(session: Session, briefing: Briefing, user: str) -> int:
     """A person discards all open variants (files are deleted)."""
-    _require_editable(draft)
-    removed = _remove_candidates(session, draft.id or 0)
+    _require_editable(session, briefing)
+    removed = _remove_candidates(session, briefing.id or 0)
     write_human_audit_entry(
         session,
         item_id=None,
         step=DISCARD_STEP,
         actor=user,
-        details=_context(draft) | {"variants": removed},
+        details=_context(briefing) | {"variants": removed},
     )
     return removed
 
 
-def delete_image_data(session: Session, draft_ids: list[int]) -> set[str]:
-    """Deletion concept: remove proposals and candidates of drafts; returns candidate files.
+def delete_image_data(
+    session: Session, *, briefing_id: int | None = None, draft_ids: list[int] | None = None
+) -> set[str]:
+    """Deletion concept: remove proposals, hints and candidates; returns candidate files.
 
+    Rows belong to the briefing; `draft_ids` covers rows from before U6 (images per draft).
     AI images chosen as assets are deleted with the assets (same rules as uploads).
     """
-    if not draft_ids:
-        return set()
-    rows = session.exec(
-        select(ImageCandidate).where(col(ImageCandidate.draft_id).in_(draft_ids))
-    ).all()
-    files = {row.stored_path for row in rows}
-    session.exec(delete(ImageCandidate).where(col(ImageCandidate.draft_id).in_(draft_ids)))  # type: ignore[call-overload]
-    session.exec(delete(PromptHint).where(col(PromptHint.draft_id).in_(draft_ids)))  # type: ignore[call-overload]
-    session.exec(delete(ImageProposal).where(col(ImageProposal.draft_id).in_(draft_ids)))  # type: ignore[call-overload]
+    files: set[str] = set()
+    for model in (ImageCandidate, PromptHint, ImageProposal):
+        clauses = []
+        if briefing_id is not None:
+            clauses.append(col(model.briefing_id) == briefing_id)
+        if draft_ids:
+            clauses.append(col(model.draft_id).in_(draft_ids))
+        if not clauses:
+            continue
+        condition = or_(*clauses)
+        if model is ImageCandidate:
+            files |= {row.stored_path for row in session.exec(select(model).where(condition))}
+        session.exec(delete(model).where(condition))  # type: ignore[call-overload]
     return files

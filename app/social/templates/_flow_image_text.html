@@ -1,0 +1,43 @@
+{# "Text aufs Bild? Ja": compact fields of the info graphic with live preview (SPEC_social 8.1). #}
+{% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
+{% set g = info.graphic %}{% set t = info.texts %}
+<div class="space-y-3" id="info-grafik">
+  <div class="flex flex-wrap items-center gap-2">
+    {% if g and g.is_ai_suggestion and not g.edited_by_human %}{{ ui.ai_badge() }}{% elif g and g.edited_by_human %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}
+    {% if not image_locked %}
+    <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic/suggest" data-loading="Text wird vorgeschlagen …"
+          {% if g %}onsubmit="return confirm('Den bisherigen Text auf dem Bild durch einen KI-Vorschlag ersetzen?')"{% endif %}>
+      <button type="submit" class="btn btn-ghost btn-sm">{{ ui.icon("sparkles") }}Text vorschlagen</button></form>
+    {% if g %}{% call ui.popover("Anders formulieren …", "info-revise") %}
+      {{ revise_form("/social/briefings/" ~ briefing.id ~ "/info-graphic/revise", "info-instruction", ["Kürzer fassen", "Neutraler formulieren, ohne Gesundheitsversprechen", "Weniger Punkte"], "Text überarbeiten") }}
+    {% endcall %}{% endif %}
+    {% endif %}
+  </div>
+  <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="space-y-3" data-loading="Wird geprüft …"
+        hx-post="/social/briefings/{{ briefing.id }}/info-graphic/live" hx-trigger="input delay:400ms" hx-swap="none" data-live-form>
+    <label class="field font-medium">Überschrift
+      <input type="text" name="headline" maxlength="60" value="{{ t.headline }}" class="input mt-1" required placeholder="z. B. Starker Rücken" {% if image_locked %}disabled{% endif %}></label>
+    {% for name, label, value, kind, max in [
+         ("subline", "Unterzeile", t.subline, "input", 90),
+         ("intro", "Einleitung", t.intro, "textarea", 260),
+         ("points", "Liste (ein Punkt je Zeile, mit ✓)", t.points | join("\n"), "list", 0),
+         ("closing", "Schlusssatz", t.closing, "input", 140)] %}
+    <details {% if value %}open{% endif %} class="group" data-optional-field="{{ name }}">
+      <summary class="cursor-pointer text-sm font-medium text-brand-text group-open:mb-1"><span class="group-open:hidden">+ </span>{{ label }}</summary>
+      <label class="sr-only" for="info-{{ name }}">{{ label }}</label>
+      {% if kind == "input" %}<input type="text" id="info-{{ name }}" name="{{ name }}" maxlength="{{ max }}" value="{{ value }}" class="input" {% if image_locked %}disabled{% endif %}>
+      {% else %}<textarea id="info-{{ name }}" name="{{ name }}" rows="{{ 4 if kind == 'list' else 2 }}" {% if max %}maxlength="{{ max }}"{% endif %} class="input" placeholder="{{ 'Alle Kurse inklusive' if kind == 'list' else '' }}" {% if image_locked %}disabled{% endif %}>{{ value }}</textarea>{% endif %}
+    </details>
+    {% endfor %}
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="submit" class="btn btn-primary btn-sm" {% if image_locked %}disabled{% endif %}>Text übernehmen und prüfen</button>
+      <span class="text-[13px] text-ink-subtle">Datum, Uhrzeit, Ort und Preis setzt das System darunter – geprüft.</span>
+    </div>
+    <p id="live-note" class="text-[13px] text-ink-subtle" role="status" aria-live="polite"></p>
+  </form>
+  {% if info.errors or info.problems %}
+  <div data-info-problems>{% call ui.alert("", "error", "alert") %}<p class="font-semibold">So kommt der Text nicht aufs Bild:</p>
+    <ul class="ml-4 list-disc">{% for p in info.errors + info.problems %}<li>{{ p }}</li>{% endfor %}</ul>{% endcall %}</div>
+  {% elif g %}<img src="{{ info.src }}" alt="" class="hidden" data-info-preview>{% endif %}
+</div>

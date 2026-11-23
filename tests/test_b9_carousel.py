@@ -1,4 +1,8 @@
-"""B9: carousel posts for Instagram – facts on all pages, order, checks, AI plan, ZIP export."""
+"""B9/U6: carousel posts – pages per briefing, for Instagram and Facebook posts.
+
+Facts on all pages, order, checks, AI plan, ZIP export; the pages belong to the briefing and
+each Instagram or Facebook post switches them on ("Mehrere Bilder").
+"""
 
 import io
 import zipfile
@@ -16,10 +20,12 @@ from app.core.llm.fake import FakeProvider
 from app.core.models import AuditEntry
 from app.main import app
 from app.social.assets import save_asset
+from app.social.briefing_image import set_briefing_image
 from app.social.briefings import BriefingInput, create_briefing
 from app.social.carousel import (
     CHANGE_STEP,
     PLAN_STEP,
+    TOGGLE_STEP,
     CarouselError,
     PageInput,
     add_page,
@@ -30,15 +36,26 @@ from app.social.carousel import (
     move_page,
     pages,
     remove_page,
+    render_page,
+    set_carousel,
     suggest_plan,
     update_page,
 )
 from app.social.drafts import generate_drafts
 from app.social.facts import BriefingFacts
-from app.social.infographic import InfoTexts
+from app.social.infographic import InfoTexts, save_texts
 from app.social.llm.client import SocialLLMClient
-from app.social.models import CarouselCheck, CarouselPage, Channel, CheckResult, PostDraft
-from app.social.retention import delete_draft
+from app.social.models import (
+    Briefing,
+    CarouselCheck,
+    CarouselPage,
+    Channel,
+    CheckResult,
+    ImageSource,
+    PostDraft,
+)
+from app.social.post_image import render_post_image
+from app.social.retention import delete_briefing, delete_draft
 from app.social.review import approval_blockers, approve_draft, confirm_warning
 from app.social.web import get_social_client, get_social_config
 from tests.social_helpers import demo_config, scripted
@@ -61,6 +78,12 @@ def _drafts(session: Session) -> tuple[PostDraft, PostDraft]:
     return instagram, facebook
 
 
+def _b(session: Session, draft: PostDraft) -> Briefing:
+    briefing = session.get(Briefing, draft.briefing_id)
+    assert briefing is not None
+    return briefing
+
+
 def _info(
     headline: str, *, points: list[str] | None = None, facts: bool = False, intro: str = ""
 ) -> PageInput:
@@ -70,34 +93,102 @@ def _info(
 
 
 def _three_pages(session: Session, draft: PostDraft) -> list[CarouselPage]:
-    add_page(session, CONFIG, CLIENT, draft, _info("Vortrag: Bewegung im Büroalltag"), "demo")
+    """Three info pages, switched on for `draft`."""
+    briefing = _b(session, draft)
+    add_page(session, CONFIG, CLIENT, briefing, _info("Vortrag: Bewegung im Büroalltag"), "demo")
     add_page(
         session,
         CONFIG,
         CLIENT,
-        draft,
+        briefing,
         _info("Das erwartet euch", points=["Übungen", "Pausen", "Fragen"]),
         "demo",
     )
-    add_page(session, CONFIG, CLIENT, draft, _info("Termin und Anmeldung", facts=True), "demo")
-    return pages(session, draft.id or 0)
+    add_page(session, CONFIG, CLIENT, briefing, _info("Termin und Anmeldung", facts=True), "demo")
+    set_carousel(session, CONFIG, CLIENT, draft, True, "demo")
+    return pages(session, draft.briefing_id)
 
 
 def _release(session: Session, draft: PostDraft) -> None:
     for result in session.exec(select(CheckResult).where(CheckResult.draft_id == draft.id)).all():
         if result.requires_confirmation:
             confirm_warning(session, result, "demo")
-    for result in carousel_checks(session, draft.id or 0):
+    for result in carousel_checks(session, draft.briefing_id):
         if result.requires_confirmation and result.confirmed_at is None:
             confirm_carousel_check(session, result, "demo")
     approve_draft(session, draft, "demo")
 
 
-def test_only_instagram_posts_have_a_carousel(session: Session) -> None:
+def test_only_instagram_and_facebook_posts_use_a_carousel(session: Session) -> None:
     _, facebook = _drafts(session)
+    story = PostDraft(briefing_id=facebook.briefing_id, channel=Channel.INSTAGRAM_STORY)
+    session.add(story)
+    session.commit()
 
-    with pytest.raises(CarouselError, match="Instagram"):
-        add_page(session, CONFIG, CLIENT, facebook, _info("Titel"), "demo")
+    with pytest.raises(CarouselError, match="Instagram- und Facebook"):
+        set_carousel(session, CONFIG, CLIENT, story, True, "demo")
+    set_carousel(session, CONFIG, CLIENT, facebook, True, "demo")
+    assert facebook.carousel_enabled
+    toggle = session.exec(select(AuditEntry).where(AuditEntry.step == TOGGLE_STEP)).one()
+    assert toggle.model_params["draft_id"] == facebook.id
+
+
+def test_first_switch_on_starts_with_the_post_image(session: Session) -> None:
+    draft, facebook = _drafts(session)
+    set_briefing_image(session, draft.briefing_id, ImageSource.COLOR, None, "demo")
+    _save_headline(session, draft)
+
+    set_carousel(session, CONFIG, CLIENT, draft, True, "demo")
+    set_carousel(session, CONFIG, CLIENT, facebook, True, "demo")
+
+    (cover,) = pages(session, draft.briefing_id)
+    assert cover.kind == "cover"
+    briefing = _b(session, draft)
+    page = render_page(session, CONFIG, briefing, cover, ImageFormat.PORTRAIT)
+    image = render_post_image(session, CONFIG, briefing, ImageFormat.PORTRAIT)
+    assert image is not None and page == image.content
+    # One page is no carousel yet: the posts using it are blocked.
+    assert any("mindestens 2" in b for b in carousel_blockers(session, facebook))
+
+
+def _save_headline(session: Session, draft: PostDraft) -> None:
+    save_texts(
+        session,
+        CONFIG,
+        CLIENT,
+        _b(session, draft),
+        InfoTexts(headline="Bewegung im Büro"),
+        story=None,
+        variant="zentriert",
+        user="demo",
+    )
+
+
+def test_pages_are_shared_by_instagram_and_facebook(session: Session) -> None:
+    instagram, facebook = _drafts(session)
+    _three_pages(session, instagram)
+    set_carousel(session, CONFIG, CLIENT, facebook, True, "demo")
+    for draft in (instagram, facebook):
+        _release(session, draft)
+
+    for draft in (instagram, facebook):
+        archive = zipfile.ZipFile(io.BytesIO(export_zip(session, CONFIG, draft)))
+        assert archive.namelist() == ["01.jpg", "02.jpg", "03.jpg"]
+        assert Image.open(io.BytesIO(archive.read("01.jpg"))).size == (1080, 1350)
+
+
+def test_a_post_without_the_switch_is_not_blocked_by_the_pages(session: Session) -> None:
+    instagram, facebook = _drafts(session)
+    rows = _three_pages(session, instagram)
+    update_page(
+        session, CONFIG, CLIENT, rows[0], _info("Termin", intro="Auch am 10.12.2026."), "demo"
+    )
+
+    assert any("Karussell" in b for b in approval_blockers(session, instagram))
+    assert not any("Karussell" in b for b in approval_blockers(session, facebook))
+    _release(session, facebook)
+    with pytest.raises(CarouselError, match="nur ein Bild"):
+        export_zip(session, CONFIG, facebook)
 
 
 def test_pages_in_order_and_reordering_is_audited(session: Session) -> None:
@@ -107,11 +198,11 @@ def test_pages_in_order_and_reordering_is_audited(session: Session) -> None:
 
     move_page(session, CONFIG, CLIENT, rows[2], -1, "demo")
 
-    order = [InfoTexts.from_json(r.texts).headline for r in pages(session, draft.id or 0)]
+    order = [InfoTexts.from_json(r.texts).headline for r in pages(session, draft.briefing_id)]
     assert order == ["Vortrag: Bewegung im Büroalltag", "Termin und Anmeldung", "Das erwartet euch"]
-    assert [r.position for r in pages(session, draft.id or 0)] == [1, 2, 3]
+    assert [r.position for r in pages(session, draft.briefing_id)] == [1, 2, 3]
     with pytest.raises(CarouselError, match="Rand"):
-        move_page(session, CONFIG, CLIENT, pages(session, draft.id or 0)[0], -1, "demo")
+        move_page(session, CONFIG, CLIENT, pages(session, draft.briefing_id)[0], -1, "demo")
     moves = session.exec(select(AuditEntry).where(AuditEntry.step == CHANGE_STEP)).all()
     assert any(e.model_params.get("action") == "move" for e in moves)
 
@@ -129,7 +220,7 @@ def test_facts_are_checked_exactly_on_every_page(session: Session) -> None:
         "demo",
     )
 
-    errors = [r for r in carousel_checks(session, draft.id or 0) if r.outcome == "error"]
+    errors = [r for r in carousel_checks(session, draft.briefing_id) if r.outcome == "error"]
     assert errors and errors[0].page == 2 and "10.12.2026" in errors[0].reason
     assert any("Karussell" in b for b in approval_blockers(session, draft))
 
@@ -165,15 +256,14 @@ def test_zip_only_after_approval_in_4x5_or_1x1(session: Session) -> None:
 
 def test_a_single_page_is_no_carousel(session: Session) -> None:
     draft, _ = _drafts(session)
-    add_page(session, CONFIG, CLIENT, draft, _info("Nur eine Seite"), "demo")
+    add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Nur eine Seite"), "demo")
+    set_carousel(session, CONFIG, CLIENT, draft, True, "demo")
 
     assert any("mindestens 2" in b for b in carousel_blockers(session, draft))
 
 
 def test_image_pages_need_a_usable_image(session: Session, raw_dir: Path) -> None:
     draft, _ = _drafts(session)
-    from app.social.models import Briefing
-
     briefing = session.get(Briefing, draft.briefing_id)
     buffer = io.BytesIO()
     Image.new("RGB", (600, 400), (40, 120, 90)).save(buffer, format="PNG")
@@ -187,23 +277,23 @@ def test_image_pages_need_a_usable_image(session: Session, raw_dir: Path) -> Non
         user="demo",
         storage=raw_dir,
     )
-    add_page(session, CONFIG, CLIENT, draft, _info("Titel"), "demo")
+    add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Titel"), "demo")
     add_page(
         session,
         CONFIG,
         CLIENT,
-        draft,
+        _b(session, draft),
         PageInput("image", InfoTexts(), group.id, False, "zentriert"),
         "demo",
     )
 
-    assert any("Einwilligung" in r.reason for r in carousel_checks(session, draft.id or 0))
+    assert any("Einwilligung" in r.reason for r in carousel_checks(session, draft.briefing_id))
     with pytest.raises(CarouselError, match="Bild"):
         add_page(
             session,
             CONFIG,
             CLIENT,
-            draft,
+            _b(session, draft),
             PageInput("image", InfoTexts(), None, False, "zentriert"),
             "demo",
         )
@@ -211,10 +301,11 @@ def test_image_pages_need_a_usable_image(session: Session, raw_dir: Path) -> Non
 
 def test_health_claim_on_a_page_needs_confirmation(session: Session) -> None:
     draft, _ = _drafts(session)
-    add_page(session, CONFIG, CLIENT, draft, _info("Garantiert schmerzfrei"), "demo")
-    add_page(session, CONFIG, CLIENT, draft, _info("Termin", facts=True), "demo")
+    add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Garantiert schmerzfrei"), "demo")
+    add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Termin", facts=True), "demo")
+    set_carousel(session, CONFIG, CLIENT, draft, True, "demo")
 
-    warnings = [r for r in carousel_checks(session, draft.id or 0) if r.requires_confirmation]
+    warnings = [r for r in carousel_checks(session, draft.briefing_id) if r.requires_confirmation]
     assert warnings and warnings[0].page == 1
     assert any("Warnung" in b for b in carousel_blockers(session, draft))
 
@@ -223,7 +314,7 @@ def test_ai_plan_is_labelled_audited_and_contains_no_facts(session: Session) -> 
     provider = FakeProvider()
     draft, _ = _drafts(session)
 
-    rows = suggest_plan(session, CONFIG, SocialLLMClient(provider), draft, "demo")
+    rows = suggest_plan(session, CONFIG, SocialLLMClient(provider), _b(session, draft), "demo")
 
     assert len(rows) == 3 and all(r.is_ai_suggestion for r in rows)
     assert rows[-1].show_facts and not rows[0].show_facts
@@ -237,17 +328,19 @@ def test_invalid_plan_is_retried_once_then_reported(session: Session) -> None:
     client = SocialLLMClient(scripted(carousel_plan=["kaputt", '{"pages": []}']))
 
     with pytest.raises(CarouselError, match="keine gültige"):
-        suggest_plan(session, CONFIG, client, draft, "demo")
-    assert pages(session, draft.id or 0) == []
+        suggest_plan(session, CONFIG, client, _b(session, draft), "demo")
+    assert pages(session, draft.briefing_id) == []
 
 
-def test_removing_pages_and_deleting_the_draft(session: Session) -> None:
+def test_removing_pages_and_deleting_the_briefing(session: Session) -> None:
     draft, _ = _drafts(session)
     rows = _three_pages(session, draft)
     remove_page(session, CONFIG, CLIENT, rows[0], "demo")
-    assert [r.position for r in pages(session, draft.id or 0)] == [1, 2]
+    assert [r.position for r in pages(session, draft.briefing_id)] == [1, 2]
 
-    delete_draft(session, draft.id or 0, "demo")
+    delete_draft(session, draft.id or 0, "demo")  # the pages belong to the briefing
+    assert len(pages(session, draft.briefing_id)) == 2
+    delete_briefing(session, draft.briefing_id, "demo")
 
     assert session.exec(select(CarouselPage)).all() == []
     assert session.exec(select(CarouselCheck)).all() == []
@@ -259,7 +352,7 @@ def test_carousel_is_fixed_after_approval(session: Session) -> None:
     _release(session, draft)
 
     with pytest.raises(CarouselError, match="freigegeben"):
-        add_page(session, CONFIG, CLIENT, draft, _info("Nachtrag"), "demo")
+        add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Nachtrag"), "demo")
 
 
 # --- web ---
@@ -276,23 +369,27 @@ def test_carousel_in_the_ui(web: TestClient, session: Session) -> None:
     draft, facebook = _drafts(session)
     url = f"/social/briefings/{draft.briefing_id}"
     page = web.get(url).text
-    assert f'id="carousel-{draft.id}"' in page and f'id="carousel-{facebook.id}"' not in page
+    assert 'id="mehrere-bilder"' in page and page.count("data-carousel-toggle") == 2
 
-    page = web.post(f"/social/drafts/{draft.id}/carousel/suggest", follow_redirects=True).text
+    page = web.post(
+        f"/social/briefings/{draft.briefing_id}/carousel/suggest", follow_redirects=True
+    ).text
     assert "data-carousel-preview" in page and page.count("Seite 3") >= 1
-    rows = pages(session, draft.id or 0)
+    rows = pages(session, draft.briefing_id)
     assert web.get(f"/social/carousel-pages/{rows[0].id}.jpg?format=1:1").status_code == 200
     assert web.get(f"/social/carousel-pages/{rows[0].id}.jpg?format=9:16").status_code == 422
 
     web.post(f"/social/carousel-pages/{rows[2].id}/move", data={"direction": "-1"})
     session.expire_all()
-    assert pages(session, draft.id or 0)[1].id == rows[2].id
+    assert pages(session, draft.briefing_id)[1].id == rows[2].id
 
-    assert web.get(f"/social/drafts/{draft.id}/carousel.zip").status_code == 409
+    web.post(f"/social/drafts/{facebook.id}/carousel", data={"enabled": "true"})
+    assert web.get(f"/social/drafts/{facebook.id}/carousel.zip").status_code == 409
     session.expire_all()
-    _release(session, session.get(PostDraft, draft.id))  # type: ignore[arg-type]
-    response = web.get(f"/social/drafts/{draft.id}/carousel.zip?format=4:5")
+    _release(session, session.get(PostDraft, facebook.id))  # type: ignore[arg-type]
+    response = web.get(f"/social/drafts/{facebook.id}/carousel.zip")
     assert response.status_code == 200 and response.headers["content-type"] == "application/zip"
+    assert "facebook" in response.headers["content-disposition"]
     assert zipfile.ZipFile(io.BytesIO(response.content)).namelist() == [
         "01.jpg",
         "02.jpg",
@@ -305,7 +402,8 @@ def test_add_page_validation_in_the_ui(web: TestClient, session: Session) -> Non
     draft, _ = _drafts(session)
 
     response = web.post(
-        f"/social/drafts/{draft.id}/carousel/pages", data={"kind": "info", "headline": ""}
+        f"/social/briefings/{draft.briefing_id}/carousel/pages",
+        data={"kind": "info", "headline": ""},
     )
 
     assert response.status_code == 422 and "Überschrift" in response.text
