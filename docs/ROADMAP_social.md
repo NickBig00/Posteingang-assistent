@@ -303,8 +303,14 @@ danach wird U8 abgehakt.
   Annahme; vor echtem Einsatz mit der aktuellen Preisliste des Anbieters abgleichen.
 - [x] **Mitgliedername im Bild-Prompt (B5):** entschieden: wie bei Beiträgen aufhebbar durch die
   bestätigte Einwilligung der Person (Audit ohne Namen).
-- [x] **Bestätigung der Bild-Hinweise (B5):** entschieden: erst bestätigen, dann erzeugen, dann
-  freigeben – ohne Bestätigung geht nichts an den Bildanbieter.
+- [x] **Bestätigung der Bild-Hinweise (B5):** ursprünglich „erst bestätigen, dann erzeugen“;
+  **neu entschieden (Product Owner, November 2026):** Hinweise zu Bildern werden nur
+  aufgelistet, ohne Bestätigung. Ein Mitgliedername im Bild-Prompt braucht weiter die
+  Einwilligung der Person (`CLAUDE.md`).
+- [x] **Selbst geschriebener Text auf dem Bild (November 2026):** entschieden: keine Prüfung
+  (Mensch verfasst und verantwortet ihn); nur Mitgliedernamen bleiben ein Fehler. KI-Vorschläge
+  werden weiter geprüft, auch nach einer Bearbeitung. Offen: Soll ein bearbeiteter KI-Vorschlag
+  als selbst geschrieben gelten?
 - [ ] **Parameter des Bildmodells (B4/B8):** Qualität „medium“, Größen 1024×1024/1024×1536 und
   `images.edit` sind ohne echten API-Aufruf nicht gegen das aktuelle Modell geprüft.
 - [x] **Karussell ohne Faktenseite (B9):** entschieden: keine Pflicht; ob eine Seite die Fakten

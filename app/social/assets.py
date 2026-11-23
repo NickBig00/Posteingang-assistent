@@ -77,11 +77,8 @@ def derived_assets(session: Session, asset: Asset) -> list[Asset]:
 
 def asset_blockers(asset: Asset) -> list[str]:
     """Reasons why a post that uses this image cannot be approved (consent, AI-edit hint)."""
+    # The hint on an AI edit (e.g. body shapes) is only listed, not confirmed.
     blockers = []
-    if asset.edit_hint and asset.edit_hint_confirmed_at is None and is_usable(asset):
-        blockers.append(
-            f"Hinweis zum KI-bearbeiteten Bild „{asset.filename}“ noch nicht bestätigt."
-        )
     if asset.consent_revoked_at is not None:
         blockers.append(
             f"Für Bild „{asset.filename}“ wurde die Einwilligung widerrufen – Bild entfernen."

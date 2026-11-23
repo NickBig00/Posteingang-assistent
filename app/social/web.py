@@ -423,6 +423,7 @@ def _info_context(
                 variant=variant,
                 background=None,
                 fact_keys=keys,
+                check_text_facts=graphic.is_ai_suggestion,
             )
         except InfoGraphicError as error:
             problems = error.problems
@@ -1559,6 +1560,7 @@ def info_graphic_file(
             fmt,
             variant=graphic.variant,
             fact_keys=graphic_fact_keys(graphic, briefing),
+            check_text_facts=graphic.is_ai_suggestion,
         )
     except InfoGraphicError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

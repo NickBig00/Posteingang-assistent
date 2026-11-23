@@ -63,7 +63,7 @@ def test_review_list_gathers_text_image_and_consent_sorted(session: Session, raw
     )
     save_texts(
         session, CONFIG, CLIENT, briefing, InfoTexts(headline="Garantiert schmerzfrei"),
-        story=None, variant="zentriert", user="demo",
+        story=None, variant="zentriert", user="demo", from_ai=True,
     )  # fmt: skip
 
     flow = draft_flow(session, CONFIG, draft, CHECK_LABELS)
@@ -192,7 +192,7 @@ def test_persons_question_after_the_upload(
     assert steps.count(PERSONS_STEP) == 2
 
 
-def test_prompt_check_shows_hints_and_blocks_generating(
+def test_prompt_check_lists_hints_and_generating_stays_possible(
     web: TestClient, session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("IMAGE_GENERATION_ENABLED", "true")
@@ -204,8 +204,8 @@ def test_prompt_check_shows_hints_and_blocks_generating(
         follow_redirects=True,
     ).text
 
-    assert "data-image-hints" in page and "Verstanden" in page
-    assert re.search(r"<button[^>]*disabled[^>]*data-generate", page)
+    assert "data-image-hints" in page and "data-hint-note" in page and "Verstanden" not in page
+    assert not re.search(r"<button[^>]*disabled[^>]*data-generate", page)
 
 
 def test_live_preview_while_typing(web: TestClient, session: Session) -> None:
@@ -225,7 +225,8 @@ def test_live_preview_while_typing(web: TestClient, session: Session) -> None:
     # Not saved: the stored text is unchanged, the download needs the approval.
     assert web.get(f"/social/drafts/{drafts[0].id}/preview.jpg").status_code == 422
 
-    invalid = web.post(url, data={"headline": "Neu ab 10.12.2026"}).text
+    # Own text is not checked for facts, but it must fit (never cut).
+    invalid = web.post(url, data={"headline": "Starker Rücken " * 6}).text
     assert "letzten gültigen Stand" in invalid and "post-image-" not in invalid
 
 

@@ -111,7 +111,9 @@ def _photo(session: Session, briefing: Briefing, storage: Path, **flags: bool) -
     )
 
 
-def _headline(session: Session, briefing: Briefing, headline: str = "Starker Rücken") -> None:
+def _headline(
+    session: Session, briefing: Briefing, headline: str = "Starker Rücken", from_ai: bool = False
+) -> None:
     save_texts(
         session,
         CONFIG,
@@ -121,6 +123,7 @@ def _headline(session: Session, briefing: Briefing, headline: str = "Starker Rü
         story=None,
         variant="zentriert",
         user="demo",
+        from_ai=from_ai,
     )
 
 
@@ -243,7 +246,7 @@ def test_colour_fill_without_text_or_headline_is_reported(session: Session) -> N
 def test_foreign_fact_on_the_image_blocks_every_post(session: Session) -> None:
     briefing = _briefing(session)
     set_briefing_image(session, briefing.id or 0, ImageSource.COLOR, None, "demo")
-    _headline(session, briefing, "Ab 10.12.2026")
+    _headline(session, briefing, "Ab 10.12.2026", from_ai=True)
 
     for draft in _drafts(session, briefing):
         assert any("10.12.2026" in b for b in approval_blockers(session, draft, CONFIG))
@@ -253,7 +256,7 @@ def test_warnings_on_the_text_on_the_image_must_be_confirmed(session: Session) -
     briefing = _briefing(session)
     (draft, *_) = _drafts(session, briefing)
     set_briefing_image(session, briefing.id or 0, ImageSource.COLOR, None, "demo")
-    _headline(session, briefing, "Garantiert schmerzfrei")
+    _headline(session, briefing, "Garantiert schmerzfrei", from_ai=True)
     from app.social.models import CheckResult
 
     for result in session.exec(select(CheckResult).where(CheckResult.draft_id == draft.id)):
@@ -399,17 +402,9 @@ def test_copy_from_step_one_is_an_independent_copy(session: Session, raw_dir: Pa
         assert COPY_STEP in steps
 
 
-def test_copied_ai_image_needs_its_hints_confirmed_again(session: Session, raw_dir: Path) -> None:
+def test_copied_ai_image_takes_its_hints_along(session: Session, raw_dir: Path) -> None:
     first, second, *_ = _campaign_briefings(session)
-    from app.social.images import ImageHintsPendingError, confirm_prompt_hint
-
     prompt = "Frau beim Rückentraining auf der Matte"
-    with pytest.raises(ImageHintsPendingError):
-        generate_variants(
-            session, CONFIG, FakeImageProvider(), first, prompt=prompt, user="demo", storage=raw_dir
-        )
-    for hint in prompt_hints(session, first.id or 0):
-        confirm_prompt_hint(session, hint, "demo")
     rows = generate_variants(
         session, CONFIG, FakeImageProvider(), first, prompt=prompt, user="demo", storage=raw_dir
     )
@@ -419,9 +414,9 @@ def test_copied_ai_image_needs_its_hints_confirmed_again(session: Session, raw_d
 
     (draft, *_) = _drafts(session, second)
     hints = prompt_hints(session, second.id or 0)
-    assert hints and all(h.confirmed_at is None for h in hints)
-    assert any("Hinweis zum KI-Bild" in b for b in post_image_blockers(session, CONFIG, draft))
-    assert all(h.confirmed_at for h in prompt_hints(session, first.id or 0))
+    assert [h.key for h in hints] == [h.key for h in prompt_hints(session, first.id or 0)]
+    # Listed only (product owner, November 2026): the hints block nothing.
+    assert not any("KI-Bild" in b for b in post_image_blockers(session, CONFIG, draft))
 
 
 def test_revoking_the_photo_of_step_one_reaches_the_copy(session: Session, raw_dir: Path) -> None:

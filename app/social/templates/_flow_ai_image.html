@@ -24,22 +24,24 @@
     <button type="submit" class="btn btn-ghost btn-sm">{{ ui.icon("sparkles") }}Vorschlag von der KI</button></form>
   {% endif %}
   {% if st.stored_hints %}
-  <ul class="space-y-2" id="image-hints-ki" data-image-hints aria-label="Hinweise zum Bild – erst bestätigen, dann erzeugen">
+  <ul class="space-y-2" id="image-hints-ki" data-image-hints aria-label="Hinweise zum Bild">
     {% for h in st.stored_hints %}
-    {% if h.confirmed_at %}
-    <li class="flex flex-wrap items-center gap-2 text-[13px] text-ink-muted" id="hint-{{ h.id }}" title="{{ h.reason }}">
-      <span class="font-medium text-ink">{{ hint_labels[h.key] }}</span><span class="badge badge-ok">✓ bestätigt von {{ h.confirmed_by }} am {{ h.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</span>
+    {% if h.consent_required and not h.confirmed_at %}
+    {# A member name: only the confirmed consent of the person lifts it (CLAUDE.md). #}
+    <li class="flex flex-wrap items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm" id="hint-{{ h.id }}">
+      <span class="min-w-0 flex-1"><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</span>
+      <form method="post" action="/social/image-hints/{{ h.id }}/confirm" onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Verwendung ihres Namens für dieses Bild ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')">
+        <button type="submit" class="btn btn-danger btn-sm">Einwilligung der Person liegt vor</button></form>
     </li>
     {% else %}
-    <li class="flex flex-wrap items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm" id="hint-{{ h.id }}">
-      <span class="min-w-0 flex-1"><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</span>
-      <form method="post" action="/social/image-hints/{{ h.id }}/confirm" {% if h.consent_required %}onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Verwendung ihres Namens für dieses Bild ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')"{% endif %}>
-        <button type="submit" class="btn {{ 'btn-danger' if h.consent_required else 'btn-secondary' }} btn-sm">{{ "Einwilligung der Person liegt vor" if h.consent_required else "Verstanden" }}</button></form>
+    <li class="flex items-start gap-2 text-[13px] text-ink-muted" id="hint-{{ h.id }}" data-hint-note>
+      {{ ui.icon("info", "mt-0.5 h-4 w-4 shrink-0 text-amber-600") }}
+      <span><span class="font-medium text-ink">{{ hint_labels[h.key] }}:</span> {{ h.reason }}{% if h.confirmed_at %} <span class="text-green-800">(Einwilligung bestätigt von {{ h.confirmed_by }})</span>{% endif %}</span>
     </li>
     {% endif %}
     {% endfor %}
   </ul>
-  <p class="text-[13px] text-ink-subtle">Erst bestätigen, dann erzeugen: Diese Hinweise erscheinen nur hier, nie im Bild. Gezeigte Personen sind keine echten Mitglieder.</p>
+  <p class="text-[13px] text-ink-subtle">Hinweise zum Bild – sie erscheinen nur hier, nie im Bild. Gezeigte Personen sind keine echten Mitglieder.</p>
   {% elif st.hints %}
   <ul class="list-disc pl-5 text-[13px] text-amber-900" data-prompt-hints>{% for h in st.hints %}<li><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</li>{% endfor %}</ul>
   {% endif %}

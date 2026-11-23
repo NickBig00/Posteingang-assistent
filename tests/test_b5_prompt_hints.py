@@ -1,7 +1,9 @@
-"""B5: hints on image prompts – first confirm, then generate, then approve.
+"""Hints on image prompts (B5): listed only since November 2026, no confirmation.
 
-A member named in the prompt is not a hint but an error that only the confirmed consent of
-that person lifts (CLAUDE.md); afterwards the generation is possible.
+Product owner decision: hints on people, text in the image, real places or contact data are
+shown to the person but need no confirmation – neither before generating nor before the
+approval. A member named in the prompt stays the exception (CLAUDE.md): only the confirmed
+consent of that person lifts it, before anything goes to the image provider.
 """
 
 from collections.abc import Iterator
@@ -22,7 +24,6 @@ from app.social.briefings import create_briefing
 from app.social.drafts import generate_drafts
 from app.social.images import (
     GENERATE_STEP,
-    HINT_CONFIRM_STEP,
     HINT_MEMBER,
     HINT_PERSONS,
     HINT_TEXT,
@@ -83,18 +84,7 @@ def _b(session: Session, draft: PostDraft) -> Briefing:
     return briefing
 
 
-def _confirm_all(session: Session, draft: PostDraft) -> None:
-    for hint in prompt_hints(session, draft.briefing_id):
-        if hint.confirmed_at is None:
-            confirm_prompt_hint(session, hint, "demo")
-
-
-def _confirmed_generation(session: Session, draft: PostDraft, storage: Path, prompt: str) -> None:
-    """Try, confirm the hints, generate, choose the first variant."""
-    with pytest.raises(ImageHintsPendingError):
-        _generate(session, draft, storage, prompt)
-    _confirm_all(session, draft)
-    _generate(session, draft, storage, prompt)
+def _choose_first(session: Session, draft: PostDraft) -> None:
     from app.social.images import candidates
 
     choose_candidate(
@@ -102,50 +92,32 @@ def _confirmed_generation(session: Session, draft: PostDraft, storage: Path, pro
     )
 
 
-def test_hints_are_recorded_and_nothing_is_generated_before_confirmation(
+def test_hints_are_listed_and_the_images_are_generated_at_once(
     session: Session, raw_dir: Path
 ) -> None:
     draft = _draft(session)
     provider = FakeImageProvider()
 
-    with pytest.raises(ImageHintsPendingError, match="erst|zuerst"):
-        _generate(session, draft, raw_dir, PEOPLE_AND_TEXT, provider)
-
-    assert provider.calls == []
-    assert GENERATE_STEP not in [e.step for e in session.exec(select(AuditEntry)).all()]
-    hints = prompt_hints(session, draft.briefing_id)
-    assert {h.key for h in hints} == {HINT_PERSONS, HINT_TEXT}
-    assert all(h.confirmed_at is None for h in hints)
-    assert "Info-Grafik" in next(h for h in hints if h.key == HINT_TEXT).reason
-
-
-def test_confirm_then_generate_then_approve_with_audit(session: Session, raw_dir: Path) -> None:
-    draft = _draft(session)
-    provider = FakeImageProvider()
-    with pytest.raises(ImageHintsPendingError):
-        _generate(session, draft, raw_dir, PEOPLE_AND_TEXT, provider)
-
-    _confirm_all(session, draft)
     _generate(session, draft, raw_dir, PEOPLE_AND_TEXT, provider)
 
     assert len(provider.calls) == 1
+    hints = prompt_hints(session, draft.briefing_id)
+    assert {h.key for h in hints} == {HINT_PERSONS, HINT_TEXT}
+    assert "Info-Grafik" in next(h for h in hints if h.key == HINT_TEXT).reason
     entry = session.exec(select(AuditEntry).where(AuditEntry.step == GENERATE_STEP)).one()
     assert set(entry.model_params["hints"]) == {HINT_PERSONS, HINT_TEXT}  # type: ignore[arg-type]
-    confirmations = session.exec(
-        select(AuditEntry).where(AuditEntry.step == HINT_CONFIRM_STEP)
-    ).all()
-    assert {e.model_params["hint"] for e in confirmations} == {HINT_PERSONS, HINT_TEXT}
-    assert all("Rückenfit" not in str(e.model_params) for e in confirmations)
-    from app.social.images import candidates
 
-    choose_candidate(
-        session, _b(session, draft), candidates(session, draft.briefing_id)[0].id or 0, "demo"
-    )
-    assert not any("Hinweis zum KI-Bild" in b for b in approval_blockers(session, draft))
+
+def test_hints_do_not_block_the_approval(session: Session, raw_dir: Path) -> None:
+    draft = _draft(session)
+    _generate(session, draft, raw_dir, PEOPLE_AND_TEXT)
+    _choose_first(session, draft)
+
+    assert not any("KI-Bild" in b or "Bild-Prompt" in b for b in approval_blockers(session, draft))
     approve_draft(session, draft, "demo")
 
 
-def test_clean_prompt_generates_at_once(session: Session, raw_dir: Path) -> None:
+def test_clean_prompt_has_no_hints(session: Session, raw_dir: Path) -> None:
     draft = _draft(session)
 
     _generate(session, draft, raw_dir, "Heller Kursraum mit Matten, weiches Morgenlicht")
@@ -153,28 +125,21 @@ def test_clean_prompt_generates_at_once(session: Session, raw_dir: Path) -> None
     assert prompt_hints(session, draft.briefing_id) == []
 
 
-def test_a_changed_prompt_needs_a_new_confirmation(session: Session, raw_dir: Path) -> None:
+def test_a_changed_prompt_lists_its_own_hints(session: Session, raw_dir: Path) -> None:
     draft = _draft(session)
-    _confirmed_generation(session, draft, raw_dir, PEOPLE_AND_TEXT)
+    _generate(session, draft, raw_dir, PEOPLE_AND_TEXT)
 
-    _generate(session, draft, raw_dir, PEOPLE_AND_TEXT)  # same prompt: confirmations kept
-    assert all(h.confirmed_at for h in prompt_hints(session, draft.briefing_id))
+    _generate(session, draft, raw_dir, "Mann beim Dehnen am Fenster")
 
-    with pytest.raises(ImageHintsPendingError):
-        _generate(session, draft, raw_dir, "Mann beim Dehnen am Fenster")
-    hints = prompt_hints(session, draft.briefing_id)
-    assert [h.key for h in hints] == [HINT_PERSONS] and hints[0].confirmed_at is None
+    assert [h.key for h in prompt_hints(session, draft.briefing_id)] == [HINT_PERSONS]
 
 
-def test_confirming_twice_or_after_approval_is_refused(session: Session, raw_dir: Path) -> None:
+def test_ordinary_hints_cannot_be_confirmed(session: Session, raw_dir: Path) -> None:
     draft = _draft(session)
-    _confirmed_generation(session, draft, raw_dir, "Frau auf der Matte")
+    _generate(session, draft, raw_dir, "Frau auf der Matte")
     (hint,) = prompt_hints(session, draft.briefing_id)
 
-    with pytest.raises(ImageSuggestionError, match="bereits"):
-        confirm_prompt_hint(session, hint, "demo")
-    approve_draft(session, draft, "demo")
-    with pytest.raises(ImageSuggestionError, match="vor der Freigabe"):
+    with pytest.raises(ImageSuggestionError, match="Mitglied"):
         confirm_prompt_hint(session, hint, "demo")
 
 
@@ -200,20 +165,21 @@ def test_member_name_needs_the_consent_of_the_person(session: Session, raw_dir: 
     provider = FakeImageProvider()
     prompt = "Hantelbank mit einer Widmung für Erika Beispiel"
 
-    with pytest.raises(ImageHintsPendingError, match="Mitglied genannt"):
+    with pytest.raises(ImageHintsPendingError, match="Mitgliederliste"):
         _generate(session, draft, raw_dir, prompt, provider)
     assert provider.calls == []
     (member,) = [h for h in prompt_hints(session, draft.briefing_id) if h.key == HINT_MEMBER]
     assert member.consent_required
 
     confirm_prompt_hint(session, member, "demo")
-    _confirm_all(session, draft)
     _generate(session, draft, raw_dir, prompt, provider)
 
     assert len(provider.calls) == 1
     consent = session.exec(select(AuditEntry).where(AuditEntry.step == MEMBER_CONSENT_STEP)).one()
     assert consent.model_params["actor"] == "demo"
     assert "Erika" not in str(consent.model_params)
+    with pytest.raises(ImageSuggestionError, match="bereits"):
+        confirm_prompt_hint(session, member, "demo")
 
 
 def test_post_errors_still_block(session: Session) -> None:
@@ -228,8 +194,7 @@ def test_post_errors_still_block(session: Session) -> None:
 
 def test_deleting_the_briefing_removes_the_hints(session: Session, raw_dir: Path) -> None:
     draft = _draft(session)
-    with pytest.raises(ImageHintsPendingError):
-        _generate(session, draft, raw_dir, PEOPLE_AND_TEXT)
+    _generate(session, draft, raw_dir, PEOPLE_AND_TEXT)
 
     delete_briefing(session, draft.briefing_id, "demo")
 
@@ -244,19 +209,16 @@ def image_client(client: TestClient) -> Iterator[TestClient]:
     yield client
 
 
-def test_confirm_then_generate_in_the_ui(image_client: TestClient, session: Session) -> None:
+def test_hints_are_listed_in_the_ui_without_buttons(
+    image_client: TestClient, session: Session
+) -> None:
     draft = _draft(session)
-    image_client.post(f"/social/briefings/{draft.briefing_id}/images/suggest")
     data = {"prompt": PEOPLE_AND_TEXT}
 
-    first = image_client.post(f"/social/briefings/{draft.briefing_id}/images/generate", data=data)
-    assert first.status_code == 422
-    assert "data-image-hints" in first.text and "erst bestätigen, dann erzeugen" in first.text
-    assert "keine echten Mitglieder" in first.text and "data-candidate=" not in first.text
-
-    for hint in prompt_hints(session, draft.briefing_id):
-        image_client.post(f"/social/image-hints/{hint.id}/confirm")
     page = image_client.post(
         f"/social/briefings/{draft.briefing_id}/images/generate", data=data, follow_redirects=True
     ).text
-    assert page.count("data-candidate=") == 3 and "✓ bestätigt von" in page
+
+    assert "data-image-hints" in page and "data-hint-note" in page
+    assert "keine echten Mitglieder" in page and page.count("data-candidate=") == 3
+    assert "/social/image-hints/" not in page and "Verstanden" not in page

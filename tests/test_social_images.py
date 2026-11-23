@@ -514,5 +514,5 @@ def test_member_from_the_member_table_blocks_generation(session: Session, raw_di
 
     from app.social.images import ImageHintsPendingError
 
-    with pytest.raises(ImageHintsPendingError, match="Mitglied genannt"):
+    with pytest.raises(ImageHintsPendingError, match="Mitgliederliste"):
         _generate(session, _draft(session), raw_dir, "Hantelbank, Widmung für Erika Beispiel")
