@@ -244,6 +244,13 @@ gepostet würde (zeigt auf die Vorschau).
 
 **Akzeptanz:** alle fünf Aufgaben ohne Hilfe gelöst; Messung, Befunde und Anpassungen im PR.
 
+**Stand:** Feinschliff umgesetzt (Toasts, Fokusführung, Platzhalter beim Erzeugen, abgeblendete
+Live-Vorschau, Bewegung mit `prefers-reduced-motion`). Protokoll und Beobachtungsbogen:
+`docs/usability/U8_usability_test.md`; ein automatischer Probedurchlauf
+(`node scripts/usability_walkthrough.cjs`) löst alle fünf Aufgaben allein über sichtbare
+Beschriftungen. **Offen: der Test mit mindestens einer Person, die die App nicht kennt** – erst
+danach wird U8 abgehakt.
+
 ---
 
 ## Offene Punkte

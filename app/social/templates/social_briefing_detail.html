@@ -44,6 +44,10 @@
   </details>
 </div>
 
+{% if toast %}
+<div class="toast alert alert-ok" role="status" data-toast>{{ ui.icon("check", "mt-0.5 h-4 w-4 shrink-0") }}<span class="flex-1">{{ toast }}</span>
+  <button type="button" class="-my-1 rounded p-1 hover:bg-green-100" data-dismiss aria-label="Meldung schließen">{{ ui.icon("x") }}</button></div>
+{% endif %}
 {% if error %}<div class="mb-4" data-flash-error>{{ ui.alert(error, "error", "alert") }}</div>{% endif %}
 {% if revocation %}
 <div class="mb-4" id="revocation">

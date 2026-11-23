@@ -472,6 +472,48 @@
   .flash {
     animation: flash-highlight 1.6s ease-out;
   }
+
+  /* Motion (U8): short, calm transitions; all off with prefers-reduced-motion. */
+  [data-tab]:not([hidden]),
+  [data-choice-panel]:not([hidden]) {
+    animation: fade-in 180ms ease-out;
+  }
+  details[open] > :not(summary) {
+    animation: fade-in 160ms ease-out;
+  }
+  .popover[open] > .popover-panel {
+    animation: pop-in 150ms ease-out;
+  }
+  [data-post-image] {
+    transition: opacity 200ms ease;
+  }
+  .is-updating [data-post-image] {
+    opacity: 0.55;
+  }
+  img[data-post-image] {
+    animation: fade-in 200ms ease-out;
+  }
+  .toast {
+    animation: pop-in 180ms ease-out;
+  }
+  .skeleton {
+    @apply bg-surface-sunken;
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.6), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
   @keyframes flash-highlight {
     0% { background-color: rgb(254 243 199); }
     100% { background-color: transparent; }
@@ -483,7 +525,17 @@
   .spinner {
     animation-duration: 2s;
   }
-  .flash {
+  .flash,
+  .skeleton,
+  .toast,
+  img[data-post-image],
+  details[open] > :not(summary),
+  .popover[open] > .popover-panel,
+  [data-tab]:not([hidden]),
+  [data-choice-panel]:not([hidden]) {
     animation: none;
+  }
+  [data-post-image] {
+    transition: none;
   }
 }

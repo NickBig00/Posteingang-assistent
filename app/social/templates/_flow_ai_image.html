@@ -43,7 +43,12 @@
   {% elif st.hints %}
   <ul class="list-disc pl-5 text-[13px] text-amber-900" data-prompt-hints>{% for h in st.hints %}<li><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</li>{% endfor %}</ul>
   {% endif %}
+  {# Placeholder tiles while the images are generated (shown by JavaScript on submit). #}
+  <div class="grid grid-cols-3 gap-2" data-skeleton-for="ki-bild-form" hidden aria-hidden="true">
+    {% for _ in range(3) %}<div class="skeleton aspect-[4/5] rounded-lg"></div>{% endfor %}
+  </div>
   {% if st.candidates %}
+  <div id="ki-varianten" tabindex="-1" class="space-y-2 outline-none" data-skeleton-hide>
   <p class="text-sm font-medium">Variante wählen – sie wird das Bild aller Beiträge dieses Briefings</p>
   {% call ui.thumb_grid("grid-cols-3") %}
     {% for c in st.candidates %}
@@ -51,6 +56,7 @@
     {% endfor %}
   {% endcall %}
   <form method="post" action="/social/briefings/{{ briefing.id }}/images/discard"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Varianten verwerfen</button></form>
+  </div>
   {% endif %}
   {% if st.chosen %}
   <div class="flex items-center gap-3">
