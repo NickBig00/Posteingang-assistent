@@ -236,3 +236,18 @@ def test_design_page_shows_the_flow_components(web: TestClient) -> None:
     markers += ["checklist", "data-chips", "data-dropzone", "thumb", "sticky_footer"]
     for marker in markers:
         assert marker in page, marker
+
+
+def test_provider_error_is_shown_at_the_empty_text(web: TestClient, session: Session) -> None:
+    """E.g. an expired API key: the reason appears in step ①, not only in the audit trail."""
+    failing = SocialLLMClient(scripted(post_draft=[]))
+    briefing = create_briefing(session, CONFIG, course_input(), "demo")
+    draft, _ = generate_drafts(session, CONFIG, failing, briefing)
+
+    flow = draft_flow(session, CONFIG, draft, CHECK_LABELS)
+    page = web.get(f"/social/briefings/{briefing.id}").text
+
+    assert not draft.text and flow.ai_error and "no scripted answer" in flow.ai_error
+    assert "data-ai-error" in page and "Die KI konnte keinen Text liefern." in page
+    # Only "Text schreiben": the missing facts of the empty text are no extra errors.
+    assert [e.label for e in flow.checklist if not e.optional] == ["Text schreiben"]

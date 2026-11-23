@@ -87,6 +87,9 @@ POST_STATUS_TONES: dict[PostStatus, str] = {
 class Campaign(SQLModel, table=True):
     """Plan over several weeks for one occasion; every post is approved on its own."""
 
+    # Never reuse the number of a deleted row (SQLite would): audit entries refer to it.
+    __table_args__ = {"sqlite_autoincrement": True}
+
     id: int | None = Field(default=None, primary_key=True)
     name: str
     brand_key: str
@@ -99,6 +102,8 @@ class Campaign(SQLModel, table=True):
 
 
 class Briefing(SQLModel, table=True):
+    # Never reuse the number of a deleted row (SQLite would): audit entries refer to it.
+    __table_args__ = {"sqlite_autoincrement": True}
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=utcnow, sa_column=timestamp_column())
     created_by: str
@@ -119,6 +124,8 @@ class Briefing(SQLModel, table=True):
 
 
 class PostDraft(SQLModel, table=True):
+    # Never reuse the number of a deleted row (SQLite would): audit entries refer to it.
+    __table_args__ = {"sqlite_autoincrement": True}
     id: int | None = Field(default=None, primary_key=True)
     briefing_id: int = Field(foreign_key="briefing.id", index=True)
     channel: Channel
@@ -181,6 +188,9 @@ class CheckResult(SQLModel, table=True):
 
 class Asset(SQLModel, table=True):
     """Uploaded image of a briefing with the consent of the people shown on it."""
+
+    # Never reuse the number of a deleted row (SQLite would): audit entries refer to it.
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id: int | None = Field(default=None, primary_key=True)
     briefing_id: int = Field(foreign_key="briefing.id", index=True)
