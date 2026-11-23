@@ -138,7 +138,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -375,7 +376,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -445,7 +447,7 @@
       },
       {
         "tag": "textarea",
-        "label": "[KI-Vorschlag – bitte vor dem Versand pr",
+        "label": "Antwortentwurf (bearbeitbar)",
         "visible": true,
         "onScreen": true
       },
@@ -474,7 +476,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -531,7 +534,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -648,7 +652,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -706,181 +711,181 @@
       },
       {
         "tag": "select",
-        "label": "Fitness Kurse Physiotherapie Rehasport F",
+        "label": "Bereich Fitness Kurse Physiotherapie Reh",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "select",
-        "label": "Kurs Aktion Probetraining Veranstaltung ",
+        "label": "Anlass Kurs Aktion Probetraining Veranst",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "textarea",
-        "label": "notes",
+        "label": "Stichpunkte",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "datum",
+        "label": "Datum *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "datum",
+        "label": "Datum *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "datum",
+        "label": "Datum *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "datum",
+        "label": "Datum *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "uhrzeit",
+        "label": "Uhrzeit *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "uhrzeit",
+        "label": "Uhrzeit *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "uhrzeit",
+        "label": "Uhrzeit *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "uhrzeit",
+        "label": "Uhrzeit *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "preis",
+        "label": "Preis in €",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "ort",
+        "label": "Ort *",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_von",
+        "label": "Zeitraum von",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_von",
+        "label": "Zeitraum von",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_von",
+        "label": "Zeitraum von",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_von",
+        "label": "Zeitraum von",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_bis",
+        "label": "Zeitraum bis",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_bis",
+        "label": "Zeitraum bis",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_bis",
+        "label": "Zeitraum bis",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "zeitraum_bis",
+        "label": "Zeitraum bis",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "telefon",
+        "label": "Telefonnummer",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "instagram_post",
+        "label": "Instagram-Beitrag",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "instagram_story",
+        "label": "Instagram-Story",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "facebook",
+        "label": "Facebook-Beitrag",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "linkedin",
+        "label": "LinkedIn-Beitrag",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "desired_date",
+        "label": "Wunschtermin Nur zur Orientierung, wann ",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "desired_date",
+        "label": "Wunschtermin Nur zur Orientierung, wann ",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "desired_date",
+        "label": "Wunschtermin Nur zur Orientierung, wann ",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "desired_date",
+        "label": "Wunschtermin Nur zur Orientierung, wann ",
         "visible": true,
         "onScreen": true
       },
@@ -891,11 +896,12 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
-    "name": "Entwurf in Prüfung (mit KI-Bild)",
+    "name": "Briefing-Ablauf in Prüfung (mit KI-Bild)",
     "url": "/social/briefings/1",
     "violations": [],
     "stops": [
@@ -948,236 +954,164 @@
         "onScreen": true
       },
       {
-        "tag": "a",
-        "label": "Audit-Verlauf",
+        "tag": "summary",
+        "label": "Weitere Aktionen zum Briefing",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Foto mit KI bearbeiten",
+        "label": "Briefing anzeigen (Stichpunkte, Fakten, ",
         "visible": true,
         "onScreen": true
       },
       {
-        "tag": "button",
-        "label": "Bild entfernen",
+        "tag": "a",
+        "label": "Instagram-Beitrag ● (In Prüfung)",
         "visible": true,
         "onScreen": true
       },
       {
-        "tag": "button",
-        "label": "Bild entfernen",
+        "tag": "ol",
+        "label": "Karussell zum Durchwischen (Pfeiltasten)",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Weiter mit KI bearbeiten",
+        "label": "Kurs! Neuer Rückenkurs am Abend, für Ein",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Bild entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Bild hochladen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "true",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "true",
+        "label": "Freigeben",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Bild hochladen",
+        "label": "Verwerfen",
         "visible": true,
         "onScreen": true
       },
       {
-        "tag": "select",
-        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Farbfläche in Markenfarbe Foto „demo_hin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Foto hochladen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Foto mit KI bearbeiten",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "KI-Bild erzeugen (im Entwurf Instagram-B",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "graphic_headline",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "datum",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "uhrzeit",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "ort",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Vorschau aktualisieren",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Text für Grafik vorschlagen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "headline",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "subline",
+        "tag": "summary",
+        "label": "Weitere Aktionen für Instagram-Beitrag",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "textarea",
-        "label": "intro",
+        "label": "Beitragstext Instagram-Beitrag",
         "visible": true,
         "onScreen": true
       },
       {
-        "tag": "textarea",
-        "label": "points",
+        "tag": "button",
+        "label": "#DemoGesundheitszentrum entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Musterstadt entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Kurse entfernen",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "closing",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Text zentriert Text in Farbfeld unten Fo",
+        "label": "Hashtags",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Kürzerer Text für die Story (9:16, optio",
+        "label": "Anders formulieren …",
         "visible": true,
         "onScreen": true
       },
       {
-        "tag": "button",
-        "label": "Speichern und prüfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Bearbeiten",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Von KI überarbeiten lassen",
+        "tag": "input",
+        "label": "KI-Bild beschreiben, KI erzeugt",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "textarea",
-        "label": "Stimmungsbild zum Thema Kurs: Kursraum m",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Format",
+        "label": "Was soll zu sehen sein?",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Neu erzeugen",
+        "label": "Neue Bilder erzeugen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Prüfen",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Bild per Anweisung ändern",
+        "label": "Anders …",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Variante 1 wählen",
+        "label": "Nein",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Variante 2 wählen",
+        "label": "Ja",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Variante 3 wählen",
+        "label": "Ohne Bild posten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Mehr: Gestaltung, Fakten, Story-Text, me",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Alle Varianten verwerfen",
+        "label": "Aus",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "An",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Aus",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "An",
         "visible": true,
         "onScreen": true
       },
@@ -1225,13 +1159,25 @@
       },
       {
         "tag": "button",
+        "label": "Seite 3 nach hinten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
         "label": "Seite 3 entfernen",
         "visible": true,
         "onScreen": true
       },
       {
-        "tag": "summary",
-        "label": "Seite 1 bearbeiten",
+        "tag": "button",
+        "label": "Seite 4 nach vorne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 4 entfernen",
         "visible": true,
         "onScreen": true
       },
@@ -1249,7 +1195,95 @@
       },
       {
         "tag": "summary",
+        "label": "Seite 4 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
         "label": "+ Seite hinzufügen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "12 Prüfungen ok",
+        "visible": true,
+        "onScreen": true
+      }
+    ],
+    "overflow": false,
+    "missing": []
+  },
+  {
+    "viewport": "Laptop 1366×900",
+    "name": "Briefing-Ablauf Reiter Facebook",
+    "url": "/social/briefings/1#facebook",
+    "violations": [],
+    "stops": [
+      {
+        "tag": "a",
+        "label": "Zum Inhalt springen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "P Posteingangs-Assistent",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Übersicht",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Posteingang",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Kalender",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Einstellungen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Social Media",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Weitere Aktionen zum Briefing",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Briefing anzeigen (Stichpunkte, Fakten, ",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Facebook-Beitrag ● (In Prüfung)",
         "visible": true,
         "onScreen": true
       },
@@ -1258,13 +1292,236 @@
         "label": "Freigeben",
         "visible": true,
         "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verwerfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Weitere Aktionen für Facebook-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Beitragstext Facebook-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#DemoGesundheitszentrum entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Musterstadt entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Kurse entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Hashtags",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Anders formulieren …",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "KI-Bild beschreiben, KI erzeugt",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Was soll zu sehen sein?",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Neue Bilder erzeugen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Prüfen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Anders …",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Nein",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Ja",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Ohne Bild posten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Mehr: Gestaltung, Fakten, Story-Text, me",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Aus",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "An",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Aus",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "An",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seitenaufteilung vorschlagen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 1 nach hinten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 1 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 2 nach vorne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 2 nach hinten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 2 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 3 nach vorne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 3 nach hinten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 3 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 4 nach vorne",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Seite 4 entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Seite 2 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Seite 3 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Seite 4 bearbeiten",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "+ Seite hinzufügen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "11 Prüfungen ok",
+        "visible": true,
+        "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
-    "name": "Entwurf freigegeben",
+    "name": "Briefing freigegeben (Veröffentlichen)",
     "url": "/social/briefings/2",
     "violations": [],
     "stops": [
@@ -1317,200 +1574,98 @@
         "onScreen": true
       },
       {
-        "tag": "a",
-        "label": "Audit-Verlauf",
+        "tag": "summary",
+        "label": "Weitere Aktionen zum Briefing",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Foto mit KI bearbeiten",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Bild entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Bild hochladen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "true",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "true",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Bild hochladen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Farbfläche in Markenfarbe Foto „demo_hin",
+        "label": "Briefing anzeigen (Stichpunkte, Fakten, ",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "a",
-        "label": "Foto hochladen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Foto mit KI bearbeiten",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "KI-Bild erzeugen (im Entwurf Instagram-B",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "graphic_headline",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "preis",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "zeitraum",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Vorschau aktualisieren",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Grafik als JPEG",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Text für Grafik vorschlagen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Winter-Schnupperwochen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Zwei Wochen alle Kurse ausprobieren",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "textarea",
-        "label": "Neugierig auf unsere Kurse? In den Schnu",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "textarea",
-        "label": "Alle Kurse inklusive Ohne Vertragsbindun",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Melde dich einfach am Empfang!",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Text zentriert Text in Farbfeld unten Fo",
+        "label": "Instagram-Beitrag ◷ (Geplant)",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Kürzerer Text für die Story (9:16, optio",
+        "label": "Aktion! Sommeraktion: zwei Wochen gratis",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "button",
-        "label": "Speichern und prüfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Grafiktext von KI überarbeiten lassen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Quadratisch 1:1 Hochformat 4:5 Story 9:1",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "select",
-        "label": "Farbfläche in Markenfarbe Foto „demo_hin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "preis",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "zeitraum",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Vorschau aktualisieren",
+        "label": "Text kopieren",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "a",
-        "label": "Info-Grafik als JPEG",
+        "label": "als Textdatei",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Bild herunterladen (4:5)",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Geplanter Termin",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "Verschieben",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "zurücknehmen",
         "visible": true,
         "onScreen": true
       },
@@ -1528,113 +1683,24 @@
       },
       {
         "tag": "button",
-        "label": "Verwerfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Entwurf löschen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Text kopieren",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Als Textdatei",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "a",
-        "label": "Bild „demo_hintergrund.jpg“ als JPEG (4:",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "zurücknehmen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Geplanter Termin",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Verschieben",
+        "label": "Freigabe zurückziehen (verwerfen)",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Aktion! Sommeraktion: zwei Wochen gratis",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Verwerfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "Entwurf löschen",
+        "label": "Text und Prüfungen ansehen",
         "visible": true,
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
     "name": "Kalender Woche",
-    "url": "/social/calendar?view=week&date=2026-11-17",
+    "url": "/social/calendar?view=week&date=2026-11-27",
     "violations": [],
     "stops": [
       {
@@ -1824,12 +1890,13 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
     "name": "Kalender Monat",
-    "url": "/social/calendar?view=month&date=2026-11-17",
+    "url": "/social/calendar?view=month&date=2026-11-27",
     "violations": [],
     "stops": [
       {
@@ -1971,7 +2038,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -2046,7 +2114,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -2127,7 +2196,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -2184,7 +2254,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Laptop 1366×900",
@@ -2284,25 +2355,73 @@
       },
       {
         "tag": "input",
-        "label": "INPUT",
+        "label": "Textfeld Hilfetext unter dem Feld",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "31.02.",
+        "label": "Mit Fehler Ungültiges Datum.",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "select",
-        "label": "Fitness Kurse",
+        "label": "Auswahl Fitness Kurse",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "input",
-        "label": "on",
+        "label": "Kontrollkästchen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Instagram-Beitrag ● (in Prüfung)",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "1 1 Hinweis bestätigen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "2 Bild wählen (optional)",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Eigenes Foto hochladen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Rücken entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Kurs entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Hashtags",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Anders formulieren …",
         "visible": true,
         "onScreen": true
       },
@@ -2313,7 +2432,8 @@
         "onScreen": true
       }
     ],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2321,7 +2441,8 @@
     "url": "/",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2329,7 +2450,8 @@
     "url": "/inbox",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2337,7 +2459,8 @@
     "url": "/items/1",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2345,7 +2468,8 @@
     "url": "/items/1/audit",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2353,7 +2477,8 @@
     "url": "/social",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2361,39 +2486,53 @@
     "url": "/social/briefings/new",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
-    "name": "Entwurf in Prüfung (mit KI-Bild)",
+    "name": "Briefing-Ablauf in Prüfung (mit KI-Bild)",
     "url": "/social/briefings/1",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
-    "name": "Entwurf freigegeben",
+    "name": "Briefing-Ablauf Reiter Facebook",
+    "url": "/social/briefings/1#facebook",
+    "violations": [],
+    "stops": [],
+    "overflow": false,
+    "missing": []
+  },
+  {
+    "viewport": "Tablet 820×1180",
+    "name": "Briefing freigegeben (Veröffentlichen)",
     "url": "/social/briefings/2",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
     "name": "Kalender Woche",
-    "url": "/social/calendar?view=week&date=2026-11-17",
+    "url": "/social/calendar?view=week&date=2026-11-27",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
     "name": "Kalender Monat",
-    "url": "/social/calendar?view=month&date=2026-11-17",
+    "url": "/social/calendar?view=month&date=2026-11-27",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2401,7 +2540,8 @@
     "url": "/social/campaigns",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2409,7 +2549,8 @@
     "url": "/social/campaigns/1",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2417,7 +2558,8 @@
     "url": "/settings",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   },
   {
     "viewport": "Tablet 820×1180",
@@ -2425,6 +2567,7 @@
     "url": "/design",
     "violations": [],
     "stops": [],
-    "overflow": false
+    "overflow": false,
+    "missing": []
   }
 ]

@@ -20,11 +20,11 @@ from app.core.llm.fake import FakeProvider
 from app.core.models import AuditEntry
 from app.main import app
 from app.social.assets import consent_blockers, delete_asset, revoke_consent, save_asset
-from app.social.briefing_image import briefing_image
+from app.social.briefing_image import briefing_image, set_briefing_image
 from app.social.briefings import create_briefing
 from app.social.drafts import generate_drafts
 from app.social.llm.client import SocialLLMClient
-from app.social.models import Asset, Briefing, Channel, PostDraft
+from app.social.models import Asset, Briefing, Channel, ImageSource, PostDraft
 from app.social.photo_edit import (
     EDIT_SAFETY_SUFFIX,
     EDIT_STEP,
@@ -287,7 +287,8 @@ def test_edit_in_the_ui_and_labelled_download(
     briefing = _briefing(session)
     photo = _photo(session, briefing, raw_dir)
     url = f"/social/briefings/{briefing.id}"
-    assert "Foto mit KI bearbeiten" in web.get(url).text
+    set_briefing_image(session, briefing.id or 0, ImageSource.UPLOAD, photo.id, "demo")
+    assert "Mit KI bearbeiten" in web.get(url).text
 
     page = web.post(
         f"/social/assets/{photo.id}/edit",
@@ -312,7 +313,8 @@ def test_edit_route_is_hidden_when_switched_off(
     web: TestClient, session: Session, raw_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     photo = _photo(session, _briefing(session), raw_dir)
+    set_briefing_image(session, photo.briefing_id, ImageSource.UPLOAD, photo.id, "demo")
     monkeypatch.setenv("IMAGE_GENERATION_ENABLED", "false")
 
     assert web.post(f"/social/assets/{photo.id}/edit", data={"instruction": "x"}).status_code == 404
-    assert "Foto mit KI bearbeiten" not in web.get(f"/social/briefings/{photo.briefing_id}").text
+    assert "Mit KI bearbeiten" not in web.get(f"/social/briefings/{photo.briefing_id}").text

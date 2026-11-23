@@ -82,6 +82,38 @@
     </div>
   </section>
 
+  <section class="card" aria-labelledby="flow">
+    <div class="card-header"><h2 class="card-title" id="flow">Abläufe (Briefing-Seite)</h2></div>
+    <div class="card-body space-y-6">
+      {{ ui.tabs([
+        {"id": "demo-a", "label": "Instagram-Beitrag", "symbol": "●", "tone": "warning", "status_label": "in Prüfung"},
+        {"id": "demo-b", "label": "Facebook-Beitrag", "symbol": "✓", "tone": "ok", "status_label": "freigegeben"},
+        {"id": "demo-c", "label": "LinkedIn-Beitrag", "symbol": "–", "tone": "neutral", "struck": true, "status_label": "verworfen"}],
+        "Beispiel-Reiter", "demo-a") }}
+      <div id="panel-demo-a" hidden></div><div id="panel-demo-b" hidden></div><div id="panel-demo-c" hidden></div>
+      {{ ui.checklist([{"label": "1 Hinweis bestätigen", "href": "#flow", "optional": false}, {"label": "Bild wählen", "href": "#flow", "optional": true}]) }}
+      {{ ui.checklist([]) }}
+      <div class="stepper">
+        {% call ui.step(1, "Text", "demo-step-1", "done", "fertig") %}<p class="text-sm text-ink-muted">Schritt mit Status fertig.</p>{% endcall %}
+        {% call ui.step(2, "Bild", "demo-step-2", "open", "optional") %}
+          {{ ui.choice_cards("demo_source", [("upload", "Eigenes Foto", "photo", "hochladen"), ("ai", "KI-Bild", "sparkles", "beschreiben"), ("color", "Farbfläche", "palette", "Markenfarbe")], "upload", "Welches Bild?") }}
+          {{ ui.toggle("/design", "demo_text", false, "Text aufs Bild?", true) }}
+          {{ ui.dropzone("/design", "Foto hochladen", disabled=true) }}
+          {% call ui.thumb_grid() %}
+            <div>{{ ui.thumb("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 4 5%22%3E%3Crect width=%224%22 height=%225%22 fill=%22%2394a3b8%22/%3E%3C/svg%3E", "Beispielbild", true) }}</div>
+          {% endcall %}
+        {% endcall %}
+        {% call ui.step(3, "Prüfen und freigeben", "demo-step-3", "error", "1 offen") %}
+          {{ ui.chips("demo_tags", ["#Rücken", "#Kurs"], "Hashtags", "demo-tags") }}
+          {% call ui.popover("Anders formulieren …", "demo-popover") %}<p class="text-sm">Inhalt eines Popovers.</p>{% endcall %}
+        {% endcall %}
+      </div>
+      <div class="relative h-16 overflow-hidden rounded-lg border border-dashed border-line-strong">
+        <div class="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-line bg-surface px-4 py-3 text-sm">Fixierter Fuß (<code>ui.sticky_footer()</code>, nur auf schmalen Bildschirmen) <button type="button" class="btn btn-success btn-sm ml-auto" disabled>Freigeben</button></div>
+      </div>
+    </div>
+  </section>
+
   <section aria-labelledby="empty">
     <h2 class="mb-3 text-base font-semibold" id="empty">Leerzustand</h2>
     {% call ui.empty_state("Noch keine Einträge", "Leerzustände erklären, was hier erscheinen wird, und bieten den nächsten Schritt an.") %}

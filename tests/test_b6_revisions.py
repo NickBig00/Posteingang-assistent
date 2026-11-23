@@ -304,4 +304,4 @@ def test_image_revise_route(web: TestClient, session: Session) -> None:
     ).text
 
     assert page.count("data-candidate=") == 3
-    assert "Bild per Anweisung ändern" in page
+    assert 'id="image-revise"' in page

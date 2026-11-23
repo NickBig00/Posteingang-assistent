@@ -217,7 +217,7 @@ Kennzeichnung, Einwilligung, Hinweise vor dem Erzeugen, Kostenbremse je Briefing
 Instagram und Facebook, Übernahme von Schritt 1 (Kopie, Fakten aus dem eigenen Briefing),
 Migration und Löschkonzept; bestehende Tests angepasst und grün.
 
-## [ ] U7 – Briefing-Seite als Ablauf
+## [x] U7 – Briefing-Seite als Ablauf
 
 Kopf, Reiter je Kanal, Schritte ①–④, Checkliste „Noch offen“, sticky Vorschau, neue Komponenten
 in `_ui.html` und auf `/design` (`ui.tabs`, `ui.step`, `ui.choice_cards`, `ui.toggle`,
@@ -243,6 +243,13 @@ Ziel: alle Aufgaben ohne Hilfe, jede in unter zwei Minuten; die Person kann jede
 gepostet würde (zeigt auf die Vorschau).
 
 **Akzeptanz:** alle fünf Aufgaben ohne Hilfe gelöst; Messung, Befunde und Anpassungen im PR.
+
+**Stand:** Feinschliff umgesetzt (Toasts, Fokusführung, Platzhalter beim Erzeugen, abgeblendete
+Live-Vorschau, Bewegung mit `prefers-reduced-motion`). Protokoll und Beobachtungsbogen:
+`docs/usability/U8_usability_test.md`; ein automatischer Probedurchlauf
+(`node scripts/usability_walkthrough.cjs`) löst alle fünf Aufgaben allein über sichtbare
+Beschriftungen. **Offen: der Test mit mindestens einer Person, die die App nicht kennt** – erst
+danach wird U8 abgehakt.
 
 ---
 
@@ -315,3 +322,8 @@ gepostet würde (zeigt auf die Vorschau).
 - [ ] **Facebook-Raster (U6):** Facebook zeigt mehrere Fotos als Raster; das erste Bild bestimmt
   das Layout, Bilder im Raster werden zugeschnitten. Karussell-Download für Facebook wie für
   Instagram in 4:5 (1080×1350); vor echtem Einsatz an einem Testbeitrag prüfen.
+- [ ] **Live-Vorschau mit Meldung je Feld (U7):** Die Live-Vorschau beim Tippen zeigt Probleme
+  (zu viel Text, fremde Fakten) als eine Zeile unter dem Formular, nicht direkt am betroffenen
+  Feld; die Prüfungen (Gesundheit, Personen) laufen erst beim Übernehmen.
+- [ ] **Alte Screenshot-Abschnitte (U7):** `scripts/screenshots.cjs` B2–B9/U4 verweisen teils auf
+  Bereiche der alten Briefing-Seite; aktuell ist der Abschnitt U7.

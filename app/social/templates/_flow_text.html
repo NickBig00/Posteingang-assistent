@@ -1,0 +1,34 @@
+{# Step ① Text of one channel (SPEC_social 8.1). Needs: d, f. #}
+{% import "_ui.html" as ui %}
+{% from "_social_revise.html" import revise_form %}
+{% set label %}{% if d.is_ai_suggestion and not d.edited_by_human %}{{ ui.ai_badge() }}{% elif d.edited_by_human %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}{% endset %}
+{% set extra %}{{ label }}
+<details class="popover popover-right" data-popover id="draft-menu-{{ d.id }}">
+  <summary class="btn btn-ghost btn-sm" aria-label="Weitere Aktionen für {{ channel_labels[d.channel] }}">{{ ui.icon("more") }}</summary>
+  <div class="popover-panel w-64 space-y-1 p-2 text-sm">
+    <form method="post" action="/social/drafts/{{ d.id }}/recheck" data-loading="Wird geprüft …"><button type="submit" class="nav-link w-full">Erneut prüfen</button></form>
+    <form method="post" action="/social/drafts/{{ d.id }}/delete" onsubmit="return confirm('Diesen Entwurf mit Prüfergebnissen und gespeicherten KI-Ausgaben löschen?')">
+      <button type="submit" class="nav-link w-full text-red-700">{{ ui.icon("trash") }}Entwurf löschen</button></form>
+  </div>
+</details>{% endset %}
+{% call ui.step(1, "Text", "draft-" ~ d.id, "done" if d.text else "error", ("fertig" if d.text else "fehlt"), extra) %}
+{% if d.status.value == "rejected" %}
+<p class="text-sm text-ink-muted">Dieser Beitrag ist verworfen.</p>
+<p class="whitespace-pre-wrap text-sm text-ink-subtle line-through">{{ d.full_text }}</p>
+<form method="post" action="/social/drafts/{{ d.id }}/reopen"><button type="submit" class="btn btn-secondary btn-sm">Wieder öffnen</button></form>
+{% else %}
+<form method="post" action="/social/drafts/{{ d.id }}/edit" class="space-y-3" id="text-{{ d.id }}" data-dirty data-loading="Wird gespeichert und geprüft …">
+  <label class="sr-only" for="text-input-{{ d.id }}">Beitragstext {{ channel_labels[d.channel] }}</label>
+  <textarea id="text-input-{{ d.id }}" name="text" rows="{{ 10 if d.text | length > 400 else 7 }}" class="input text-[15px] leading-relaxed"
+            placeholder="Die KI hat keinen Text geliefert – schreib ihn hier selbst.">{{ d.text }}</textarea>
+  {{ ui.chips("hashtags", d.hashtags, "Hashtags", "hashtags-" ~ d.id) }}
+  <div class="flex flex-wrap items-center gap-2">
+    <button type="submit" class="btn btn-primary" data-dirty-submit>Speichern</button>
+    <span class="text-[13px] text-ink-subtle">Nach dem Speichern prüft das System den Text neu.</span>
+  </div>
+</form>
+{% call ui.popover("Anders formulieren …", "revise-" ~ d.id) %}
+  {{ revise_form("/social/drafts/" ~ d.id ~ "/revise", "instruction-" ~ d.id, post_quick_picks, "Text überarbeiten", hint="Bestätigte Hinweise müssen danach neu bestätigt werden.") }}
+{% endcall %}
+{% endif %}
+{% endcall %}

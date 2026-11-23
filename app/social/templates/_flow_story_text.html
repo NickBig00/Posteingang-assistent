@@ -1,0 +1,14 @@
+{# Shorter text for the 9:16 story (optional; otherwise the text above is used). #}
+<form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="space-y-2" id="story-text">
+  <h3 class="text-[15px] font-semibold">Story-Text (9:16, kürzer)</h3>
+  {% for name in ("headline", "subline", "intro", "closing") %}<input type="hidden" name="{{ name }}" value="{{ info.texts[name] }}">{% endfor %}
+  <input type="hidden" name="points" value="{{ info.texts.points | join('\n') }}">
+  <div class="grid gap-2 sm:grid-cols-2">
+    <label class="field">Überschrift <input type="text" name="story_headline" maxlength="60" value="{{ info.story.headline if info.story else '' }}" class="input mt-1"></label>
+    <label class="field">Schlusssatz <input type="text" name="story_closing" maxlength="140" value="{{ info.story.closing if info.story else '' }}" class="input mt-1"></label>
+    <label class="field">Einleitung <textarea name="story_intro" rows="2" maxlength="260" class="input mt-1">{{ info.story.intro if info.story else '' }}</textarea></label>
+    <label class="field">Punkte (0–6) <textarea name="story_points" rows="2" class="input mt-1">{{ info.story.points | join("\n") if info.story else '' }}</textarea></label>
+  </div>
+  <p class="hint">Leer lassen: Die Story nutzt den Text oben. Abgeschnitten wird nie – passt etwas nicht, kommt eine Meldung.</p>
+  <button type="submit" class="btn btn-secondary btn-sm" {% if image_locked %}disabled{% endif %}>Story-Text übernehmen</button>
+</form>

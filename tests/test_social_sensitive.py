@@ -494,7 +494,7 @@ def social_client(client: TestClient) -> Iterator[TestClient]:
 def test_confirm_and_approve_in_the_ui(social_client: TestClient, session: Session) -> None:
     draft = _draft(session, notes="Training, das Bluthochdruck vorbeugt")
     page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
-    assert "Geprüft – bestätigen" in page
+    assert ">Bestätigen</button>" in page
     assert "disabled" in page
     assert "<mark" in page and "Bluthochdruck</mark>" in page
 
@@ -525,9 +525,9 @@ def test_health_notice_in_the_ui(social_client: TestClient) -> None:
 def test_member_consent_in_the_ui(social_client: TestClient, session: Session) -> None:
     draft, error = _member_draft(session)
     page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
-    assert "Einwilligung der Person liegt vor" in page
+    assert "Einwilligung liegt vor</button>" in page
     assert f'action="/social/checks/{error.id}/consent"' in page
-    assert "Geprüft – bestätigen" not in page
+    assert ">Bestätigen</button>" not in page
 
     assert social_client.post(f"/social/drafts/{draft.id}/approve").status_code == 409
     consent = social_client.post(f"/social/checks/{error.id}/consent", follow_redirects=False)
