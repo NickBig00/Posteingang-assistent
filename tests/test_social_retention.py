@@ -23,6 +23,7 @@ from app.social.assets import (
     revoke_consent,
     save_asset,
 )
+from app.social.audit import briefing_audit_trail
 from app.social.briefing_image import set_briefing_image
 from app.social.briefings import create_briefing
 from app.social.calendar import publish_draft, schedule_draft
@@ -39,6 +40,7 @@ from app.social.models import (
     PostDraft,
     PostReview,
     PostStatus,
+    as_utc,
 )
 from app.social.post_image import remove_asset_choice
 from app.social.retention import (
@@ -476,3 +478,41 @@ def test_revoke_and_delete_draft_in_the_ui(
     session.expire_all()
     assert session.get(PostDraft, second_id) is None
     assert social_client.post(f"/social/drafts/{second_id}/delete").status_code == 404
+
+
+# --- a deleted briefing's number is never reused, its entries never show up elsewhere ---
+
+
+def test_deleted_briefing_number_is_not_reused(session: Session) -> None:
+    first = _briefing(session)
+    first_id = first.id or 0
+    delete_briefing(session, first_id, "demo")
+
+    second = _briefing(session)
+
+    assert second.id != first_id
+
+
+def test_entries_of_an_older_briefing_with_the_same_number_are_left_out(
+    session: Session,
+) -> None:
+    """Databases from before the fix may reuse numbers: older entries are not shown."""
+    briefing = _briefing(session)
+    old = AuditEntry(
+        item_id=None,
+        step="social.post_draft",
+        model="fake",
+        prompt_version="v1",
+        model_params={"briefing_id": briefing.id},
+        input_hash="0" * 64,
+        output_hash="0" * 64,
+        duration_ms=1,
+        created_at=as_utc(briefing.created_at) - timedelta(days=2),
+    )
+    session.add(old)
+    session.commit()
+
+    trail = briefing_audit_trail(session, briefing.id or 0)
+
+    assert old.id not in [e.id for e in trail]
+    assert any(e.step == "social.post_draft" for e in trail)
