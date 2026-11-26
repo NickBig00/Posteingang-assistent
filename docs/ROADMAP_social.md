@@ -253,7 +253,24 @@ danach wird U8 abgehakt.
 
 ---
 
+## [x] B10 – Anlässe, Pflichtangaben und Kampagnenplan je Markenprofil
+
+Abschnitt `industry_overrides:` im Markenprofil (SPEC_social 4.3): eigene Anlass-Typen mit
+Pflicht- und optionalen Angaben, eigener Kampagnenplan; neue Text-Angaben Name, Kursleitung,
+Anmeldung, Vorteil, Bedingungen (wörtlich geprüft). Anlass: Fragebogen eines Kunden
+(Kampagnenplan 14/7/1 Tage, keine Stellenangebote, Kurs mit Kursleitung und Anmeldung).
+
+**Akzeptanz:** Tests für Überschreiben und Beibehalten der Branchenregeln, ungültige Angaben,
+Pflichtangaben im Formular, wörtliche Prüfung der Text-Angaben, Ablauf bis zum geprüften
+Entwurf.
+
+---
+
 ## Offene Punkte
+
+- [ ] **Kursleitung und Personenprüfung (B10):** Ein Name als Kursleitung löst wie jeder Name
+  im Beitrag die Personen-Warnung aus (Bestätigung nötig). Zu entscheiden, ob die im Briefing
+  angegebene Kursleitung davon ausgenommen wird.
 
 - [x] **Löschkonzept Social Media:** Löschen je Briefing/Kampagne und Aufbewahrungsfrist
   (`social-purge`, `RETENTION_DAYS`), analog zum Posteingang.

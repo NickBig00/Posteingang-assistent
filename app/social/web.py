@@ -95,7 +95,7 @@ from app.social.carousel import (
 )
 from app.social.checks import CHECK_LABELS
 from app.social.drafts import generate_drafts
-from app.social.facts import FACT_LABELS, BriefingFacts, formatted_facts
+from app.social.facts import FACT_LABELS, TEXT_FACT_KEYS, BriefingFacts, formatted_facts
 from app.social.flow import draft_flow
 from app.social.graphics import GraphicLayoutError
 from app.social.highlight import highlight
@@ -195,6 +195,21 @@ from app.social.revisions import (
 )
 from app.social.sensitive import SENSITIVE_CHECK_LABELS
 from app.social.status import latest_review
+
+TEXT_FACT_PLACEHOLDERS = {
+    "titel": "z. B. Rücken-Fit",
+    "kursleitung": "z. B. Name der Trainerin oder des Trainers",
+    "anmeldung": "z. B. über die App",
+    "vorteil": "z. B. erster Monat gratis",
+    "bedingungen": "z. B. nur für Neumitglieder, Laufzeit 12 Monate",
+}
+TEXT_FACT_MAX = {
+    "titel": 120,
+    "kursleitung": 120,
+    "anmeldung": 200,
+    "vorteil": 200,
+    "bedingungen": 300,
+}
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 NAV_ENTRY = NavEntry(module="social", label="Social Media", path="/social", icon="megaphone")
@@ -330,8 +345,14 @@ def _form_context(
         required.add("zeitraum_bis")
     if channels is None:
         channels = [c.value for c in config.brand.channels(area_key)]
+    text_facts = [
+        (key, FACT_LABELS[key], TEXT_FACT_PLACEHOLDERS[key], TEXT_FACT_MAX[key])
+        for key in occasion.form_facts
+        if key in TEXT_FACT_KEYS
+    ]
     return {
         "config": config,
+        "text_facts": text_facts,
         "values": values | {"area": area_key, "occasion_type": occasion_key},
         "area": config.brand.area(area_key),
         "occasion": occasion,

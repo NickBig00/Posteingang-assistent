@@ -47,6 +47,13 @@ class OccasionType(_Strict):
     label: str = Field(min_length=1)
     # Facts the briefing form asks for; a briefing without them is rejected.
     required_facts: list[FactKey] = Field(default_factory=list)
+    # Further facts the form offers for this occasion (text facts such as "Kursleitung" only
+    # appear in the form where an occasion type lists them as required or optional).
+    optional_facts: list[FactKey] = Field(default_factory=list)
+
+    @property
+    def form_facts(self) -> list[FactKey]:
+        return list(dict.fromkeys([*self.required_facts, *self.optional_facts]))
 
 
 class HealthClaimRules(_Strict):
@@ -207,6 +214,15 @@ class BrandDesign(_Strict):
     logo: str | None = Field(default=None, pattern=r"^[\w-]+(?:\.[\w-]+)*\.(?:png|jpg|jpeg)$")
 
 
+class BrandSocial(_Strict):
+    """Per-brand overrides of the industry rules (SPEC_social 4.3): occasion types with their
+    required facts and the campaign plan. Each list replaces the industry list as a whole;
+    left out, the industry profile applies."""
+
+    occasion_types: list[OccasionType] | None = Field(default=None, min_length=1)
+    campaign_steps: list[CampaignStep] | None = None
+
+
 class BrandProfile(_Strict):
     key: str = Field(pattern=KEY_PATTERN)
     name: str = Field(min_length=1)
@@ -222,6 +238,9 @@ class BrandProfile(_Strict):
     # Optional: colours and font of graphics from templates (default: neutral design).
     design: BrandDesign | None = None
     areas: list[Area] = Field(min_length=1)
+    # Optional: occasion types and campaign plan of this business (instead of the industry's).
+    # Not called `social:` – that name marks module sections of an industry profile.
+    industry_overrides: BrandSocial | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -326,6 +345,29 @@ def profile_brand_color() -> str | None:
     return _COLOR_CACHE[key]
 
 
+def apply_brand_overrides(
+    industry: IndustrySocial, brand: BrandProfile, brand_path: Path
+) -> IndustrySocial:
+    """The industry rules with the brand's own occasion types and campaign plan.
+
+    Health claim rules, term rules and sensitive areas always stay those of the industry.
+    """
+    overrides = brand.industry_overrides
+    if overrides is None:
+        return industry
+    data = industry.model_dump()
+    if overrides.occasion_types is not None:
+        data["occasion_types"] = [o.model_dump() for o in overrides.occasion_types]
+    if overrides.campaign_steps is not None:
+        data["campaign_steps"] = [s.model_dump() for s in overrides.campaign_steps]
+    try:
+        return IndustrySocial.model_validate(data)
+    except ValueError as error:
+        raise ProfileError(
+            f"Markenprofil '{brand_path}', Abschnitt industry_overrides: {error}"
+        ) from error
+
+
 def load_social_config(
     industry_path: Path | None = None, brand_path: Path | None = None
 ) -> SocialConfig:
@@ -340,6 +382,7 @@ def load_social_config(
             f"Markenprofil '{brand_path}' gehört zur Branche '{brand.industry}', "
             f"aktiv ist das Branchenprofil '{industry_key}'"
         )
+    industry = apply_brand_overrides(industry, brand, brand_path)
     config = SocialConfig(
         industry_key=industry_key, industry=industry, brand=brand, brand_dir=brand_path.parent
     )

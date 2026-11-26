@@ -483,11 +483,14 @@ def mask_facts(text: str, facts: BriefingFacts) -> str:
     spans += [(m.start, m.end) for m in find_times(text)]
     spans += [(m.start, m.end) for m in find_prices(text)]
     spans += [(m.start, m.end) for m in find_phones(text)]
-    if facts.ort:
-        position = text.find(facts.ort)
+    for value in (facts.ort, facts.titel, facts.kursleitung, facts.anmeldung, facts.vorteil,
+                  facts.bedingungen):  # fmt: skip
+        if not value:
+            continue
+        position = text.find(value)
         while position >= 0:
-            spans.append((position, position + len(facts.ort)))
-            position = text.find(facts.ort, position + 1)
+            spans.append((position, position + len(value)))
+            position = text.find(value, position + 1)
     merged: list[tuple[int, int]] = []
     for start, end in sorted(spans):
         if merged and start < merged[-1][1]:

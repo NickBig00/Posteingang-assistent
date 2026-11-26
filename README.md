@@ -392,6 +392,8 @@ Spezifikation: [`docs/SPEC_social.md`](docs/SPEC_social.md).
   `BRAND_PROFILES_DIR=/srv/kunden/profile BRAND_PROFILE=studio_x`. Unter `profiles/brand/`
   ignoriert git alles außer den fiktiven Demo-Profilen.
 - Ungültige Profile werden beim Laden mit genauer Fehlermeldung (Feldpfad und Grund) abgelehnt.
+- Eigene Anlässe, Pflichtangaben und Kampagnenplan eines Betriebs stehen im Markenprofil unter
+  `industry_overrides:` (Beispiel und Regeln: `docs/SPEC_social.md`, Abschnitt 4.3).
 
 ### Briefing und Entwürfe
 
