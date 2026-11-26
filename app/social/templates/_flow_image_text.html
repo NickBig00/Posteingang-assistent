@@ -1,13 +1,13 @@
 {# "Text aufs Bild? Ja": compact fields of the info graphic with live preview (SPEC_social 8.1). #}
-{% import "_ui.html" as ui %}
-{% from "_social_revise.html" import revise_form %}
+{% import "_ui.html" as ui with context %}
+{% from "_social_revise.html" import revise_form with context %}
 {% set g = info.graphic %}{% set t = info.texts %}
 <div class="space-y-3" id="info-grafik">
   <div class="flex flex-wrap items-center gap-2">
     {% if g and g.is_ai_suggestion and not g.edited_by_human %}{{ ui.ai_badge() }}{% elif g and g.edited_by_human %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}
     {% if not image_locked %}
     <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic/suggest" data-loading="Text wird vorgeschlagen …"
-          {% if g %}onsubmit="return confirm('Den bisherigen Text auf dem Bild durch einen KI-Vorschlag ersetzen?')"{% endif %}>
+          {% if g %}onsubmit="return confirm('Den bisherigen Text auf dem Bild durch einen KI-Vorschlag ersetzen?')"{% endif %}><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn btn-ghost btn-sm">{{ ui.icon("sparkles") }}Text vorschlagen</button></form>
     {% if g %}{% call ui.popover("Anders formulieren …", "info-revise") %}
       {{ revise_form("/social/briefings/" ~ briefing.id ~ "/info-graphic/revise", "info-instruction", ["Kürzer fassen", "Neutraler formulieren, ohne Gesundheitsversprechen", "Weniger Punkte"], "Text überarbeiten") }}
@@ -15,7 +15,7 @@
     {% endif %}
   </div>
   <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="space-y-3" data-loading="Wird geprüft …"
-        hx-post="/social/briefings/{{ briefing.id }}/info-graphic/live" hx-trigger="input delay:400ms" hx-swap="none" data-live-form>
+        hx-post="/social/briefings/{{ briefing.id }}/info-graphic/live" hx-trigger="input delay:400ms" hx-swap="none" data-live-form><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label class="field font-medium">Überschrift
       <input type="text" name="headline" maxlength="60" value="{{ t.headline }}" class="input mt-1" required placeholder="z. B. Starker Rücken" {% if image_locked %}disabled{% endif %}></label>
     {% for name, label, value, kind, max in [

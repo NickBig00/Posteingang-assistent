@@ -1,5 +1,5 @@
 {# Step ③ Prüfen und freigeben: one list of all checks of text, image and carousel. Needs d, f. #}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% macro item_row(i) %}
 <li class="review-item" id="{{ i.uid }}" data-review-item="{{ i.status }}">
   <span class="mt-1.5 dot dot-{{ {'error': 'error', 'open': 'warning', 'note': 'warning', 'confirmed': 'ok', 'ok': 'ok'}[i.status] }}" aria-hidden="true"></span>
@@ -12,7 +12,7 @@
     {% if i.confirmed_at %}<p class="mt-1 text-xs text-green-800">✓ {{ "Einwilligung bestätigt" if i.confirm_text else "bestätigt" }} von {{ i.confirmed_by }} am {{ i.confirmed_at.strftime("%d.%m.%Y %H:%M") }}</p>{% endif %}
   </div>
   {% if i.action_url %}
-  <form method="post" action="{{ i.action_url }}" {% if i.confirm_text %}onsubmit="return confirm('{{ i.confirm_text }}')"{% endif %}>
+  <form method="post" action="{{ i.action_url }}" {% if i.confirm_text %}onsubmit="return confirm('{{ i.confirm_text }}')"{% endif %}><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="btn {{ 'btn-danger' if i.confirm_text else 'btn-secondary' }} btn-sm">{{ i.action_label }}</button></form>
   {% endif %}
 </li>

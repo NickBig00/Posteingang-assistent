@@ -1,11 +1,11 @@
 {# "KI-Bild": prompt, hints before generating, variants as tiles (SPEC_social 13). #}
-{% import "_ui.html" as ui %}
-{% from "_social_revise.html" import revise_form %}
+{% import "_ui.html" as ui with context %}
+{% from "_social_revise.html" import revise_form with context %}
 {% set st = image_state %}
 <div class="space-y-3" id="ki-bild" data-ai-images>
   {% if image_locked %}<p class="text-[13px] text-ink-subtle">Das Bild ist mit einem freigegebenen Beitrag freigegeben.</p>
   {% else %}
-  <form method="post" action="/social/briefings/{{ briefing.id }}/images/generate" class="space-y-2" data-loading="Bilder werden erzeugt …" id="ki-bild-form">
+  <form method="post" action="/social/briefings/{{ briefing.id }}/images/generate" class="space-y-2" data-loading="Bilder werden erzeugt …" id="ki-bild-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <label class="question" for="prompt-ki">Was soll zu sehen sein?</label>
       {% if st.proposal %}{% if st.proposal.prompt_from_ai %}{{ ui.ai_badge() }}{% else %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}{% endif %}
@@ -20,7 +20,7 @@
     </div>
   </form>
   {% if not st.proposal %}
-  <form method="post" action="/social/briefings/{{ briefing.id }}/images/suggest" data-loading="Vorschlag wird formuliert …">
+  <form method="post" action="/social/briefings/{{ briefing.id }}/images/suggest" data-loading="Vorschlag wird formuliert …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="btn btn-ghost btn-sm">{{ ui.icon("sparkles") }}Vorschlag von der KI</button></form>
   {% endif %}
   {% if st.stored_hints %}
@@ -30,7 +30,7 @@
     {# A member name: only the confirmed consent of the person lifts it (CLAUDE.md). #}
     <li class="flex flex-wrap items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm" id="hint-{{ h.id }}">
       <span class="min-w-0 flex-1"><span class="font-medium">{{ hint_labels[h.key] }}:</span> {{ h.reason }}</span>
-      <form method="post" action="/social/image-hints/{{ h.id }}/confirm" onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Verwendung ihres Namens für dieses Bild ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')">
+      <form method="post" action="/social/image-hints/{{ h.id }}/confirm" onsubmit="return confirm('Nur bestätigen, wenn die genannte Person der Verwendung ihres Namens für dieses Bild ausdrücklich zugestimmt hat und die Einwilligung dokumentiert ist.')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="btn btn-danger btn-sm">Einwilligung der Person liegt vor</button></form>
     </li>
     {% else %}
@@ -57,7 +57,7 @@
     <div data-candidate="{{ c.id }}">{{ ui.thumb("/social/images/candidates/" ~ c.id, "KI-Variante " ~ c.variant, false, "/social/briefings/" ~ briefing.id ~ "/images/" ~ c.id ~ "/choose", {}, ui.ai_badge(ai_image_label)) }}</div>
     {% endfor %}
   {% endcall %}
-  <form method="post" action="/social/briefings/{{ briefing.id }}/images/discard"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Varianten verwerfen</button></form>
+  <form method="post" action="/social/briefings/{{ briefing.id }}/images/discard"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Varianten verwerfen</button></form>
   </div>
   {% endif %}
   {% if st.chosen %}

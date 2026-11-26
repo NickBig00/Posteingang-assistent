@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse,
 from sqlmodel import Session, col, select
 
 from app.core.audit import audit_outputs
+from app.core.auth import current_user
 from app.core.db import get_session
 from app.core.image_formats import (
     FORMAT_SPECS,
@@ -26,7 +27,6 @@ from app.core.models import utcnow
 from app.core.outcomes import worst_outcome
 from app.core.retention import retention_days
 from app.core.storage import get_storage_dir
-from app.core.users import current_user
 from app.core.web import NavEntry, module_templates
 from app.social.assets import (
     MAX_IMAGE_BYTES,

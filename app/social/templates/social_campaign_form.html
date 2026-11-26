@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Neue Kampagne – Social Media{% endblock %}
 {% block content %}
 {% call ui.page_header("Neue Kampagne", "Ein Anlass, mehrere Beiträge – jeder wird einzeln geprüft und freigegeben", "/social/campaigns", "Kampagnen") %}{% endcall %}
 {% if errors %}<div class="mb-4">{{ ui.alert("Bitte die markierten Angaben prüfen.", "error", "alert") }}</div>{% endif %}
-<form method="post" action="/social/campaigns" class="card card-body max-w-4xl" data-loading="Kampagne wird erstellt …">
+<form method="post" action="/social/campaigns" class="card card-body max-w-4xl" data-loading="Kampagne wird erstellt …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <input type="hidden" name="campaign" value="1">
   <div class="mb-5 grid gap-4 md:grid-cols-2">
     <label class="field font-medium">Name der Kampagne

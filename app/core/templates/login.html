@@ -1,0 +1,32 @@
+{% import "_ui.html" as ui with context %}<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anmelden – {{ app_title }}</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>:root { {{ theme.css_variables() }} }</style>
+</head>
+<body class="min-h-screen">
+  <main id="inhalt" class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-4 py-10">
+    <div class="mb-6 flex items-center gap-2.5">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-on" aria-hidden="true">{{ app_title[:1] | upper }}</span>
+      <span class="text-lg font-semibold">{{ app_title }}</span>
+    </div>
+    <section class="card" aria-labelledby="login-title">
+      <div class="card-header"><h1 class="card-title" id="login-title">Anmelden</h1></div>
+      <form method="post" action="/login" class="card-body space-y-4" data-login-form>
+        <input type="hidden" name="csrf_token" value="{{ login_csrf }}">
+        <input type="hidden" name="next" value="{{ next_path }}">
+        {% if error %}{{ ui.alert(error, "error", "alert") }}{% endif %}
+        <label class="field"><span class="label">Benutzername</span>
+          <input class="input" type="text" name="username" autocomplete="username" required autofocus></label>
+        <label class="field"><span class="label">Passwort</span>
+          <input class="input" type="password" name="password" autocomplete="current-password" required></label>
+        <button type="submit" class="btn btn-primary w-full">Anmelden</button>
+      </form>
+    </section>
+    <p class="mt-4 text-sm text-ink-muted">Passwort vergessen? Bitte an die Administration wenden.</p>
+  </main>
+</body>
+</html>

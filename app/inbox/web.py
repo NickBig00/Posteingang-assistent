@@ -9,6 +9,7 @@ from sqlmodel import Session, col, select
 
 from app.core.approval import DECISION_LABELS, ReviewDecision
 from app.core.audit import audit_outputs
+from app.core.auth import current_user
 from app.core.db import get_session
 from app.core.llm.factory import get_provider
 from app.core.profiles import active_profile_key
@@ -92,6 +93,7 @@ def get_imap_config() -> ImapConfig | None:
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
+UserDep = Annotated[str, Depends(current_user)]
 ImapDep = Annotated[ImapConfig | None, Depends(get_imap_config)]
 ClientDep = Annotated[LLMClient, Depends(get_llm_client)]
 ProfileDep = Annotated[Profile, Depends(get_profile)]
@@ -237,6 +239,7 @@ def item_audit(request: Request, session: SessionDep, item_id: int) -> HTMLRespo
 def item_review(
     request: Request,
     session: SessionDep,
+    user: UserDep,
     item_id: int,
     decision: Annotated[ReviewDecision, Form()],
     edited_text: Annotated[str | None, Form()] = None,
@@ -244,7 +247,7 @@ def item_review(
     """Human decision: approve (optionally with edited text) or reject."""
     item = _details_or_404(session, item_id).item
     try:
-        review_item(session, item, decision, edited_text)
+        review_item(session, item, decision, edited_text, reviewer=user)
     except ReviewNotAllowedError as error:
         return _render_detail(request, session, item_id, str(error), status=409)
     return RedirectResponse(f"/items/{item_id}", status_code=303)
@@ -332,12 +335,13 @@ def item_reprocess(
     session: SessionDep,
     client: ClientDep,
     profile: ProfileDep,
+    user: UserDep,
     item_id: int,
 ) -> HTMLResponse | RedirectResponse:
     """Run the AI pipeline again for an item in manual review (recorded in the audit trail)."""
     item = _details_or_404(session, item_id).item
     try:
-        reprocess_item(session, item, profile, client)
+        reprocess_item(session, item, profile, client, actor=user)
     except ReviewNotAllowedError as error:
         return _render_detail(request, session, item_id, str(error), status=409)
     return RedirectResponse(f"/items/{item_id}", status_code=303)
@@ -345,12 +349,12 @@ def item_reprocess(
 
 @router.post("/items/{item_id}/reopen", response_model=None)
 def item_reopen(
-    request: Request, session: SessionDep, item_id: int
+    request: Request, session: SessionDep, user: UserDep, item_id: int
 ) -> HTMLResponse | RedirectResponse:
     """Reopen a rejected item for a new decision (recorded in the audit trail)."""
     item = _details_or_404(session, item_id).item
     try:
-        reopen_item(session, item)
+        reopen_item(session, item, actor=user)
     except ReviewNotAllowedError as error:
         return _render_detail(request, session, item_id, str(error), status=409)
     return RedirectResponse(f"/items/{item_id}", status_code=303)

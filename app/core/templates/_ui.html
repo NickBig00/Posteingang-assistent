@@ -1,6 +1,6 @@
 {#
   Shared UI components (docs/DESIGN.md). Import with:
-    {% import "_ui.html" as ui %}
+    {% import "_ui.html" as ui with context %}
   CSS classes of the components live in app/core/static/src/app.css.
 #}
 
@@ -154,7 +154,7 @@
 
 {# Yes/no switch as a small form with two buttons (aria-pressed). #}
 {% macro toggle(action, name, current, label, disabled=false, no="Nein", yes="Ja", attrs="") -%}
-<form method="post" action="{{ action }}" class="toggle" {{ attrs | safe }}>
+<form method="post" action="{{ action }}" class="toggle" {{ attrs | safe }}><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <span class="toggle-label" id="{{ name }}-{{ action | replace('/', '-') }}">{{ label }}</span>
   <span class="segmented" role="group" aria-labelledby="{{ name }}-{{ action | replace('/', '-') }}">
     <button type="submit" name="{{ name }}" value="false" class="segment" aria-pressed="{{ 'false' if current else 'true' }}" {% if disabled %}disabled{% endif %}>{{ no }}</button>
@@ -202,7 +202,7 @@
 
 {# Upload area: click or drop a file; submits on choice (JavaScript), with a button as fallback. #}
 {% macro dropzone(action, label="Foto hochladen", hint="PNG oder JPG, höchstens 10 MB", accept=".png,.jpg,.jpeg", disabled=false) -%}
-<form method="post" action="{{ action }}" enctype="multipart/form-data" class="dropzone" data-dropzone data-loading="Wird hochgeladen …">
+<form method="post" action="{{ action }}" enctype="multipart/form-data" class="dropzone" data-dropzone data-loading="Wird hochgeladen …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <label class="dropzone-area">
     {{ icon("upload", "h-6 w-6 text-ink-subtle") }}
     <span class="font-medium text-ink">{{ label }}</span>
@@ -219,7 +219,7 @@
   <img src="{{ src }}" alt="{{ alt }}" class="{{ ratio }} w-full object-cover" loading="lazy">
   {% if badge %}<span class="thumb-badge">{{ badge | safe }}</span>{% endif %}
   {% if selected %}<span class="thumb-check" aria-hidden="true">{{ icon("check", "h-3.5 w-3.5") }}</span><span class="sr-only">gewählt</span>
-  {% elif action %}<form method="post" action="{{ action }}" class="absolute inset-0">
+  {% elif action %}<form method="post" action="{{ action }}" class="absolute inset-0"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     {% for k, v in hidden_fields.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
     <button type="submit" class="thumb-button" {% if disabled %}disabled{% endif %}><span class="sr-only">{{ alt }} wählen</span></button></form>{% endif %}
 </div>

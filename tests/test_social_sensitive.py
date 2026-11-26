@@ -512,7 +512,9 @@ def test_confirm_and_approve_in_the_ui(social_client: TestClient, session: Sessi
     assert approved.status_code == 303
     session.refresh(draft)
     assert draft.status is PostStatus.APPROVED
-    assert "bestätigt von demo" in social_client.get(f"/social/briefings/{draft.briefing_id}").text
+    assert (
+        "bestätigt von testuser" in social_client.get(f"/social/briefings/{draft.briefing_id}").text
+    )
 
 
 def test_health_notice_in_the_ui(social_client: TestClient) -> None:
@@ -533,7 +535,7 @@ def test_member_consent_in_the_ui(social_client: TestClient, session: Session) -
     consent = social_client.post(f"/social/checks/{error.id}/consent", follow_redirects=False)
     assert consent.status_code == 303
     page = social_client.get(f"/social/briefings/{draft.briefing_id}").text
-    assert "Einwilligung bestätigt von demo" in page
+    assert "Einwilligung bestätigt von testuser" in page
     assert social_client.post(f"/social/drafts/{draft.id}/approve").status_code == 200
 
 

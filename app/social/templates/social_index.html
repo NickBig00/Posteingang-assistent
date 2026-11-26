@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Social Media – {{ app_title }}{% endblock %}
 {% block content %}
 {% call ui.page_header("Social Media", config.brand.name ~ " · Branche " ~ config.industry_key) %}

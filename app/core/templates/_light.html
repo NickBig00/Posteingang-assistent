@@ -1,2 +1,2 @@
 {# Traffic light of rule/check results; same look in all modules (see _ui.html, `light`). #}
-{% import "_ui.html" as ui %}{{ ui.light(light, light_ok_label | default("Regeln ok")) }}
+{% import "_ui.html" as ui with context %}{{ ui.light(light, light_ok_label | default("Regeln ok")) }}

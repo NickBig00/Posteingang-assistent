@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Design-System – {{ app_title }}{% endblock %}
 {% block content %}
 {% call ui.page_header("Design-System", "Alle gemeinsamen Bausteine der Oberfläche (Dokumentation: docs/DESIGN.md)", "/settings", "Einstellungen") %}{% endcall %}

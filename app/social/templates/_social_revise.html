@@ -1,6 +1,6 @@
 {# "Was soll anders werden?" – revision by instruction (SPEC_social 13.8). #}
 {% macro revise_form(action, id, picks, submit_label, extra_buttons=None, hint="") %}
-<form method="post" action="{{ action }}" class="mt-3 space-y-2" data-loading="KI überarbeitet …" data-revise>
+<form method="post" action="{{ action }}" class="mt-3 space-y-2" data-loading="KI überarbeitet …" data-revise><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <label class="label" for="{{ id }}">Was soll anders werden?</label>
   <textarea id="{{ id }}" name="instruction" rows="2" maxlength="500" class="input text-sm"
             placeholder="In eigenen Worten, z. B. „Satz 2 neutraler formulieren“"></textarea>

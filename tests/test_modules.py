@@ -1,13 +1,19 @@
 """Modular monolith: shared navigation, module switches and import boundaries."""
 
 import re
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine
+from sqlmodel import Session
 
 from app.core.config import ModuleConfigError, app_title, enabled_modules
+from app.core.db import get_session
+from app.core.users import Role
 from app.main import MODULES, create_app
+from tests.conftest import BASE_URL, TEST_USER, add_test_user, login_client
 
 APP_DIR = Path(__file__).resolve().parent.parent / "app"
 AVAILABLE = ["inbox", "social"]
@@ -56,12 +62,27 @@ def test_registry_lists_all_modules() -> None:
 # --- application with module switches ---
 
 
-def _client(monkeypatch: pytest.MonkeyPatch, modules: str | None) -> TestClient:
-    if modules is None:
-        monkeypatch.delenv("MODULES", raising=False)
-    else:
-        monkeypatch.setenv("MODULES", modules)
-    return TestClient(create_app())
+@pytest.fixture
+def module_client(
+    monkeypatch: pytest.MonkeyPatch, engine: Engine
+) -> Callable[[str | None], TestClient]:
+    """Factory for a logged-in client of an app built with the given `MODULES`."""
+    user = add_test_user(engine, TEST_USER, Role.ADMIN)
+
+    def _session() -> Iterator[Session]:
+        with Session(engine) as session:
+            yield session
+
+    def build(modules: str | None) -> TestClient:
+        if modules is None:
+            monkeypatch.delenv("MODULES", raising=False)
+        else:
+            monkeypatch.setenv("MODULES", modules)
+        application = create_app()
+        application.dependency_overrides[get_session] = _session
+        return login_client(TestClient(application, base_url=BASE_URL), engine, user)
+
+    return build
 
 
 def test_navigation_shows_all_modules(client: TestClient) -> None:
@@ -81,13 +102,13 @@ def test_social_start_page(client: TestClient) -> None:
     assert re.search(r'<a href="/social"[^>]*\s+aria-current="page"', response.text)
 
 
-def test_health_is_part_of_core(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_health_is_part_of_core(module_client: Callable[[str | None], TestClient]) -> None:
     for modules in ("inbox", "social"):
-        assert _client(monkeypatch, modules).get("/health").json() == {"status": "ok"}
+        assert module_client(modules).get("/health").json() == {"status": "ok"}
 
 
-def test_inbox_only_hides_social(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = _client(monkeypatch, "inbox")
+def test_inbox_only_hides_social(module_client: Callable[[str | None], TestClient]) -> None:
+    client = module_client("inbox")
 
     assert client.get("/social").status_code == 404
     page = client.get("/")
@@ -99,8 +120,10 @@ def test_inbox_only_hides_social(monkeypatch: pytest.MonkeyPatch) -> None:
     assert 'href="/settings"' in page.text
 
 
-def test_social_only_start_page_shows_only_social(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = _client(monkeypatch, "social")
+def test_social_only_start_page_shows_only_social(
+    module_client: Callable[[str | None], TestClient],
+) -> None:
+    client = module_client("social")
 
     page = client.get("/")
     assert page.status_code == 200

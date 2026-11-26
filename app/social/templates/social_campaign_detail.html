@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Kampagne {{ campaign.id }} – Social Media{% endblock %}
 {% block content %}
 {% set subtitle = occasion_labels.get(campaign.occasion_type, campaign.occasion_type) ~ " · " ~ area_labels.get(campaign.area, campaign.area) ~ " · Anlass am " ~ campaign.event_date.strftime("%d.%m.%Y") %}
@@ -25,7 +25,7 @@
 </ol>
 <p class="mt-4 text-xs text-ink-subtle">Jeder Beitrag wird einzeln geprüft und freigegeben.</p>
 <form method="post" action="/social/campaigns/{{ campaign.id }}/delete" class="mt-6 border-t border-line pt-6"
-      onsubmit="return confirm('Kampagne mit allen Briefings, Entwürfen und Bildern endgültig löschen?')">
+      onsubmit="return confirm('Kampagne mit allen Briefings, Entwürfen und Bildern endgültig löschen?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <button type="submit" class="btn btn-danger">{{ ui.icon("trash") }}Kampagne löschen</button>
 </form>
 {% endblock %}

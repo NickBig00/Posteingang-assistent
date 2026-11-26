@@ -1,4 +1,4 @@
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% if message %}
 <div class="mb-4">{{ ui.alert(message, "error" if error else "ok", "alert" if error else "status") }}</div>
 {% endif %}

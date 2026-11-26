@@ -1,6 +1,6 @@
 {# Step ① Bild – one image for the whole briefing, above the channel tabs (SPEC_social 8.1, 14.3). #}
-{% import "_ui.html" as ui %}
-{% from "_social_revise.html" import revise_form %}
+{% import "_ui.html" as ui with context %}
+{% from "_social_revise.html" import revise_form with context %}
 {% set bi = briefing_image %}
 {% set selected = (bi.source.value if bi else "upload") %}
 {% set image_state_label = "gesperrt" if image_locked else ("gewählt" if bi and not image_problems else ("bitte prüfen" if bi else "optional")) %}
@@ -40,10 +40,10 @@
         <span class="toggle-label">Einwilligung liegt vor?</span>
         {% if a.consent_confirmed %}
         <span class="badge badge-ok">✓ Ja – bestätigt von {{ a.consent_by }} am {{ a.consent_at.strftime("%d.%m.%Y") }}</span>
-        <form method="post" action="/social/assets/{{ a.id }}/revoke" onsubmit="return confirm('Einwilligung widerrufen? Das Bild wird gelöscht, freigegebene und geplante Beiträge gehen zurück in die Prüfung.')">
+        <form method="post" action="/social/assets/{{ a.id }}/revoke" onsubmit="return confirm('Einwilligung widerrufen? Das Bild wird gelöscht, freigegebene und geplante Beiträge gehen zurück in die Prüfung.')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button type="submit" class="btn btn-link btn-sm text-red-700">widerrufen</button></form>
         {% else %}
-        <form method="post" action="/social/assets/{{ a.id }}/consent" onsubmit="return confirm('Liegt die Einwilligung aller abgebildeten Personen vor?')">
+        <form method="post" action="/social/assets/{{ a.id }}/consent" onsubmit="return confirm('Liegt die Einwilligung aller abgebildeten Personen vor?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <span class="segmented"><span class="segment" aria-pressed="true">Nein</span><button type="submit" class="segment">Ja</button></span></form>
         {% endif %}
       </div>
@@ -53,7 +53,7 @@
         {% if a.shows_persons and not a.consent_confirmed %}
         <p class="text-sm font-medium text-red-700">Erst die Einwilligung der abgebildeten Personen bestätigen – das Foto geht beim Bearbeiten an den Bildanbieter.</p>
         {% else %}
-        <form method="post" action="/social/assets/{{ a.id }}/edit" class="space-y-2" data-loading="Foto wird bearbeitet …">
+        <form method="post" action="/social/assets/{{ a.id }}/edit" class="space-y-2" data-loading="Foto wird bearbeitet …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <label class="label" for="edit-{{ a.id }}">Was soll anders werden?</label>
           <textarea id="edit-{{ a.id }}" name="instruction" rows="2" maxlength="500" class="input text-sm" placeholder="z. B. „Kabel am Boden entfernen“"></textarea>
           <input type="hidden" name="image_format" value="4:5">
@@ -67,7 +67,7 @@
       {% endif %}
       {% endif %}
       {% if not image_locked or a.consent_revoked_at %}
-      <form method="post" action="/social/assets/{{ a.id }}/delete" class="inline"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Foto entfernen</button></form>
+      <form method="post" action="/social/assets/{{ a.id }}/delete" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-link btn-sm px-0 text-red-700">Foto entfernen</button></form>
       {% endif %}
     </div>
     {% endif %}
@@ -79,7 +79,7 @@
   {# Colour fill #}
   <div data-choice-panel="color" class="flex flex-wrap items-center gap-3">
     {% if bi and bi.source.value == "color" %}<span class="badge badge-ok">✓ Farbfläche in Markenfarbe gewählt</span>
-    {% else %}<form method="post" action="/social/briefings/{{ briefing.id }}/image"><input type="hidden" name="source" value="color">
+    {% else %}<form method="post" action="/social/briefings/{{ briefing.id }}/image"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="source" value="color">
       <button type="submit" class="btn btn-secondary" {% if image_locked %}disabled{% endif %}>{{ ui.icon("palette") }}Farbfläche verwenden</button></form>{% endif %}
     <span class="text-[13px] text-ink-subtle">Ruhiger Hintergrund in der Markenfarbe; der Text kommt aufs Bild.</span>
   </div>
@@ -88,7 +88,7 @@
   {% if copy_source %}
   <div data-choice-panel="copy" class="flex flex-wrap items-center gap-3">
     {% if bi and bi.copied_from_briefing_id %}<span class="badge badge-ok">✓ Von Schritt 1 übernommen (Kopie, unabhängig änderbar)</span>{% endif %}
-    <form method="post" action="/social/briefings/{{ briefing.id }}/image/copy" data-loading="Wird übernommen …">
+    <form method="post" action="/social/briefings/{{ briefing.id }}/image/copy" data-loading="Wird übernommen …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn btn-secondary" {% if image_locked %}disabled{% endif %} data-copy-step>{{ ui.icon("layers") }}{{ "Erneut übernehmen" if bi and bi.copied_from_briefing_id else "Bild von Schritt 1 übernehmen" }}</button></form>
     <span class="text-[13px] text-ink-subtle">Bild und Text aufs Bild als Kopie; die Fakten kommen aus diesem Briefing.</span>
   </div>
@@ -100,14 +100,14 @@
   {{ ui.toggle("/social/briefings/" ~ briefing.id ~ "/image/text", "with_text", bi.with_text, "Text aufs Bild?", image_locked, attrs='data-with-text') }}
   {% if bi.with_text %}{% include "_flow_image_text.html" %}{% endif %}
 </div>
-{% if not image_locked %}<form method="post" action="/social/briefings/{{ briefing.id }}/image/clear"><button type="submit" class="btn btn-link btn-sm px-0 text-ink-subtle">Ohne Bild posten</button></form>{% endif %}
+{% if not image_locked %}<form method="post" action="/social/briefings/{{ briefing.id }}/image/clear"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-link btn-sm px-0 text-ink-subtle">Ohne Bild posten</button></form>{% endif %}
 {% endif %}
 
 <details class="border-t border-line pt-4" id="mehr" {% if carousel_open %}open{% endif %}>
   <summary class="cursor-pointer text-sm font-medium text-brand-text">Mehr: Gestaltung, Fakten, Story-Text, mehrere Bilder</summary>
   <div class="mt-4 space-y-6">
     {% if info.graphic %}
-    <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic/layout" class="space-y-3" id="gestaltung">
+    <form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic/layout" class="space-y-3" id="gestaltung"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <fieldset><legend class="label">Gestaltung des Texts auf dem Bild</legend>
         <div class="grid grid-cols-3 gap-2 sm:max-w-md">
           {% for key, label in info.variants.items() %}

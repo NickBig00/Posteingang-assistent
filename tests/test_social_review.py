@@ -351,7 +351,7 @@ def test_full_run_briefing_to_approval(social_client: TestClient, session: Sessi
     first = drafts[0]
     approved = social_client.post(f"/social/drafts/{first.id}/approve")
     assert approved.status_code == 200
-    assert "Freigegeben von demo" in approved.text
+    assert "Freigegeben von testuser" in approved.text
     assert "Text kopieren" in approved.text
     assert f'data-copy="{first.full_text.splitlines()[0]}' in approved.text
 

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Audit Eingang {{ item.id }} – {{ app_title }}{% endblock %}
 {% block content %}
 {% call ui.page_header("Audit-Verlauf für Eingang " ~ item.id, "Alle KI-Verarbeitungsschritte und Eingriffe von Menschen (neu verarbeiten, wieder öffnen) in zeitlicher Reihenfolge. Einträge sind unveränderlich; gespeichert wird nur ein Hash der Eingabe.", "/items/" ~ item.id, "Eingang " ~ item.id) %}{% endcall %}

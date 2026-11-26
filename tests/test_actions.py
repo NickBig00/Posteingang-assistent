@@ -168,7 +168,7 @@ def test_reprocess_endpoint(client: TestClient, engine: Engine) -> None:
 
     assert response.status_code == 303
     assert _status(engine, item_id) == ItemStatus.PROCESSED
-    assert "durch Mensch: demo" in client.get(f"/items/{item_id}/audit").text
+    assert "durch Mensch: testuser" in client.get(f"/items/{item_id}/audit").text
 
 
 def test_reopen_endpoint(client: TestClient, engine: Engine) -> None:
