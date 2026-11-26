@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.audit import audit_outputs, hash_input
-from app.core.image_formats import ImageFormat
 from app.core.images.fake import FakeImageProvider
 from app.core.llm.fake import FakeProvider
 from app.core.models import AuditEntry, AuditOutput
@@ -206,33 +205,16 @@ def test_image_prompt_revision_creates_a_new_version(session: Session) -> None:
 def test_image_revision_generates_new_variants_through_the_checks(
     session: Session, raw_dir: Path
 ) -> None:
-    from app.social.images import ImageHintsPendingError, confirm_prompt_hint, prompt_hints
+    from app.social.images import prompt_hints
 
     briefing = _with_prompt(session)
     provider = FakeImageProvider()
 
-    # The new prompt shows a person: first confirm the hint, then generate.
-    with pytest.raises(ImageHintsPendingError):
-        revise_image(
-            session, CONFIG, CLIENT, provider, briefing, "Frau beim Dehnen zeigen", "demo", raw_dir
-        )
-    assert provider.calls == []
-    for hint in prompt_hints(session, briefing.id or 0):
-        confirm_prompt_hint(session, hint, "demo")
-    proposal = latest_proposal(session, briefing.id or 0)
-    assert proposal is not None
-    from app.social.images import generate_variants
-
-    generate_variants(
-        session,
-        CONFIG,
-        provider,
-        briefing,
-        prompt=proposal.prompt,
-        fmt=ImageFormat.PORTRAIT,
-        user="demo",
-        storage=raw_dir,
+    # The new prompt shows a person: the hint is listed, the images are generated at once.
+    revise_image(
+        session, CONFIG, CLIENT, provider, briefing, "Frau beim Dehnen zeigen", "demo", raw_dir
     )
+    assert [h.key for h in prompt_hints(session, briefing.id or 0)] == ["personen"]
 
     assert len(candidates(session, briefing.id or 0)) == 3
     assert "Frau beim Dehnen zeigen" in provider.calls[0]

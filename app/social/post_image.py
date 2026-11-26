@@ -157,6 +157,8 @@ def render_post_image(
                 variant=graphic.variant,
                 background=content,
                 fact_keys=graphic_fact_keys(graphic, briefing),
+                # Text a person wrote is not checked; AI suggestions are.
+                check_text_facts=graphic.is_ai_suggestion,
             )
         elif content is None:
             raise PostImageError(

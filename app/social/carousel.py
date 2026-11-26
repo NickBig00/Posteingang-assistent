@@ -199,7 +199,9 @@ def page_problems(
     texts = InfoTexts.from_json(page.texts)
     problems = validate_texts(texts, story=True, label=label)
     keys = tuple(facts.present_keys()) if page.show_facts else ()
-    problems += [f"{label}{p}" for p in fact_problems(texts, facts, keys)]
+    # Free text a person wrote is not checked; AI-suggested pages are.
+    checked = texts if page.is_ai_suggestion else InfoTexts()
+    problems += [f"{label}{p}" for p in fact_problems(checked, facts, keys)]
     if page.asset_id is not None:
         asset = session.get(Asset, page.asset_id)
         if asset is None or asset.briefing_id != briefing.id or not is_usable(asset):
@@ -229,6 +231,10 @@ def run_carousel_checks(
         if page.kind != "info":
             continue
         text = InfoTexts.from_json(page.texts).text
+        if not page.is_ai_suggestion:
+            # Text a person wrote: only a member name (CLAUDE.md) is checked.
+            results += [(number, f) for f in check_persons(text, members) if f.consent_required]
+            continue
         found = [
             *[
                 f
@@ -261,7 +267,7 @@ def run_carousel_checks(
     combined = "\n\n".join(
         f"Seite {n}:\n{InfoTexts.from_json(p.texts).text}"
         for n, p in enumerate(rows, start=1)
-        if p.kind == "info"
+        if p.kind == "info" and p.is_ai_suggestion
     )
     if combined.strip():
         context: dict[str, JsonValue] = {"briefing_id": briefing.id}
@@ -324,12 +330,6 @@ def carousel_blockers(session: Session, draft: PostDraft) -> list[str]:
             blockers.append(f"{prefix}{result.reason}")
         elif result.requires_confirmation and result.confirmed_at is None:
             blockers.append(f"{prefix}Warnung noch nicht bestätigt: {result.reason}")
-    for page in rows:
-        asset = session.get(Asset, page.asset_id) if page.asset_id else None
-        if asset is not None and asset.edit_hint and asset.edit_hint_confirmed_at is None:
-            blockers.append(
-                f"{prefix}Hinweis zum KI-bearbeiteten Bild „{asset.filename}“ noch nicht bestätigt."
-            )
     return list(dict.fromkeys(blockers))
 
 
@@ -595,6 +595,7 @@ def render_page(
             background=content,
             show_facts=page.show_facts,
             few_points=True,
+            check_text_facts=page.is_ai_suggestion,
         )
     except InfoGraphicError as error:
         raise CarouselError(str(error)) from error

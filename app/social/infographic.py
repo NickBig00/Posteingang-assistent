@@ -260,8 +260,18 @@ def run_graphic_checks(
     briefing: Briefing,
     graphic: InfoGraphic,
 ) -> list[Finding]:
-    """Same checks as for posts (code + LLM assessment) on all free texts; stored results."""
+    """Checks of the free texts on the image; stored results.
+
+    Text a person wrote is not checked (product owner, November 2026: it is human-made and the
+    person is responsible) – except a name from the member list, which CLAUDE.md never allows
+    without the confirmed consent. Texts suggested by the AI (also when edited afterwards) run
+    through the same checks as posts (code + LLM assessment).
+    """
     text = _checked_text(graphic)
+    if not graphic.is_ai_suggestion:
+        members = [f for f in check_persons(text, member_names(session)) if f.consent_required]
+        _store_checks(session, graphic, text, members)
+        return members
     area = config.brand.area(briefing.area)
     industry = config.industry
     facts = BriefingFacts.from_json(briefing.facts)
@@ -300,6 +310,14 @@ def run_graphic_checks(
         else:
             ai = [assessment_failed()]
     findings += [*code, *ai, *ok_findings([*code, *ai], industry.health_claims is not None)]
+    _store_checks(session, graphic, text, findings)
+    return findings
+
+
+def _store_checks(
+    session: Session, graphic: InfoGraphic, text: str, findings: list[Finding]
+) -> None:
+    """Replace the stored results (confirmations start over)."""
     for old in graphic_checks(session, graphic.id or 0):
         session.delete(old)
     session.flush()
@@ -318,7 +336,6 @@ def run_graphic_checks(
             )
         )
     session.commit()
-    return findings
 
 
 def check_blockers(session: Session, graphic: InfoGraphic) -> list[str]:
@@ -769,11 +786,14 @@ def render_info_graphic(
     fact_keys: Iterable[FactKey] | None = None,
     show_facts: bool = True,
     few_points: bool = False,
+    check_text_facts: bool = True,
 ) -> bytes:
     """Check the facts, lay out the texts (shrinking if needed) and render the JPEG.
 
     `show_facts=False` leaves out the facts block (carousel pages without facts; the free texts
     are still checked against the briefing). `few_points` allows 0–6 points (carousel pages).
+    `check_text_facts=False` skips the fact check of the free texts (text a person wrote); the
+    facts block added by code is always exact.
     Raises `InfoGraphicError` for fact problems and `GraphicLayoutError` when the text does
     not fit even at the smallest font size.
     """
@@ -783,9 +803,8 @@ def render_info_graphic(
         if show_facts
         else ()
     )
-    problems = validate_texts(texts, story=fmt is ImageFormat.STORY or few_points) + fact_problems(
-        texts, facts, keys
-    )
+    problems = validate_texts(texts, story=fmt is ImageFormat.STORY or few_points)
+    problems += fact_problems(texts if check_text_facts else InfoTexts(), facts, keys)
     if problems:
         raise InfoGraphicError(problems)
     if variant not in VARIANT_LABELS:

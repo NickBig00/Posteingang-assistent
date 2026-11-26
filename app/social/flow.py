@@ -196,7 +196,8 @@ def _image_items(
             )
     if chosen_image(session, briefing.id or 0) is not None:
         for h in prompt_hints(session, briefing.id or 0):
-            status = "confirmed" if h.confirmed_at else "open"
+            # Only a member name needs the consent; every other hint is just listed.
+            status = ("confirmed" if h.confirmed_at else "open") if h.consent_required else "note"
             items.append(
                 ReviewItem(
                     uid=f"hint-{h.id}",
@@ -244,20 +245,13 @@ def _image_items(
                 )
             )
         if asset.edit_hint and asset.consent_revoked_at is None:
-            confirmed = asset.edit_hint_confirmed_at is not None
             items.append(
                 ReviewItem(
                     uid=f"asset-{asset.id}-edit",
                     source="Bild",
                     label="KI-Bearbeitung",
-                    status="confirmed" if confirmed else "open",
+                    status="note",
                     reason=asset.edit_hint,
-                    action_url=f"/social/assets/{asset.id}/edit-hint/confirm"
-                    if not confirmed and editable
-                    else None,
-                    action_label="Bestätigen",
-                    confirmed_by=asset.edit_hint_confirmed_by,
-                    confirmed_at=asset.edit_hint_confirmed_at,
                 )
             )
     return items, problems

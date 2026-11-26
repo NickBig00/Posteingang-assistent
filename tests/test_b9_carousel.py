@@ -37,6 +37,7 @@ from app.social.carousel import (
     pages,
     remove_page,
     render_page,
+    run_carousel_checks,
     set_carousel,
     suggest_plan,
     update_page,
@@ -90,6 +91,15 @@ def _info(
     return PageInput(
         "info", InfoTexts(headline, "", intro, points or [], ""), None, facts, "zentriert"
     )
+
+
+def _as_ai(session: Session, draft: PostDraft) -> None:
+    """Mark the pages as AI suggestion: only those are checked (own text is not)."""
+    for page in pages(session, draft.briefing_id):
+        page.is_ai_suggestion = True
+        session.add(page)
+    session.commit()
+    run_carousel_checks(session, CONFIG, CLIENT, _b(session, draft))
 
 
 def _three_pages(session: Session, draft: PostDraft) -> list[CarouselPage]:
@@ -183,6 +193,7 @@ def test_a_post_without_the_switch_is_not_blocked_by_the_pages(session: Session)
     update_page(
         session, CONFIG, CLIENT, rows[0], _info("Termin", intro="Auch am 10.12.2026."), "demo"
     )
+    _as_ai(session, instagram)
 
     assert any("Karussell" in b for b in approval_blockers(session, instagram))
     assert not any("Karussell" in b for b in approval_blockers(session, facebook))
@@ -219,6 +230,7 @@ def test_facts_are_checked_exactly_on_every_page(session: Session) -> None:
         _info("Das erwartet euch", points=["Übungen", "Pausen"], intro="Auch am 10.12.2026 dabei."),
         "demo",
     )
+    _as_ai(session, draft)
 
     errors = [r for r in carousel_checks(session, draft.briefing_id) if r.outcome == "error"]
     assert errors and errors[0].page == 2 and "10.12.2026" in errors[0].reason
@@ -304,10 +316,25 @@ def test_health_claim_on_a_page_needs_confirmation(session: Session) -> None:
     add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Garantiert schmerzfrei"), "demo")
     add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Termin", facts=True), "demo")
     set_carousel(session, CONFIG, CLIENT, draft, True, "demo")
+    _as_ai(session, draft)
 
     warnings = [r for r in carousel_checks(session, draft.briefing_id) if r.requires_confirmation]
     assert warnings and warnings[0].page == 1
     assert any("Warnung" in b for b in carousel_blockers(session, draft))
+
+
+def test_pages_a_person_wrote_are_not_checked(session: Session) -> None:
+    """Own text on the pages is human-made: no checks (product owner, November 2026)."""
+    draft, _ = _drafts(session)
+    add_page(
+        session, CONFIG, CLIENT, _b(session, draft),
+        _info("Garantiert schmerzfrei", intro="Auch am 10.12.2026."), "demo",
+    )  # fmt: skip
+    add_page(session, CONFIG, CLIENT, _b(session, draft), _info("Termin", facts=True), "demo")
+    set_carousel(session, CONFIG, CLIENT, draft, True, "demo")
+
+    assert all(r.outcome == "ok" for r in carousel_checks(session, draft.briefing_id))
+    assert carousel_blockers(session, draft) == []
 
 
 def test_ai_plan_is_labelled_audited_and_contains_no_facts(session: Session) -> None:

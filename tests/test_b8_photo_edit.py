@@ -28,9 +28,7 @@ from app.social.models import Asset, Briefing, Channel, ImageSource, PostDraft
 from app.social.photo_edit import (
     EDIT_SAFETY_SUFFIX,
     EDIT_STEP,
-    HINT_CONFIRM_STEP,
     PhotoEditError,
-    confirm_edit_hint,
     edit_photo,
 )
 from app.social.retention import delete_briefing
@@ -140,19 +138,17 @@ def test_photos_with_persons_need_confirmed_consent(session: Session, raw_dir: P
     assert edited.shows_persons and edited.consent_confirmed
 
 
-def test_misleading_instruction_gives_a_hint_that_blocks_approval(
+def test_misleading_instruction_gives_a_hint_that_is_only_listed(
     session: Session, raw_dir: Path
 ) -> None:
+    """Hints are listed, not confirmed (product owner, November 2026)."""
     briefing = _briefing(session)
     photo = _photo(session, briefing, raw_dir, persons=True, consent=True)
 
     edited = _edit(session, photo, raw_dir, "Person etwas schlanker machen")
 
     assert edited.edit_hint and "Körperform" in edited.edit_hint
-    assert any("KI-bearbeiteten Bild" in b for b in consent_blockers(session, briefing.id or 0))
-    confirm_edit_hint(session, edited, "demo")
     assert not any("KI-bearbeiteten" in b for b in consent_blockers(session, briefing.id or 0))
-    assert session.exec(select(AuditEntry).where(AuditEntry.step == HINT_CONFIRM_STEP)).one()
 
 
 @pytest.mark.parametrize("instruction", ["", "x" * 501, "Telefon 01234 567890 einfügen"])

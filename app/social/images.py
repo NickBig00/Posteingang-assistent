@@ -421,9 +421,17 @@ def _hash(text: str) -> str:
 
 
 def confirm_prompt_hint(session: Session, hint: PromptHint, user: str) -> PromptHint:
-    """A person confirms a hint on the image prompt (recorded in the audit trail)."""
+    """A person confirms the consent of a member named in the prompt (audit trail).
+
+    Other hints are only listed and cannot be confirmed (nothing waits for them).
+    """
+    if not hint.consent_required:
+        raise ImageSuggestionError(
+            "Dieser Hinweis braucht keine Bestätigung – nur ein Mitgliedername braucht die "
+            "Einwilligung der Person."
+        )
     if hint.briefing_id is None or image_locked(session, hint.briefing_id):
-        raise ImageSuggestionError("Hinweise können nur vor der Freigabe bestätigt werden.")
+        raise ImageSuggestionError("Einwilligungen können nur vor der Freigabe bestätigt werden.")
     if hint.confirmed_at is not None:
         raise ImageSuggestionError("Der Hinweis ist bereits bestätigt.")
     hint.confirmed_by, hint.confirmed_at = user, utcnow()
@@ -442,13 +450,14 @@ def confirm_prompt_hint(session: Session, hint: PromptHint, user: str) -> Prompt
 
 
 def image_hint_blockers(session: Session, briefing_id: int) -> list[str]:
-    """Unconfirmed hints of the prompt behind the briefing's AI image block the approval."""
+    """A member named in the prompt behind the AI image blocks the approval until the consent
+    of that person is confirmed; all other hints are only listed."""
     if chosen_image(session, briefing_id) is None:
         return []
     return [
-        f"Hinweis zum KI-Bild noch nicht bestätigt: {HINT_LABELS.get(h.key, h.key)}"
+        f"Einwilligung fehlt: {HINT_LABELS.get(h.key, h.key)} im Bild-Prompt"
         for h in prompt_hints(session, briefing_id)
-        if h.confirmed_at is None
+        if h.consent_required and h.confirmed_at is None
     ]
 
 
@@ -535,14 +544,17 @@ def save_prompt(
 
 
 def pending_hints(session: Session, briefing_id: int) -> list[PromptHint]:
-    """Hints of the stored prompt that still need a confirmation before generating."""
+    """Member names in the stored prompt without the confirmed consent (block generating).
+
+    All other hints are only listed and need no confirmation.
+    """
     proposal = latest_proposal(session, briefing_id)
     if proposal is None:
         return []
     return [
         h
         for h in prompt_hints(session, briefing_id)
-        if h.confirmed_at is None and h.prompt_hash == _hash(proposal.prompt)
+        if h.consent_required and h.confirmed_at is None and h.prompt_hash == _hash(proposal.prompt)
     ]
 
 
@@ -589,15 +601,14 @@ def generate_variants(
     session.refresh(proposal)
     if violations:
         raise ImagePromptRejectedError(violations)
-    # First confirm, then generate (then approve): nothing goes to the provider before a
-    # person has read the hints on this exact prompt.
+    # Hints are only listed (product owner, November 2026). A member named in the prompt is
+    # the exception (CLAUDE.md): the name goes to the provider only with the confirmed consent.
     _store_hints(session, briefing, proposal, check.hints)
-    pending = [h for h in prompt_hints(session, briefing.id or 0) if h.confirmed_at is None]
+    pending = pending_hints(session, briefing.id or 0)
     if pending:
         raise ImageHintsPendingError(
-            "Bitte zuerst die Hinweise zum Bild-Prompt prüfen und bestätigen, dann erzeugen: "
-            + ", ".join(HINT_LABELS.get(h.key, h.key) for h in pending)
-            + "."
+            "Im Bild-Prompt steht ein Name aus der Mitgliederliste: erst die Einwilligung der "
+            "Person bestätigen oder den Namen entfernen, dann erzeugen."
         )
     batch = generate_images(
         session,

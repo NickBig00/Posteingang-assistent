@@ -109,6 +109,7 @@ def _save(
         story=kw.get("story"),  # type: ignore[arg-type]
         variant=str(kw.get("variant", "zentriert")),
         user="demo",
+        from_ai=bool(kw.get("from_ai", False)),
     )
 
 
@@ -222,11 +223,28 @@ def test_rendering_is_deterministic() -> None:
 # --- stored texts, checks, AI ---
 
 
-def test_saving_runs_the_checks_and_health_claims_block_the_download(session: Session) -> None:
+def test_text_a_person_wrote_is_not_checked(session: Session) -> None:
+    """Product owner, November 2026: own text on the image is human-made, no checks – only a
+    member name stays an error (CLAUDE.md, see the next tests)."""
+    briefing = _stored(session)
+    claim = InfoTexts(**(TALK.to_json() | {"closing": "Garantiert schmerzfrei – auch am 10.12.!"}))  # type: ignore[arg-type]
+
+    graphic = _save(session, briefing, claim)
+
+    assert graphic_checks(session, graphic.id or 0) == []
+    assert check_blockers(session, graphic) == []
+    steps = [e.step for e in session.exec(select(AuditEntry)).all()]
+    assert "social.graphic_text_assess" not in steps  # no AI assessment of own text
+    assert render_info_graphic(
+        CONFIG, briefing, claim, ImageFormat.PORTRAIT, check_text_facts=False
+    )
+
+
+def test_ai_suggested_text_is_checked_and_health_claims_block(session: Session) -> None:
     briefing = _stored(session)
     claim = InfoTexts(**(TALK.to_json() | {"closing": "Garantiert schmerzfrei nach dem Vortrag!"}))  # type: ignore[arg-type]
 
-    graphic = _save(session, briefing, claim)
+    graphic = _save(session, briefing, claim, from_ai=True)
 
     blockers = check_blockers(session, graphic)
     assert blockers and any("Warnung" in b or "Fehler" in b for b in blockers)
@@ -389,7 +407,7 @@ def test_invalid_texts_show_the_reason(web: TestClient, session: Session) -> Non
 def test_foreign_fact_in_the_text_shows_no_preview(web: TestClient, session: Session) -> None:
     briefing = _stored(session)
     texts = InfoTexts(**(TALK.to_json() | {"intro": "Auch am 10.12.2026."}))  # type: ignore[arg-type]
-    _save(session, briefing, texts)
+    _save(session, briefing, texts, from_ai=True)
     web.post(f"/social/briefings/{briefing.id}/image", data={"source": "color"})
 
     page = web.get(f"/social/briefings/{briefing.id}").text
