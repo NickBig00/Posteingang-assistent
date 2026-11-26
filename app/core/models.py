@@ -14,8 +14,8 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def timestamp_column() -> Column:
-    return Column(DateTime(timezone=True), nullable=False)
+def timestamp_column(nullable: bool = False) -> Column:
+    return Column(DateTime(timezone=True), nullable=nullable)
 
 
 class AuditEntry(SQLModel, table=True):

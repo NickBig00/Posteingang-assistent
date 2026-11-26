@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Audit Briefing {{ briefing.id }} – Social Media{% endblock %}
 {% block content %}
 {% call ui.page_header("Audit-Verlauf Briefing " ~ briefing.id, "KI-Schritte und Entscheidungen von Menschen in zeitlicher Reihenfolge; Einträge sind unveränderlich.", "/social/briefings/" ~ briefing.id, "Briefing " ~ briefing.id) %}{% endcall %}

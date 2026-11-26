@@ -1,4 +1,4 @@
-{% import "_ui.html" as ui %}<!DOCTYPE html>
+{% import "_ui.html" as ui with context %}<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -10,7 +10,7 @@
   <script src="/static/vendor/htmx-2.0.3.min.js" defer></script>
   <script src="/static/js/app.js" defer></script>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen" hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
   <a href="#inhalt" class="skip-link">Zum Inhalt springen</a>
   <header class="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
     <div class="flex h-14 items-center gap-3 px-4 lg:px-6">
@@ -24,9 +24,15 @@
       </a>
       <div class="ml-auto flex items-center gap-3">
         <span class="badge badge-warning hidden sm:inline-flex" title="Alle Daten in dieser Demo sind erfunden.">Demo · nur synthetische Daten</span>
-        <span class="hidden items-center gap-2 text-sm text-ink-muted md:flex">
-          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold" aria-hidden="true">D</span>Demo-Benutzer
+        {% if current_user %}
+        <span class="hidden items-center gap-2 text-sm text-ink-muted md:flex" data-current-user>
+          <span class="flex h-7 w-7 items-center justify-center rounded-full bg-surface-sunken text-xs font-semibold" aria-hidden="true">{{ current_user.username[:1] | upper }}</span>{{ current_user.username }} · {{ current_user.role_label }}
         </span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn-ghost px-2 text-sm">Abmelden</button>
+        </form>
+        {% endif %}
       </div>
     </div>
   </header>

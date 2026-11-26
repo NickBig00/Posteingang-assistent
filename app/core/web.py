@@ -47,6 +47,7 @@ class NavEntry:
     label: str
     path: str
     icon: str = "dot"
+    admin_only: bool = False
     prefixes: tuple[str, ...] = field(default=())
 
     def match_length(self, url_path: str) -> int:
@@ -66,7 +67,9 @@ def active_entry(navigation: list[NavEntry], url_path: str) -> NavEntry | None:
 
 
 OVERVIEW_ENTRY = NavEntry(module="core", label="Übersicht", path="/", icon="home")
-SETTINGS_ENTRY = NavEntry(module="core", label="Einstellungen", path="/settings", icon="settings")
+SETTINGS_ENTRY = NavEntry(
+    module="core", label="Einstellungen", path="/settings", icon="settings", admin_only=True
+)
 
 
 # A module may supply the brand colour of its profile (registered in `app/main.py`).
@@ -87,8 +90,16 @@ def profile_brand_color(application: object) -> str | None:
 
 def _app_context(request: Request) -> dict[str, object]:
     # Read per request, so title and brand colour apply without code changes.
-    navigation: list[NavEntry] = getattr(request.app.state, "navigation", [])
+    user = getattr(request.state, "user", None)  # set by app.core.auth.enforce_access
+    is_admin = bool(getattr(user, "is_admin", False))
+    navigation: list[NavEntry] = [
+        entry
+        for entry in getattr(request.app.state, "navigation", [])
+        if is_admin or not entry.admin_only
+    ]
     return {
+        "current_user": user,
+        "csrf_token": getattr(user, "csrf_token", ""),
         "app_title": app_title(),
         "theme": current_theme(profile_brand_color(request.app)),
         "navigation": navigation,

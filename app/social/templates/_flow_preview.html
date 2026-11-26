@@ -2,7 +2,7 @@
   The post as it will roughly look on the platform (SPEC_social 8.1): finished image (with text
   if chosen) and post text; download and approval refer to exactly this. Needs d, f.
 #}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% set limits = {"instagram_post": 125, "instagram_story": 160, "facebook": 280, "linkedin": 210} %}
 {% set ratios = {"1:1": "aspect-square", "4:5": "aspect-[4/5]", "9:16": "aspect-[9/16]"} %}
 {% set fmt = channel_formats[d.channel].value %}
@@ -74,11 +74,11 @@
 
 <div class="mt-4 space-y-2" data-main-action>
   {% if d.status.value == "in_review" %}
-  <form method="post" action="/social/drafts/{{ d.id }}/approve" class="hidden lg:block">
+  <form method="post" action="/social/drafts/{{ d.id }}/approve" class="hidden lg:block"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="btn btn-success w-full py-2.5" {% if not f.ready %}disabled aria-describedby="approve-hint-{{ d.id }}"{% endif %}>{{ ui.icon("check") }}Freigeben</button></form>
   {% if not f.ready %}<p class="hidden text-center text-xs text-ink-muted lg:block" id="approve-hint-{{ d.id }}">Erst die offenen Punkte erledigen.</p>{% endif %}
   {% endif %}
   {% if d.status.value in ("draft", "in_review", "needs_manual_review") %}
-  <form method="post" action="/social/drafts/{{ d.id }}/reject" class="text-center"><button type="submit" class="btn btn-link btn-sm text-ink-subtle">Verwerfen</button></form>
+  <form method="post" action="/social/drafts/{{ d.id }}/reject" class="text-center"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-link btn-sm text-ink-subtle">Verwerfen</button></form>
   {% endif %}
 </div>

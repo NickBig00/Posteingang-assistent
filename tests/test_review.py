@@ -185,7 +185,7 @@ def test_review_decision_is_shown_in_german(client: TestClient, engine: Engine) 
     item_id = _create(engine, ItemStatus.PROCESSED)
     client.post(f"/items/{item_id}/review", data={"decision": "rejected"})
 
-    assert "verworfen durch demo" in client.get(f"/items/{item_id}").text
+    assert "verworfen durch testuser" in client.get(f"/items/{item_id}").text
 
 
 def test_unknown_item_is_404(client: TestClient) -> None:
@@ -290,5 +290,5 @@ def test_full_ui_flow_load_review_approve_execute(
     assert "attachment" in export.headers["content-disposition"]
     with Session(engine) as session:
         review = session.exec(select(Review).where(Review.item_id == item_id)).one()
-    assert review.reviewer == "demo"
+    assert review.reviewer == "testuser"
     assert review.edited_text == edited

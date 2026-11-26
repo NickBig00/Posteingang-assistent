@@ -1,5 +1,5 @@
 {# Carousel pages of the briefing (SPEC_social 14.2): used by Instagram/Facebook posts with "Mehrere Bilder". #}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% set c = carousel %}
 {% set editable = not image_locked %}
 <div class="mt-4 rounded-lg border border-line p-4" id="karussell" data-carousel>
@@ -12,7 +12,7 @@
 
   {% if editable %}
   <form method="post" action="/social/briefings/{{ briefing.id }}/carousel/suggest" class="mt-2" data-loading="Seiten werden vorgeschlagen …"
-        {% if c.pages %}onsubmit="return confirm('Die bisherigen Seiten durch einen KI-Vorschlag ersetzen?')"{% endif %}>
+        {% if c.pages %}onsubmit="return confirm('Die bisherigen Seiten durch einen KI-Vorschlag ersetzen?')"{% endif %}><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit" class="btn btn-secondary btn-sm">{{ ui.icon("sparkles") }}Seitenaufteilung vorschlagen</button>
   </form>
   {% endif %}
@@ -33,9 +33,9 @@
       </div>
       {% if editable %}
       <div class="mt-1 flex flex-wrap gap-1">
-        {% if not loop.first %}<form method="post" action="/social/carousel-pages/{{ p.id }}/move"><input type="hidden" name="direction" value="-1"><button type="submit" class="btn btn-ghost btn-sm px-2" aria-label="Seite {{ loop.index }} nach vorne">←</button></form>{% endif %}
-        {% if not loop.last %}<form method="post" action="/social/carousel-pages/{{ p.id }}/move"><input type="hidden" name="direction" value="1"><button type="submit" class="btn btn-ghost btn-sm px-2" aria-label="Seite {{ loop.index }} nach hinten">→</button></form>{% endif %}
-        <form method="post" action="/social/carousel-pages/{{ p.id }}/delete"><button type="submit" class="btn btn-ghost btn-sm px-2 text-red-700" aria-label="Seite {{ loop.index }} entfernen">{{ ui.icon("trash") }}</button></form>
+        {% if not loop.first %}<form method="post" action="/social/carousel-pages/{{ p.id }}/move"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="direction" value="-1"><button type="submit" class="btn btn-ghost btn-sm px-2" aria-label="Seite {{ loop.index }} nach vorne">←</button></form>{% endif %}
+        {% if not loop.last %}<form method="post" action="/social/carousel-pages/{{ p.id }}/move"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="direction" value="1"><button type="submit" class="btn btn-ghost btn-sm px-2" aria-label="Seite {{ loop.index }} nach hinten">→</button></form>{% endif %}
+        <form method="post" action="/social/carousel-pages/{{ p.id }}/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-ghost btn-sm px-2 text-red-700" aria-label="Seite {{ loop.index }} entfernen">{{ ui.icon("trash") }}</button></form>
       </div>
       {% endif %}
     </li>
@@ -46,7 +46,7 @@
   {% for item in c.pages %}{% set p = item.page %}{% if p.kind != "cover" %}
   <details class="mt-2" id="page-{{ p.id }}">
     <summary class="cursor-pointer text-sm font-medium">Seite {{ loop.index }} bearbeiten</summary>
-    <form method="post" action="/social/carousel-pages/{{ p.id }}" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
+    <form method="post" action="/social/carousel-pages/{{ p.id }}" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if p.kind == "info" %}
       <label class="field sm:col-span-2">Überschrift <input type="text" name="headline" maxlength="60" value="{{ item.texts.headline }}" class="input mt-1"></label>
       <label class="field sm:col-span-2">Unterzeile <input type="text" name="subline" maxlength="90" value="{{ item.texts.subline }}" class="input mt-1"></label>
@@ -74,7 +74,7 @@
   {% if editable and c.pages | length < c.max_pages %}
   <details class="mt-2" id="carousel-add">
     <summary class="btn btn-ghost btn-sm cursor-pointer">+ Seite hinzufügen</summary>
-    <form method="post" action="/social/briefings/{{ briefing.id }}/carousel/pages" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …">
+    <form method="post" action="/social/briefings/{{ briefing.id }}/carousel/pages" class="mt-2 grid gap-2 sm:grid-cols-2" data-loading="Wird geprüft …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label class="field">Art
         <select name="kind" class="input mt-1"><option value="info">Info-Grafik (Text)</option><option value="cover">Beitragsbild</option>{% if usable_assets %}<option value="image">Bild</option>{% endif %}</select></label>
       <label class="field">Bild bzw. Hintergrund
@@ -100,7 +100,7 @@
         {% if r.is_ai_assessment %}{{ ui.ai_badge("KI-Einschätzung") }}{% endif %}</span>
         {% if r.requires_confirmation or r.consent_required %}
           {% if r.confirmed_at %}<span class="badge badge-ok">✓ bestätigt von {{ r.confirmed_by }}</span>
-          {% elif editable %}<form method="post" action="/social/carousel-checks/{{ r.id }}/confirm" class="ml-1 inline"><button type="submit" class="btn {{ 'btn-danger' if r.consent_required else 'btn-secondary border-amber-400' }} btn-sm">{{ "Einwilligung der Person liegt vor" if r.consent_required else "Geprüft – bestätigen" }}</button></form>{% endif %}
+          {% elif editable %}<form method="post" action="/social/carousel-checks/{{ r.id }}/confirm" class="ml-1 inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn {{ 'btn-danger' if r.consent_required else 'btn-secondary border-amber-400' }} btn-sm">{{ "Einwilligung der Person liegt vor" if r.consent_required else "Geprüft – bestätigen" }}</button></form>{% endif %}
         {% endif %}
       </li>
       {% endif %}{% endfor %}

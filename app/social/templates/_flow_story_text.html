@@ -1,5 +1,5 @@
 {# Shorter text for the 9:16 story (optional; otherwise the text above is used). #}
-<form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="space-y-2" id="story-text">
+<form method="post" action="/social/briefings/{{ briefing.id }}/info-graphic" class="space-y-2" id="story-text"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <h3 class="text-[15px] font-semibold">Story-Text (9:16, kürzer)</h3>
   {% for name in ("headline", "subline", "intro", "closing") %}<input type="hidden" name="{{ name }}" value="{{ info.texts[name] }}">{% endfor %}
   <input type="hidden" name="points" value="{{ info.texts.points | join('\n') }}">

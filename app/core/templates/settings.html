@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Einstellungen – {{ app_title }}{% endblock %}
 {% block content %}
 {% call ui.page_header("Einstellungen", "Aktuelle Konfiguration dieser Installation") %}

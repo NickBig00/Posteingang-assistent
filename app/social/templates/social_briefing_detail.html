@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {#
   Briefing page as a flow (SPEC_social 8.1): tabs per channel, steps ① text → ② image →
   ③ check and approve, then ④ publish; the preview on the right shows exactly what is posted.
@@ -23,7 +23,7 @@
         <a class="nav-link" href="/social/briefings/{{ briefing.id }}/audit">{{ ui.icon("clock") }}Audit-Verlauf</a>
         <a class="nav-link" href="#hinweis-gesundheit">{{ ui.icon("info") }}Hinweis zu Gesundheitswerbung</a>
         <form method="post" action="/social/briefings/{{ briefing.id }}/delete"
-              onsubmit="return confirm('Briefing mit allen Entwürfen, Prüfergebnissen und Bildern endgültig löschen?')">
+              onsubmit="return confirm('Briefing mit allen Entwürfen, Prüfergebnissen und Bildern endgültig löschen?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button type="submit" class="nav-link w-full text-red-700">{{ ui.icon("trash") }}Briefing löschen</button>
         </form>
         <p class="px-3 pb-1 text-xs text-ink-subtle">Löschen entfernt Inhalte und Bilder; der Audit-Verlauf behält nur Hashes und Metadaten.</p>
@@ -106,7 +106,7 @@
 <div data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>
   {% call ui.sticky_footer('data-sticky-approve') %}
   <span class="min-w-0 flex-1 truncate text-sm {{ 'text-green-800' if f.ready else 'text-ink-muted' }}">{{ "Bereit zur Freigabe" if f.ready else (f.checklist | rejectattr("optional") | list | length) ~ " Punkt(e) offen" }}</span>
-  <form method="post" action="/social/drafts/{{ d.id }}/approve"><button type="submit" class="btn btn-success" {% if not f.ready %}disabled{% endif %}>{{ ui.icon("check") }}Freigeben</button></form>
+  <form method="post" action="/social/drafts/{{ d.id }}/approve"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-success" {% if not f.ready %}disabled{% endif %}>{{ ui.icon("check") }}Freigeben</button></form>
   {% endcall %}
   <div class="h-16 lg:hidden" aria-hidden="true"></div>
 </div>

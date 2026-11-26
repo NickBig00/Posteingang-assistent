@@ -11,6 +11,7 @@ from sqlalchemy.engine import Connection
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.core import members as _members  # noqa: F401 - registers the shared member table
+from app.core import users as _users  # noqa: F401 - registers the account tables
 from app.core.models import AuditEntry
 
 DEFAULT_DATABASE_URL = "sqlite:///./data/posteingang.db"

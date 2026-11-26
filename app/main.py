@@ -3,9 +3,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from sqlmodel import Session
 
+from app.core.auth import enforce_access, register_auth
 from app.core.config import app_title, enabled_modules
 from app.core.db import engine, init_db
 from app.core.logging_config import setup_logging
@@ -56,9 +57,20 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     """Build the application with the modules enabled via env `MODULES`."""
-    application = FastAPI(title=app_title(), version="0.1.0", lifespan=lifespan)
+    # Every route requires a login (except /login and /health) and a CSRF token for changes.
+    # The generated API docs are switched off: they would bypass the login.
+    application = FastAPI(
+        title=app_title(),
+        version="0.1.0",
+        lifespan=lifespan,
+        dependencies=[Depends(enforce_access)],
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
     mount_static(application)
     register_error_handlers(application)
+    register_auth(application)
     application.include_router(core_router)
     navigation: list[NavEntry] = [OVERVIEW_ENTRY]
     providers: list[OverviewProvider] = []

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% block title %}Eingang {{ d.item.id }} – {{ app_title }}{% endblock %}
 {% block content %}
 {% set item = d.item %}
@@ -91,7 +91,7 @@
         {% endif %}
 
         {% if item.status.value in ("processed", "needs_manual_review") %}
-        <form method="post" action="/items/{{ item.id }}/review" class="mt-4 space-y-3">
+        <form method="post" action="/items/{{ item.id }}/review" class="mt-4 space-y-3"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <label for="edited_text" class="label">Antwortentwurf (bearbeitbar)</label>
           <textarea id="edited_text" name="edited_text" rows="10"
                     class="input font-normal leading-relaxed">{{ d.suggestion.draft_text if d.suggestion and d.suggestion.draft_text else "" }}</textarea>
@@ -103,20 +103,20 @@
             Die Kennzeichnung „KI-Vorschlag“ wird beim Freigeben entfernt.</p>
         </form>
         {% if item.status.value == "needs_manual_review" %}
-        <form method="post" action="/items/{{ item.id }}/reprocess" class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4" data-loading="Wird verarbeitet …">
+        <form method="post" action="/items/{{ item.id }}/reprocess" class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4" data-loading="Wird verarbeitet …"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-secondary">{{ ui.icon("sparkles") }}Neu verarbeiten</button>
           <span class="text-xs text-ink-subtle">Führt die KI-Verarbeitung erneut aus (z. B. nach Profiländerung); wird protokolliert.</span>
         </form>
         {% endif %}
         {% elif item.status.value == "rejected" %}
         <p class="text-sm text-ink-muted">Verworfen.</p>
-        <form method="post" action="/items/{{ item.id }}/reopen" class="mt-3 flex flex-wrap items-center gap-2">
+        <form method="post" action="/items/{{ item.id }}/reopen" class="mt-3 flex flex-wrap items-center gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-secondary">Wieder öffnen</button>
           <span class="text-xs text-ink-subtle">Zur erneuten Prüfung; wird protokolliert.</span>
         </form>
         {% elif item.status.value == "approved" %}
         <pre class="mt-2 whitespace-pre-wrap rounded-lg bg-surface-muted p-3 font-sans text-sm">{{ final_text or "(kein Antworttext)" }}</pre>
-        <form method="post" action="/items/{{ item.id }}/execute" class="mt-3">
+        <form method="post" action="/items/{{ item.id }}/execute" class="mt-3"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-primary">Ausführen (Demo)</button>
         </form>
         {% elif item.status.value == "done" %}
@@ -139,7 +139,7 @@
 
 <div class="mt-8 flex flex-wrap items-center gap-3 border-t border-line pt-6">
   <form method="post" action="/items/{{ item.id }}/delete"
-        onsubmit="return confirm('Eingang mit allen Inhalten endgültig löschen? Der Audit-Verlauf behält nur Hashes und Metadaten.');">
+        onsubmit="return confirm('Eingang mit allen Inhalten endgültig löschen? Der Audit-Verlauf behält nur Hashes und Metadaten.');"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button class="btn btn-danger">{{ ui.icon("trash") }}Eingang löschen</button>
   </form>
   <span class="text-xs text-ink-subtle">Löscht Original, Text und KI-Ergebnisse; der Audit-Verlauf behält nur Hashes und Metadaten.</span>

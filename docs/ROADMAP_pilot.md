@@ -15,7 +15,7 @@ Entscheidungen des Product Owners (November 2026):
 
 ---
 
-## [ ] P1 – Login und Rollen
+## [x] P1 – Login und Rollen
 
 - Benutzerkonten mit Rollen: `admin` (Betreiber) und `editor` (Mitarbeitende des Kunden)
 - Passwörter mit Argon2 oder bcrypt gehasht; sichere Session-Cookies (HttpOnly, Secure, SameSite)

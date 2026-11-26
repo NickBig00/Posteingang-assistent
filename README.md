@@ -163,11 +163,42 @@ Voraussetzung: [uv](https://docs.astral.sh/uv/) (Python 3.12 wird bei Bedarf von
 ```bash
 uv sync                                  # Abhängigkeiten installieren
 cp .env.example .env                     # optional: lokale Konfiguration
+uv run python -m app.cli user-create admin --role admin   # ersten Benutzer anlegen
 uv run uvicorn app.main:app --reload     # App starten
 ```
 
-- Startseite: <http://127.0.0.1:8000/>
-- Health-Check: <http://127.0.0.1:8000/health> → `{"status": "ok"}`
+- Startseite: <http://localhost:8000/> (Anmeldung erforderlich)
+- Health-Check: <http://localhost:8000/health> → `{"status": "ok"}` (ohne Anmeldung)
+
+### Anmeldung, Rollen und Benutzerverwaltung
+
+Ohne Anmeldung ist nur die Login-Seite und `/health` erreichbar; eine automatische Anmeldung
+als „demo“ gibt es nicht. Konten legt die Administration per Kommandozeile an (kein
+E-Mail-Versand):
+
+```bash
+uv run python -m app.cli user-create anna.beispiel --role editor   # Passwort wird zweimal abgefragt
+uv run python -m app.cli user-reset-password anna.beispiel        # beendet alle Sitzungen, hebt Sperre auf
+uv run python -m app.cli user-list
+```
+
+Mit `--password-stdin` liest `user-create`/`user-reset-password` das Passwort aus der
+Standardeingabe (für Skripte). Passwörter: mindestens 12 Zeichen, gespeichert als
+Argon2id-Hash.
+
+- **Rollen:** `admin` (Betreiber) sieht zusätzlich Einstellungen und Styleguide (`/settings`,
+  `/design`); `editor` (Mitarbeitende des Kunden) arbeitet in den Modulen.
+- **Sitzungen:** serverseitig, Cookie `pa_session` mit HttpOnly, Secure und SameSite=Lax;
+  Dauer `SESSION_HOURS` (Standard 12). In der Datenbank liegt nur ein Hash des Tokens.
+  Browser akzeptieren Secure-Cookies auf `http://localhost`; nur für lokale Entwicklung über
+  HTTP auf einem anderen Hostnamen `SESSION_COOKIE_SECURE=0` setzen (nie im Betrieb).
+- **CSRF:** Jedes Formular und jede HTMX-Anfrage sendet das Token der Sitzung
+  (Feld `csrf_token` bzw. Header `X-CSRF-Token`); die Login-Seite nutzt ein eigenes Token.
+- **Sperre:** Nach 5 fehlgeschlagenen Anmeldungen ist der Benutzername 15 Minuten gesperrt
+  (auch für unbekannte Namen, damit nicht erkennbar ist, welche existieren).
+- **Protokoll:** Freigaben und Audit-Einträge tragen den angemeldeten Benutzer. Ältere
+  Einträge mit „demo“ bleiben unverändert (Audit ist unveränderlich).
+- Die automatisch erzeugte API-Dokumentation (`/docs`, `/openapi.json`) ist abgeschaltet.
 
 Die `.env` im Projektordner wird von App und CLI automatisch geladen; bereits gesetzte
 Umgebungsvariablen haben Vorrang. Sie steht in `.gitignore` und gehört nie ins Repository.

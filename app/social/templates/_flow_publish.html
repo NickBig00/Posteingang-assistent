@@ -1,5 +1,5 @@
 {# Step ④ Veröffentlichen (after the approval) with ①–③ as a folded summary. Needs d, f. #}
-{% import "_ui.html" as ui %}
+{% import "_ui.html" as ui with context %}
 {% set review = reviews.get(d.id) %}
 {% set pi = post_images[d.id] %}
 {% call ui.step(4, "Veröffentlichen", "draft-" ~ d.id, "done" if d.status.value == "published" else "open", post_status_labels[d.status]) %}
@@ -25,17 +25,17 @@
       {% set back = "" %}{% include "_social_schedule.html" %}
       {% if d.status.value == "scheduled" %}
       {% if d.is_scheduled_externally %}<span class="badge badge-info" data-external>eingeplant (extern)</span>
-        <form method="post" action="/social/drafts/{{ d.id }}/external/undo" class="inline"><button type="submit" class="btn btn-link btn-sm">zurücknehmen</button></form>
-      {% else %}<form method="post" action="/social/drafts/{{ d.id }}/external"><button type="submit" class="btn btn-secondary btn-sm" title="Festhalten, dass der Beitrag in der Planungsfunktion der Plattform eingeplant ist.">Als „eingeplant (extern)“ markieren</button></form>{% endif %}
-      <form method="post" action="/social/drafts/{{ d.id }}/publish"><button type="submit" class="btn btn-success btn-sm">Als veröffentlicht markieren</button></form>
-      <form method="post" action="/social/drafts/{{ d.id }}/unschedule"><button type="submit" class="btn btn-ghost btn-sm">Aus Kalender nehmen</button></form>
+        <form method="post" action="/social/drafts/{{ d.id }}/external/undo" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-link btn-sm">zurücknehmen</button></form>
+      {% else %}<form method="post" action="/social/drafts/{{ d.id }}/external"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-secondary btn-sm" title="Festhalten, dass der Beitrag in der Planungsfunktion der Plattform eingeplant ist.">Als „eingeplant (extern)“ markieren</button></form>{% endif %}
+      <form method="post" action="/social/drafts/{{ d.id }}/publish"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-success btn-sm">Als veröffentlicht markieren</button></form>
+      <form method="post" action="/social/drafts/{{ d.id }}/unschedule"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-ghost btn-sm">Aus Kalender nehmen</button></form>
       {% endif %}
       {% endif %}</li>
   </ol>
   {% if d.scheduled_at %}<p class="flex items-center gap-2 text-sm">{{ ui.icon("calendar", "h-4 w-4 text-ink-subtle") }}Geplant: <strong>{{ (d.scheduled_at | local).strftime("%d.%m.%Y %H:%M") }} Uhr</strong></p>{% endif %}
 </div>
 {% if d.status.value in ("approved", "scheduled") %}
-<form method="post" action="/social/drafts/{{ d.id }}/reject" onsubmit="return confirm('Freigabe zurückziehen und den Beitrag verwerfen?')"><button type="submit" class="btn btn-link btn-sm px-0 text-ink-subtle">Freigabe zurückziehen (verwerfen)</button></form>
+<form method="post" action="/social/drafts/{{ d.id }}/reject" onsubmit="return confirm('Freigabe zurückziehen und den Beitrag verwerfen?')"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="btn btn-link btn-sm px-0 text-ink-subtle">Freigabe zurückziehen (verwerfen)</button></form>
 {% endif %}
 <details class="text-sm">
   <summary class="cursor-pointer text-ink-muted">Text und Prüfungen ansehen</summary>
