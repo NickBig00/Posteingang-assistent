@@ -264,6 +264,16 @@ Anmeldung, Vorteil, Bedingungen (wörtlich geprüft). Anlass: Fragebogen eines K
 Pflichtangaben im Formular, wörtliche Prüfung der Text-Angaben, Ablauf bis zum geprüften
 Entwurf.
 
+## [x] U9 – Bild über den Kanal-Reitern
+
+Das Bild ist für alle Kanäle gleich (U6): Schritt „Bild“ steht deshalb einmal über den Reitern;
+die Reiter enthalten nur Text, Prüfungen und Veröffentlichen je Kanal. Neue Nummerierung:
+① Bild → ② Text → ③ Prüfen und freigeben → ④ Veröffentlichen (Entscheidung des Product Owners,
+November 2026).
+
+**Akzeptanz:** Tests (Bild vor den Reitern, einmal auf der Seite, gesperrt nach Freigabe);
+Screenshots `docs/screenshots/U9/`; a11y-Prüfung ohne Verstöße.
+
 ---
 
 ## Offene Punkte

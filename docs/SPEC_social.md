@@ -153,7 +153,7 @@ Regeln:
 - **Social Media** als eigener Navigationspunkt
 - **Übersicht:** Entwürfe nach Status, Ampel aus den Prüfungen
 - **Neues Briefing:** Formular mit Anlass-Typ, Stichpunkten, Fakten, Kanälen, Bild
-- **Briefing-Seite als Ablauf** (Abschnitt 8.1): Reiter je Kanal, Schritte ① Text → ② Bild → ③ Prüfen und freigeben → ④ Veröffentlichen, immer sichtbare Vorschau des fertigen Beitrags
+- **Briefing-Seite als Ablauf** (Abschnitt 8.1): ① Bild für alle Kanäle, darunter Reiter je Kanal mit ② Text → ③ Prüfen und freigeben → ④ Veröffentlichen, immer sichtbare Vorschau des fertigen Beitrags
 - **Kalender:** Wochen- und Monatsansicht der geplanten Beiträge
 - **Export:** Text kopieren, Beitrag als Textdatei, Kalender als `.ics`
 
@@ -167,8 +167,10 @@ noch fehlt. Die Seite wirkt ruhig, modern und flüssig.
 
 **Grundsätze** (im Zweifel weglassen oder einklappen):
 
-1. **Der Ablauf ist die Seite:** Text → Bild → Prüfen und Freigeben → Veröffentlichen. Außerhalb
-   davon stehen nur Briefing-Daten und Audit.
+1. **Der Ablauf ist die Seite:** Bild → Text → Prüfen und Freigeben → Veröffentlichen. Außerhalb
+   davon stehen nur Briefing-Daten und Audit. Das Bild steht **über** den Kanal-Reitern, weil es
+   für alle Kanäle gleich ist; die Reiter enthalten nur, was sich je Kanal unterscheidet
+   (Entscheidung des Product Owners, November 2026).
 2. **Ein Bild je Briefing** für alle Kanäle (Abschnitt 14.3).
 3. **Was du siehst, wird gepostet:** eine immer sichtbare Vorschau zeigt fertiges Bild (mit Text,
    falls gewählt) und Beitragstext; Download und Freigabe beziehen sich genau darauf.
@@ -190,10 +192,10 @@ noch fehlt. Die Seite wirkt ruhig, modern und flüssig.
   über das URL-Fragment (`#instagram_post`) aktiv; Pfeiltasten wechseln (WAI-ARIA-Tabs).
 - **Checkliste „Noch offen“:** die Freigabe-Blocker plus „Bild wählen“ (nur Hinweis, ein Beitrag
   ohne Bild bleibt möglich); sonst grüne Zeile „Bereit zur Freigabe“.
-- **① Text:** Beitragstext direkt editierbar, „Speichern“ nur bei Änderungen aktiv; Hashtags als
+- **② Text** (im Reiter des Kanals): Beitragstext direkt editierbar, „Speichern“ nur bei Änderungen aktiv; Hashtags als
   Chips; „✨ Anders formulieren …“ (13.8) als Popover; Badge „KI-Vorschlag“ bzw. „von Mensch
   bearbeitet“. Ohne Text: Platzhalter „Die KI hat keinen Text geliefert – schreib ihn hier selbst.“
-- **② Bild** (für das ganze Briefing, in jedem Reiter gleich): Frage „Welches Bild?“ mit den Karten
+- **① Bild** (für das ganze Briefing, einmal **über** den Kanal-Reitern): Frage „Welches Bild?“ mit den Karten
   **Eigenes Foto** (Upload, danach die Fragen „Personen zu sehen?“ und „Einwilligung liegt vor?“,
   Kacheln der Fotos, „✨ Mit KI bearbeiten …“), **KI-Bild** (Feld „Was soll zu sehen sein?“,
   Hinweise direkt darunter (nur aufgelistet; ein Mitgliedername braucht die Einwilligung), Varianten als

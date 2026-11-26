@@ -1,4 +1,4 @@
-{# Step ① Text of one channel (SPEC_social 8.1). Needs: d, f. #}
+{# Step ② Text of one channel (SPEC_social 8.1). Needs: d, f. #}
 {% import "_ui.html" as ui %}
 {% from "_social_revise.html" import revise_form %}
 {% set label %}{% if d.is_ai_suggestion and not d.edited_by_human %}{{ ui.ai_badge() }}{% elif d.edited_by_human %}<span class="badge badge-neutral">von Mensch bearbeitet</span>{% endif %}{% endset %}
@@ -11,7 +11,7 @@
       <button type="submit" class="nav-link w-full text-red-700">{{ ui.icon("trash") }}Entwurf löschen</button></form>
   </div>
 </details>{% endset %}
-{% call ui.step(1, "Text", "draft-" ~ d.id, "done" if d.text else "error", ("fertig" if d.text else "fehlt"), extra) %}
+{% call ui.step(2, "Text", "draft-" ~ d.id, "done" if d.text else "error", ("fertig" if d.text else "fehlt"), extra) %}
 {% if d.status.value == "rejected" %}
 <p class="text-sm text-ink-muted">Dieser Beitrag ist verworfen.</p>
 <p class="whitespace-pre-wrap text-sm text-ink-subtle line-through">{{ d.full_text }}</p>

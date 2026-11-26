@@ -13,7 +13,7 @@ Demo-Daten wie bei den Screenshots (Fake-Anbieter, KI-Bilder eingeschaltet).
 | Laptop 1366×900 | Neues Briefing | keine | 39 | 0 | ja | nein |
 | Laptop 1366×900 | Briefing-Ablauf in Prüfung (mit KI-Bild) | keine | 51 | 0 | ja | nein |
 | Laptop 1366×900 | Briefing-Ablauf Reiter Facebook | keine | 49 | 0 | ja | nein |
-| Laptop 1366×900 | Briefing freigegeben (Veröffentlichen) | keine | 28 | 0 | ja | nein |
+| Laptop 1366×900 | Briefing freigegeben (Veröffentlichen) | keine | 34 | 0 | ja | nein |
 | Laptop 1366×900 | Kalender Woche | keine | 31 | 0 | ja | nein |
 | Laptop 1366×900 | Kalender Monat | keine | 23 | 0 | ja | nein |
 | Laptop 1366×900 | Kampagnen | keine | 11 | 0 | ja | nein |

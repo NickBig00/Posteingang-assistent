@@ -966,12 +966,6 @@
         "onScreen": true
       },
       {
-        "tag": "a",
-        "label": "Instagram-Beitrag ● (In Prüfung)",
-        "visible": true,
-        "onScreen": true
-      },
-      {
         "tag": "ol",
         "label": "Karussell zum Durchwischen (Pfeiltasten)",
         "visible": true,
@@ -992,48 +986,6 @@
       {
         "tag": "button",
         "label": "Verwerfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Weitere Aktionen für Instagram-Beitrag",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "textarea",
-        "label": "Beitragstext Instagram-Beitrag",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "#DemoGesundheitszentrum entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "#Musterstadt entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "#Kurse entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Hashtags",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Anders formulieren …",
         "visible": true,
         "onScreen": true
       },
@@ -1202,6 +1154,54 @@
       {
         "tag": "summary",
         "label": "+ Seite hinzufügen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Instagram-Beitrag ● (In Prüfung)",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Weitere Aktionen für Instagram-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Beitragstext Instagram-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#DemoGesundheitszentrum entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Musterstadt entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Kurse entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Hashtags",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Anders formulieren …",
         "visible": true,
         "onScreen": true
       },
@@ -1282,12 +1282,6 @@
         "onScreen": true
       },
       {
-        "tag": "a",
-        "label": "Facebook-Beitrag ● (In Prüfung)",
-        "visible": true,
-        "onScreen": true
-      },
-      {
         "tag": "button",
         "label": "Freigeben",
         "visible": true,
@@ -1296,48 +1290,6 @@
       {
         "tag": "button",
         "label": "Verwerfen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Weitere Aktionen für Facebook-Beitrag",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "textarea",
-        "label": "Beitragstext Facebook-Beitrag",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "#DemoGesundheitszentrum entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "#Musterstadt entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "button",
-        "label": "#Kurse entfernen",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "input",
-        "label": "Hashtags",
-        "visible": true,
-        "onScreen": true
-      },
-      {
-        "tag": "summary",
-        "label": "Anders formulieren …",
         "visible": true,
         "onScreen": true
       },
@@ -1510,6 +1462,54 @@
         "onScreen": true
       },
       {
+        "tag": "a",
+        "label": "Facebook-Beitrag ● (In Prüfung)",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Weitere Aktionen für Facebook-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "textarea",
+        "label": "Beitragstext Facebook-Beitrag",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#DemoGesundheitszentrum entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Musterstadt entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "button",
+        "label": "#Kurse entfernen",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Hashtags",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Anders formulieren …",
+        "visible": true,
+        "onScreen": true
+      },
+      {
         "tag": "summary",
         "label": "11 Prüfungen ok",
         "visible": true,
@@ -1586,14 +1586,50 @@
         "onScreen": true
       },
       {
-        "tag": "a",
-        "label": "Instagram-Beitrag ◷ (Geplant)",
+        "tag": "summary",
+        "label": "Aktion! Sommeraktion: zwei Wochen gratis",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "input",
+        "label": "Eigenes Foto hochladen oder wählen",
         "visible": true,
         "onScreen": true
       },
       {
         "tag": "summary",
-        "label": "Aktion! Sommeraktion: zwei Wochen gratis",
+        "label": "Unterzeile",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Einleitung",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Liste (ein Punkt je Zeile, mit ✓)",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Schlusssatz",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "summary",
+        "label": "Mehr: Gestaltung, Fakten, Story-Text, me",
+        "visible": true,
+        "onScreen": true
+      },
+      {
+        "tag": "a",
+        "label": "Instagram-Beitrag ◷ (Geplant)",
         "visible": true,
         "onScreen": true
       },
@@ -1700,7 +1736,7 @@
   {
     "viewport": "Laptop 1366×900",
     "name": "Kalender Woche",
-    "url": "/social/calendar?view=week&date=2026-11-27",
+    "url": "/social/calendar?view=week&date=2026-12-02",
     "violations": [],
     "stops": [
       {
@@ -1896,7 +1932,7 @@
   {
     "viewport": "Laptop 1366×900",
     "name": "Kalender Monat",
-    "url": "/social/calendar?view=month&date=2026-11-27",
+    "url": "/social/calendar?view=month&date=2026-12-02",
     "violations": [],
     "stops": [
       {
@@ -2519,7 +2555,7 @@
   {
     "viewport": "Tablet 820×1180",
     "name": "Kalender Woche",
-    "url": "/social/calendar?view=week&date=2026-11-27",
+    "url": "/social/calendar?view=week&date=2026-12-02",
     "violations": [],
     "stops": [],
     "overflow": false,
@@ -2528,7 +2564,7 @@
   {
     "viewport": "Tablet 820×1180",
     "name": "Kalender Monat",
-    "url": "/social/calendar?view=month&date=2026-11-27",
+    "url": "/social/calendar?view=month&date=2026-12-02",
     "violations": [],
     "stops": [],
     "overflow": false,
