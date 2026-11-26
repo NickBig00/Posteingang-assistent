@@ -65,9 +65,7 @@
 {% if not drafts %}
 {{ ui.empty_state("Keine Entwürfe.", "Für dieses Briefing gibt es keinen Kanal mehr. Ein neues Briefing anlegen.", "megaphone") }}
 {% else %}
-{{ ui.tabs(tabs, "Kanäle", active_tab) }}
-
-<div class="mt-5 flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+<div class="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
   {# Preview first on small screens (compact), right column on laptops (sticky). #}
   <aside class="order-first mx-auto w-full max-w-xs lg:sticky lg:top-20 lg:order-last lg:max-w-none" aria-label="Vorschau">
     {% for d in drafts %}{% set f = flows[d.id] %}
@@ -75,27 +73,30 @@
     {% endfor %}
   </aside>
 
-  <div class="min-w-0 space-y-6">
-    {% for d in drafts %}{% set f = flows[d.id] %}
-    <div data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>
-      {{ ui.checklist(f.checklist, attrs='data-checklist') if f.editable else "" }}
-    </div>
-    {% endfor %}
+  <div class="min-w-0 space-y-8">
+    {# ① The image is the same for every channel: above the channel tabs, shown once. #}
+    <div class="stepper">{% include "_flow_image.html" %}</div>
 
-    <div class="stepper">
+    {# Below the tabs only what differs per channel: text, checks, publishing. #}
+    <div class="space-y-5" id="kanaele">
+      {{ ui.tabs(tabs, "Kanäle", active_tab) }}
       {% for d in drafts %}{% set f = flows[d.id] %}
-      <div id="panel-{{ d.channel.value }}" role="tabpanel" aria-labelledby="tab-{{ d.channel.value }}" data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>
-        {% if f.released %}{% include "_flow_publish.html" %}{% else %}{% include "_flow_text.html" %}{% endif %}
+      <div data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>
+        {{ ui.checklist(f.checklist, attrs='data-checklist') if f.editable else "" }}
       </div>
       {% endfor %}
 
-      <div data-hide-for="{{ released_channels | join(' ') }}" {% if active_tab in released_channels %}hidden{% endif %}>
-        {% include "_flow_image.html" %}
-      </div>
+      <div class="stepper pt-3">
+        {% for d in drafts %}{% set f = flows[d.id] %}
+        <div id="panel-{{ d.channel.value }}" role="tabpanel" aria-labelledby="tab-{{ d.channel.value }}" data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>
+          {% if f.released %}{% include "_flow_publish.html" %}{% else %}{% include "_flow_text.html" %}{% endif %}
+        </div>
+        {% endfor %}
 
-      {% for d in drafts %}{% set f = flows[d.id] %}{% if not f.released %}
-      <div data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>{% include "_flow_review.html" %}</div>
-      {% endif %}{% endfor %}
+        {% for d in drafts %}{% set f = flows[d.id] %}{% if not f.released %}
+        <div data-tab="{{ d.channel.value }}" {% if d.channel.value != active_tab %}hidden{% endif %}>{% include "_flow_review.html" %}</div>
+        {% endif %}{% endfor %}
+      </div>
     </div>
   </div>
 </div>

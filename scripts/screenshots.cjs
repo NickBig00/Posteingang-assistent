@@ -106,6 +106,11 @@ const SHOTS = {
     ["briefing-tablet-oben", "/social/briefings/{briefing}#facebook", { viewport: TABLET }],
     ["design-system-ablauf", "/design", { selector: "section:has(#flow)" }],
   ],
+  U9: [
+    ["bild-ueber-den-reitern-laptop", "/social/briefings/{briefing}#instagram_post", { fullPage: true }],
+    ["bild-ueber-den-reitern-oben", "/social/briefings/{briefing}", {}],
+    ["bild-ueber-den-reitern-tablet", "/social/briefings/{briefing}#facebook", { viewport: TABLET, fullPage: true }],
+  ],
   U8: [
     ["toast-freigegeben", "/social/briefings/{approved_briefing}?toast=freigegeben#instagram_post", {}],
     ["ki-bild-ladezustand", "/social/briefings/{briefing}#ki-bild", {
@@ -123,7 +128,7 @@ const SHOTS = {
 };
 
 // Milestones whose pages need the AI image functions switched on.
-const IMAGE_MILESTONES = new Set(["B2", "B4", "B5", "B6", "B8", "B9", "U7", "U8"]);
+const IMAGE_MILESTONES = new Set(["B2", "B4", "B5", "B6", "B8", "B9", "U7", "U8", "U9"]);
 
 function startServer(env) {
   // Start uvicorn directly (not via `uv run`), so stopping the child really stops the server.

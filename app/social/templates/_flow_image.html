@@ -1,10 +1,10 @@
-{# Step ② Bild – one image for the whole briefing, shown in every tab (SPEC_social 8.1, 14.3). #}
+{# Step ① Bild – one image for the whole briefing, above the channel tabs (SPEC_social 8.1, 14.3). #}
 {% import "_ui.html" as ui %}
 {% from "_social_revise.html" import revise_form %}
 {% set bi = briefing_image %}
 {% set selected = (bi.source.value if bi else "upload") %}
 {% set image_state_label = "gesperrt" if image_locked else ("gewählt" if bi and not image_problems else ("bitte prüfen" if bi else "optional")) %}
-{% call ui.step(2, "Bild", "bild", "locked" if image_locked else ("done" if bi and not image_problems else ("error" if image_problems else "open")), image_state_label, '<span class="text-[13px] text-ink-subtle">gilt für alle Kanäle</span>') %}
+{% call ui.step(1, "Bild", "bild", "locked" if image_locked else ("done" if bi and not image_problems else ("error" if image_problems else "open")), image_state_label, '<span class="text-[13px] text-ink-subtle">gilt für alle Kanäle</span>') %}
 {% if image_locked %}
 <p class="text-[13px] text-ink-muted" data-image-locked>Das Bild ist mit einem freigegebenen Beitrag freigegeben. Zum Ändern den Beitrag verwerfen und wieder öffnen.</p>
 {% endif %}

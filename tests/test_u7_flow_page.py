@@ -121,7 +121,9 @@ def test_page_has_tabs_steps_preview_and_checklist(web: TestClient, session: Ses
     assert selected and selected.group(1) == "true"
     for title in ("Text", "Bild", "Prüfen und freigeben"):
         assert f">{title}</h2>" in page
-    assert page.count('id="bild"') == 1  # step ② once, for all channels
+    assert page.count('id="bild"') == 1  # the image step once, for all channels
+    # The image comes before the channel tabs: only text and checks differ per channel.
+    assert page.index('id="bild"') < page.index('role="tablist"') < page.index(">Text</h2>")
     assert "Welches Bild?" in page and "Eigenes Foto" in page and "Farbfläche" in page
     assert f'id="draft-{instagram.id}"' in page and f'id="pruefen-{facebook.id}"' in page
     assert page.count("data-preview=") == 2 and "data-checklist" in page
@@ -139,7 +141,7 @@ def test_error_page_opens_the_tab_of_the_action(web: TestClient, session: Sessio
     assert "data-flash-error" in response.text
 
 
-def test_released_tab_shows_publishing_and_hides_the_image_step(
+def test_released_tab_shows_publishing_and_the_image_stays_locked_above(
     web: TestClient, session: Session
 ) -> None:
     briefing, (instagram, _) = _briefing(session)
@@ -149,7 +151,7 @@ def test_released_tab_shows_publishing_and_hides_the_image_step(
     page = web.get(f"/social/briefings/{briefing.id}").text
 
     assert ">Veröffentlichen</h2>" in page and "Text kopieren" in page
-    assert 'data-hide-for="instagram_post"' in page
+    assert "data-image-locked" in page  # the image is fixed with the approved post
     assert f'id="pruefen-{instagram.id}"' not in page
 
 
