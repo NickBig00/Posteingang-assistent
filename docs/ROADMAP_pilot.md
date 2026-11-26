@@ -5,8 +5,13 @@ Ziel: Das Social-Media-Modul sicher und dauerhaft auf einem kleinen Server in De
 Rahmen:
 - Ein Server (virtueller Server bei einem deutschen Hoster, Ubuntu LTS), eine Installation, ein Kunde
 - Datenbank bleibt SQLite (inkl. bestehendem Schutz des Audit-Logs); PostgreSQL erst bei mehreren Kunden
-- Gleiche Arbeitsweise wie in den anderen Roadmaps: ein Meilenstein pro Commit, Tests und Linting danach, bei fehlschlagenden Tests anhalten
+- Gleiche Arbeitsweise wie in den anderen Roadmaps: ein Meilenstein pro Pull Request (CLAUDE.md), Tests und Linting danach, bei fehlschlagenden Tests anhalten
 - Keine Zugangsdaten, Kundendaten oder echten Markenprofile im Repository
+
+Entscheidungen des Product Owners (November 2026):
+- Keine Meta Business Suite: veröffentlicht und eingeplant wird direkt in Instagram bzw. Facebook (wie `docs/SPEC_social.md` §12)
+- Ein Pull Request je Meilenstein
+- Migrationen und Demo-Daten: siehe P1 und P2
 
 ---
 
@@ -19,12 +24,16 @@ Rahmen:
 - Benutzer anlegen und Passwort zurücksetzen per CLI durch den Admin (kein E-Mail-Versand nötig)
 - Freigaben und Audit-Einträge speichern den angemeldeten Benutzer statt „demo“
 - Ohne Anmeldung ist außer der Login-Seite und `/health` nichts erreichbar
+- Demo-Benutzer: Die automatische Anmeldung als „demo“ entfällt. Für die lokale Entwicklung gibt es höchstens einen ausdrücklichen Schalter (Standard aus, im Produktivbetrieb gesperrt); Tests nutzen einen festen Testbenutzer
+- Bestehende Daten: Lokale Demo-Daten bleiben erhalten; vorhandene Audit-Einträge und Freigaben mit „demo“ bleiben unverändert (Audit ist unveränderlich), neue tragen den angemeldeten Benutzer. Der Pilot-Server startet mit leerer Datenbank ohne Demo-Daten
 
 **Akzeptanz:** Tests für Login, Logout, Rollen, CSRF, Sperre nach Fehlversuchen und dass geschützte Seiten ohne Anmeldung nicht erreichbar sind.
 
 ## [ ] P2 – Datenbank-Migrationen
 
 - Alembic einführen, Ausgangsmigration aus dem aktuellen Schema
+- Bestehende Datenbanken (lokale Demo-Datenbanken aus der Zeit vor Alembic): ein einmaliger CLI-Befehl bringt sie zuerst auf den aktuellen Stand (fehlende Spalten, Tabellen-Umbau für optionale Spalten, einmaliger Bild-Umzug aus U6) und markiert sie dann als Ausgangsmigration; eine neue Datenbank (Pilot-Server) entsteht direkt aus den Migrationen
+- Die bisherigen Start-Hilfen (`add_missing_columns`, `relax_not_null_columns`, `migrate_briefing_images` beim Start) entfallen danach; ab dann gibt es Schemaänderungen nur noch per Migration
 - Migrationen per CLI-Befehl ausführen; Dokumentation, wie neue Migrationen entstehen
 - Der Schutz des Audit-Logs (Trigger o. Ä.) wird Teil der Migrationen
 - Regel in CLAUDE.md ergänzen: Jede Änderung am Datenmodell braucht eine Migration
@@ -77,7 +86,7 @@ Rahmen:
 ## [ ] P8 – Abnahme und Übergabe
 
 - Checkliste für den ersten Start auf dem Server (Smoke-Test)
-- Kurzanleitung für Mitarbeitende (`docs/KURZANLEITUNG_SOCIAL.md`): Briefing anlegen, prüfen, freigeben, Bild wählen, in der Meta Business Suite einplanen, Status setzen
+- Kurzanleitung für Mitarbeitende (`docs/KURZANLEITUNG_SOCIAL.md`): Briefing anlegen, prüfen, freigeben, Bild wählen, direkt in Instagram bzw. Facebook einplanen (Planungsfunktion der Plattform, keine Meta Business Suite), Status setzen
 - Abschnitt zur KI-Kompetenz: was das System kann, was nicht, worauf man bei Prüfhinweisen achtet
 
 **Akzeptanz:** Dokumente vollständig; Smoke-Test-Checkliste deckt Login, Briefing, Entwurf, Bild, Freigabe, Kalender und Backup ab.
