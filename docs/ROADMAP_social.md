@@ -322,8 +322,8 @@ Screenshots `docs/screenshots/U9/`; a11y-Prüfung ohne Verstöße.
   bleibt jederzeit sichtbar (SPEC_social §14).
 - [x] **Logo in Grafiken:** optionales Feld `design.logo` (Dateiname neben dem Markenprofil);
   ohne Logo bleibt der Markenname als Schriftzug. Demo-Profile haben bewusst kein Logo.
-- [ ] **Migrationen:** `add_missing_columns` reicht für SQLite-Demo-Datenbanken; Alembic erst
-  beim Wechsel auf PostgreSQL einführen.
+- [ ] **Migrationen:** `add_missing_columns` reicht für SQLite-Demo-Datenbanken; Alembic kommt
+  mit `docs/ROADMAP_pilot.md` P2 (schon für SQLite, vor dem Pilotbetrieb).
 - [ ] **Screenreader-Test:** Barrierefreiheit bisher nur automatisch geprüft (axe, Tastatur);
   ein Test mit NVDA oder VoiceOver durch einen Menschen steht aus.
 - [ ] **Kostenschätzung KI-Bilder:** Standardwert `IMAGE_COST_PER_IMAGE_EUR=0.05` ist eine
