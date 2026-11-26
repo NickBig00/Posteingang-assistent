@@ -12,6 +12,7 @@ from app.core.outcomes import Outcome
 from app.social.channels import CHANNEL_SPECS
 from app.social.facts import (
     FACT_LABELS,
+    TEXT_FACT_KEYS,
     BriefingFacts,
     FactKey,
     format_date,
@@ -267,12 +268,17 @@ def check_facts(text: str, facts: BriefingFacts) -> list[Finding]:
             )
         else:
             findings.append(Finding("fakten", Outcome.ERROR, f"Preis {expected} fehlt im Text."))
-    if facts.ort:
-        match_place = place_pattern(facts.ort).search(text)
-        if match_place:
+    # Place and the text facts (name, course leader, registration …): word for word.
+    for key in ("ort", *TEXT_FACT_KEYS):
+        value = getattr(facts, key)
+        if not value:
+            continue
+        label = FACT_LABELS[key]
+        match_text = place_pattern(value).search(text)
+        if match_text:
             findings.append(
                 Finding(
-                    "fakten", Outcome.OK, f"Ort „{facts.ort}“ ist enthalten.", match_place.span()
+                    "fakten", Outcome.OK, f"{label} „{value}“ ist enthalten.", match_text.span()
                 )
             )
         else:
@@ -280,7 +286,7 @@ def check_facts(text: str, facts: BriefingFacts) -> list[Finding]:
                 Finding(
                     "fakten",
                     Outcome.ERROR,
-                    f"Ort „{facts.ort}“ fehlt im Text oder wurde verändert.",
+                    f"{label} „{value}“ fehlt im Text oder wurde verändert.",
                 )
             )
     if facts.telefon:

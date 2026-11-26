@@ -9,16 +9,56 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
-FactKey = Literal["datum", "uhrzeit", "preis", "ort", "zeitraum", "telefon"]
-FACT_KEYS: tuple[FactKey, ...] = ("datum", "uhrzeit", "preis", "ort", "zeitraum", "telefon")
+FactKey = Literal[
+    "titel",
+    "datum",
+    "uhrzeit",
+    "preis",
+    "ort",
+    "zeitraum",
+    "telefon",
+    "kursleitung",
+    "anmeldung",
+    "vorteil",
+    "bedingungen",
+]
+FACT_KEYS: tuple[FactKey, ...] = (
+    "titel",
+    "datum",
+    "uhrzeit",
+    "preis",
+    "ort",
+    "zeitraum",
+    "telefon",
+    "kursleitung",
+    "anmeldung",
+    "vorteil",
+    "bedingungen",
+)
+# Facts written as free text (e.g. "über die App"): they must appear word for word in the post,
+# like the place. A brand profile can ask for them per occasion type (SPEC_social 4.3).
+TEXT_FACT_KEYS: tuple[FactKey, ...] = (
+    "titel",
+    "kursleitung",
+    "anmeldung",
+    "vorteil",
+    "bedingungen",
+)
+# Facts every form shows; the text facts only appear where an occasion type uses them.
+BASE_FACT_KEYS: tuple[FactKey, ...] = ("datum", "uhrzeit", "preis", "ort", "zeitraum", "telefon")
 
 FACT_LABELS: dict[FactKey, str] = {
+    "titel": "Name",
     "datum": "Datum",
     "uhrzeit": "Uhrzeit",
     "preis": "Preis",
     "ort": "Ort",
     "zeitraum": "Zeitraum",
     "telefon": "Telefonnummer",
+    "kursleitung": "Kursleitung",
+    "anmeldung": "Anmeldung",
+    "vorteil": "Vorteil",
+    "bedingungen": "Bedingungen",
 }
 
 
@@ -32,6 +72,11 @@ class BriefingFacts(BaseModel):
     zeitraum_von: date | None = None
     zeitraum_bis: date | None = None
     telefon: str | None = Field(default=None, pattern=r"^\+?[0-9][0-9 /-]{4,24}[0-9]$")
+    titel: str | None = Field(default=None, min_length=1, max_length=120)
+    kursleitung: str | None = Field(default=None, min_length=1, max_length=120)
+    anmeldung: str | None = Field(default=None, min_length=1, max_length=200)
+    vorteil: str | None = Field(default=None, min_length=1, max_length=200)
+    bedingungen: str | None = Field(default=None, min_length=1, max_length=300)
 
     @model_validator(mode="after")
     def _check_period(self) -> Self:
@@ -80,6 +125,8 @@ def format_price(value: Decimal) -> str:
 def formatted_facts(facts: BriefingFacts) -> dict[FactKey, str]:
     """German spelling of every given fact, e.g. {"preis": "19,00 €"}."""
     result: dict[FactKey, str] = {}
+    if facts.titel:
+        result["titel"] = facts.titel
     if facts.datum:
         result["datum"] = format_date(facts.datum)
     if facts.uhrzeit:
@@ -94,6 +141,10 @@ def formatted_facts(facts: BriefingFacts) -> dict[FactKey, str]:
         )
     if facts.telefon:
         result["telefon"] = facts.telefon
+    for key in ("kursleitung", "anmeldung", "vorteil", "bedingungen"):
+        value = getattr(facts, key)
+        if value:
+            result[key] = value  # type: ignore[index]
     return result
 
 

@@ -46,6 +46,15 @@
     <label class="field font-medium">Telefonnummer{{ mark("telefon") }}
       <input type="text" name="telefon" value="{{ values.get('telefon', '') }}" class="input mt-1">{{ err("telefon") }}</label>
   </div>
+  {% if text_facts %}
+  <div class="mt-3 grid gap-3 md:grid-cols-2" data-text-facts>
+    {% for key, label, placeholder, maxlength in text_facts %}
+    <label class="field font-medium {{ 'md:col-span-2' if key == 'bedingungen' else '' }}">{{ label }}{{ mark(key) }}
+      <input type="text" name="{{ key }}" maxlength="{{ maxlength }}" value="{{ values.get(key, '') }}" placeholder="{{ placeholder }}" class="input mt-1">{{ err(key) }}</label>
+    {% endfor %}
+  </div>
+  <p class="hint">Diese Angaben übernimmt der Beitrag wörtlich; das System prüft, dass sie unverändert im Text stehen.</p>
+  {% endif %}
 </fieldset>
 
 <fieldset class="mt-5 rounded-lg border border-line p-4">

@@ -13,7 +13,20 @@ from app.social.profiles import SocialConfig
 
 MAX_NOTES_LENGTH = 2000
 # Form fields of the facts; `zeitraum` has two fields.
-FACT_FIELDS = ("datum", "uhrzeit", "preis", "ort", "zeitraum_von", "zeitraum_bis", "telefon")
+FACT_FIELDS = (
+    "titel",
+    "datum",
+    "uhrzeit",
+    "preis",
+    "ort",
+    "zeitraum_von",
+    "zeitraum_bis",
+    "telefon",
+    "kursleitung",
+    "anmeldung",
+    "vorteil",
+    "bedingungen",
+)
 
 
 @dataclass(frozen=True)

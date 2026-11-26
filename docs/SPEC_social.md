@@ -68,6 +68,32 @@ Was für einen einzelnen Betrieb gilt. Ein Betrieb kann **mehrere Bereiche mit e
 
 Das Demo-Markenprofil im Repository ist **fiktiv**, bildet aber die Struktur eines echten Gesundheitszentrums ab. Markenprofile echter Kunden werden nicht im Repository gespeichert, sondern beim Betrieb separat bereitgestellt (z. B. per Pfad aus einer Umgebungsvariable).
 
+### 4.3 Anlässe und Kampagnenplan je Betrieb
+
+Ein Markenprofil kann die Vorgaben der Branche für **Anlass-Typen** (mit Pflicht- und
+optionalen Angaben) und den **Kampagnenplan** im Abschnitt `industry_overrides:` ersetzen. Jede
+Liste ersetzt die der Branche vollständig; fehlt sie, gilt das Branchenprofil. Die Regeln zu
+Gesundheitsversprechen, Begriffslisten und sensiblen Bereichen bleiben immer die der Branche.
+(Der Name ist nicht `social:`, weil dieser Name im Branchenprofil den Modul-Abschnitt markiert.)
+
+Zu den festen Fakten (Datum, Uhrzeit, Preis, Ort, Zeitraum, Telefonnummer) kommen
+**Text-Angaben**: Name (z. B. Kursname), Kursleitung, Anmeldung (z. B. „über die App“), Vorteil
+und Bedingungen. Das Formular zeigt sie nur bei Anlässen, die sie als `required_facts` oder
+`optional_facts` nennen. Sie gelten wie der Ort als Fakten: Der Beitrag muss sie **wörtlich**
+enthalten (deterministische Prüfung), sie stehen auf Wunsch im Faktenblock der Grafik und
+gehen nicht als freier Text an die KI für Grafiktexte.
+
+```yaml
+industry_overrides:
+  occasion_types:
+    - key: kurs
+      label: Kurs
+      required_facts: [titel, datum, uhrzeit, kursleitung, anmeldung]
+      optional_facts: [ort]
+  campaign_steps:
+    - {key: ankuendigung, label: Ankündigung, offset_days: -14, instruction: neugierig machen}
+```
+
 ## 5. Ablauf
 
 ```
